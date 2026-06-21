@@ -79,9 +79,9 @@ module.exports = {
 
                 let content = "### ✅ Playlist Added\n\n" +
                     "**Playlist**\n" +
-                    `-# ${playlistInfo.name}\n\n` +
+                    `-# ${playlistInfo?.name || "Unknown Playlist"}\n\n` +
                     "**Tracks**\n" +
-                    `-# ${addedTracks.length} songs added to queue`;
+                    `-# ${addedTracks.length} of ${tracks.length} songs added to queue`;
                     
                 if (duplicates.length > 0) {
                     content += `\n\n⚠️ **Duplicates Skipped**\n-# ${duplicates.length} songs already in queue`;

@@ -3,10 +3,51 @@ const { getGuildData, clearUpdateInterval } = require("../utils/playerStore");
 const { createNowPlayingContainer, createChatPlayIdleContainer, createChatPlayNowPlayingContainer } = require("../utils/components");
 const { generateMusicCard } = require("../utils/musicard");
 const { recordIncident } = require("../utils/incidents");
-const path = require("path");
-const fs = require("fs");
+const { scheduleStatusUpdate } = require("../services/statusMonitor");
+const config = require("../../config");
 
 const UPDATE_INTERVAL_MS = 15 * 1000; // 15 seconds
+const LAVALINK_RECONNECT_INTERVAL_MS = 30 * 60 * 1000;
+let lavalinkReconnectTimer = null;
+
+function refreshLavalinkNodes(client) {
+    if (!client?.riffy?.initiated) return;
+
+    for (const configNode of config.nodes) {
+        const node = client.riffy.nodeMap.get(configNode.name);
+
+        if (!node) {
+            client.riffy.createNode(configNode);
+            console.log(`[Musicify] Created missing Lavalink node "${configNode.name}".`);
+            continue;
+        }
+
+        if (node.reconnectAttempt) {
+            clearTimeout(node.reconnectAttempt);
+            node.reconnectAttempt = null;
+        }
+
+        node.reconnectAttempted = 1;
+
+        if (node.connected && node.ws) {
+            node.ws.close(1000, "Scheduled refresh");
+            console.log(`[Musicify] Scheduled Lavalink refresh for node "${configNode.name}".`);
+            continue;
+        }
+
+        node.connect();
+        console.log(`[Musicify] Reconnecting Lavalink node "${configNode.name}".`);
+    }
+}
+
+function startLavalinkReconnectMonitor(client) {
+    if (lavalinkReconnectTimer) clearInterval(lavalinkReconnectTimer);
+
+    lavalinkReconnectTimer = setInterval(() => {
+        console.log("[Musicify] Running scheduled Lavalink reconnect...");
+        refreshLavalinkNodes(client);
+    }, LAVALINK_RECONNECT_INTERVAL_MS);
+}
 
 /**
  * Helper: edit the existing player message or send a new one (never duplicates)
@@ -113,24 +154,30 @@ function setupPlayerHandler(client) {
     // --- Node Connected ---
     client.riffy.on("nodeConnect", (node) => {
         console.log(`[Musicify] Lavalink node "${node.name}" connected.`);
+        scheduleStatusUpdate(client, true);
     });
 
     // --- Node Error ---
     client.riffy.on("nodeError", (node, error) => {
         console.error(`[Musicify] Node "${node.name}" error:`, error.message);
         recordIncident("Lavalink", `Node error: ${error.message.substring(0, 50)}`);
+        scheduleStatusUpdate(client, true);
     });
 
     // --- Node Disconnect ---
     client.riffy.on("nodeDisconnect", (node) => {
         console.warn(`[Musicify] Node "${node.name}" disconnected.`);
         recordIncident("Lavalink", "Node disconnected");
+        scheduleStatusUpdate(client, true);
     });
 
     // --- Node Reconnected (Riffy built-in auto-reconnect) ---
     client.riffy.on("nodeReconnect", (node) => {
         console.log(`[Musicify] Node "${node.name}" reconnected successfully.`);
+        scheduleStatusUpdate(client, true);
     });
+
+    startLavalinkReconnectMonitor(client);
 
     // --- Track Start ---
     client.riffy.on("trackStart", async (player, track) => {

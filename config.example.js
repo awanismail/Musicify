@@ -1,20 +1,22 @@
+require("dotenv").config();
+
 module.exports = {
     nodes: [
         {
-            host: "localhost",
-            password: "youshallnotpass",
+            host: "your.lavalink.host",
+            password: "your_lavalink_password",
             port: 443,
-            secure: false,
-            name: "Main"
-        }
+            secure: true,
+            name: "Main",
+        },
     ],
 
     defaultSearchPlatform: "ytmsearch",
     restVersion: "v4",
 
     accentColor: 0x2b2d31,
+    statusWebhookUrl: process.env.STATUS_WEBHOOK_URL,
 
-    // Musicard theme config
     musicard: {
         theme: "Bloom",
         progressBarColor: "#FACC15",

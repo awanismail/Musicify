@@ -404,7 +404,7 @@ function addSupportPage(container, getCmd) {
             "**1.** Note what command you were using\n" +
             "-# Include the exact command and any error shown.\n\n" +
             "**2.** Join our Support Server\n" +
-            "-# [discord.gg/MRjEUhDCpZ](https://discord.gg/MRjEUhDCpZ)\n\n" +
+            "-# Use the **Join Support Server** button above.\n\n" +
             "**3.** Open a ticket\n" +
             "-# Or ask in the support channel.\n\n" +
             "**4.** Attach evidence\n" +

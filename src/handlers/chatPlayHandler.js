@@ -1,7 +1,15 @@
-const { MessageFlags, AttachmentBuilder } = require("discord.js");
+const { MessageFlags } = require("discord.js");
 const { getGuildData } = require("../utils/playerStore");
-const { createChatPlayIdleContainer, createNowPlayingContainer } = require("../utils/components");
-const { generateMusicCard } = require("../utils/musicard");
+const { createChatPlayLoadingContainer } = require("../utils/components");
+
+async function sendChatPlayFeedback(channel, content, timeoutMs = 5000) {
+    try {
+        const feedback = await channel.send({ content });
+        setTimeout(() => feedback.delete().catch(() => {}), timeoutMs);
+    } catch (err) {
+        // Can't send in channel — ignore
+    }
+}
 
 /**
  * Handle ChatPlay messages
@@ -77,7 +85,6 @@ async function handleChatPlayMessage(client, message) {
         // Update ChatPlay message to show loading state (only for first song)
         if (!player.playing && !player.paused && !player.current) {
             try {
-                const { createChatPlayLoadingContainer } = require("../utils/components");
                 const loadingContainer = createChatPlayLoadingContainer();
                 const channel = client.channels.cache.get(guildData.chatPlayChannelId);
                 if (channel && guildData.chatPlayMessageId) {
@@ -128,12 +135,12 @@ async function handleChatPlayMessage(client, message) {
             
             // Send feedback for playlist
             try {
-                let feedbackMsg = `✅ Added **${addedTracks.length} tracks** to queue!`;
+                const playlistName = playlistInfo?.name || "Playlist";
+                let feedbackMsg = `✅ Added **${addedTracks.length}** of **${tracks.length}** tracks from **${playlistName}**!`;
                 if (duplicates.length > 0) {
                     feedbackMsg += `\n⚠️ Skipped ${duplicates.length} duplicates: ${duplicates.slice(0, 3).join(", ")}${duplicates.length > 3 ? "..." : ""}`;
                 }
-                const feedback = await message.channel.send({ content: feedbackMsg });
-                setTimeout(() => feedback.delete().catch(() => {}), 5000);
+                await sendChatPlayFeedback(message.channel, feedbackMsg);
             } catch (err) {}
             if (!player.playing && !player.paused && !player.current) player.play();
         } else if (
@@ -144,7 +151,7 @@ async function handleChatPlayMessage(client, message) {
         ) {
             const track = tracks[0];
             if (!track) {
-
+                await sendChatPlayFeedback(message.channel, "❌ No results found for that search.");
                 return true;
             }
             
@@ -173,11 +180,15 @@ async function handleChatPlayMessage(client, message) {
                 setTimeout(() => feedback.delete().catch(() => {}), 3000);
             } catch (err) {}
             if (!player.playing && !player.paused && !player.current) player.play();
+        } else if (loadType === "empty" || loadType === "EMPTY" || loadType === "NO_MATCHES") {
+            await sendChatPlayFeedback(message.channel, "❌ No results found for that search.");
         } else {
-
+            console.log(`[Musicify ChatPlay] Unhandled loadType: "${loadType}"`);
+            await sendChatPlayFeedback(message.channel, "❌ No results found for that search.");
         }
     } catch (error) {
         console.error("[Musicify ChatPlay] Error:", error.message);
+        await sendChatPlayFeedback(message.channel, "❌ Something went wrong while searching for that song.");
     }
 
     return true;

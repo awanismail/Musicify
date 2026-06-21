@@ -51,8 +51,8 @@ docker compose logs -f musicify
    npm install
    ```
 3. Copy `.env.example` to `.env` and fill in your `BOT_TOKEN` and `CLIENT_ID`.
-4. Configure `config.js` with your Lavalink server details.
-   - Update `host`, `port`, `password`, and `secure` in `src/config.js`.
+4. Copy `config.example.js` to `config.js` and configure your Lavalink server details.
+   - Update `host`, `port`, `password`, and `secure` in `config.js`.
    - Ensure your Lavalink server is running and reachable.
 5. Start the bot:
    ```bash

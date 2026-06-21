@@ -1,8 +1,9 @@
-const { REST, Routes, ActivityType } = require("discord.js");
+const { REST, Routes, ActivityType, MessageFlags } = require("discord.js");
 const fs = require("fs");
 const path = require("path");
 const { readDB } = require("../utils/database");
 const { getGuildData } = require("../utils/playerStore");
+const { startStatusMonitor } = require("../services/statusMonitor");
 
 module.exports = {
     name: "clientReady",
@@ -13,6 +14,8 @@ module.exports = {
 
         // Initialize riffy with bot user ID
         client.riffy.init(client.user.id);
+
+        startStatusMonitor(client);
 
         // Cycling statuses
         const statuses = [

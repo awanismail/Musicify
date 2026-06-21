@@ -1,8 +1,9 @@
 const { MessageFlags, AttachmentBuilder } = require("discord.js");
-const { getGuildData } = require("../utils/playerStore");
+const { getGuildData, clearUpdateInterval } = require("../utils/playerStore");
 const { createNowPlayingContainer, createChatPlayNowPlayingContainer, createQueueContainer, createChatPlayIdleContainer } = require("../utils/components");
 const { generateMusicCard } = require("../utils/musicard");
 const { addNodeDetails } = require("../utils/nodeDetails");
+const { canControlMusic, VOICE_CHANNEL_DENIAL } = require("../utils/permissions");
 const config = require("../../config");
 
 /**
@@ -273,6 +274,9 @@ async function handleButtonInteraction(client, interaction) {
         if (!player) {
             return interaction.reply({ content: `❌ No music playing. Start with ${getCmd("play")} or ChatPlay!`, flags: MessageFlags.Ephemeral });
         }
+        if (!canControlMusic(interaction.member, player)) {
+            return interaction.reply({ content: VOICE_CHANNEL_DENIAL, flags: MessageFlags.Ephemeral });
+        }
 
         await interaction.deferUpdate();
 
@@ -300,6 +304,9 @@ async function handleButtonInteraction(client, interaction) {
         if (!player || !player.current) {
             return interaction.reply({ content: `❌ No music playing. Start with ${getCmd("play")} or ChatPlay!`, flags: MessageFlags.Ephemeral });
         }
+        if (!canControlMusic(interaction.member, player)) {
+            return interaction.reply({ content: VOICE_CHANNEL_DENIAL, flags: MessageFlags.Ephemeral });
+        }
         if (!guildData.queuePages) guildData.queuePages = new Map();
         guildData.queuePages.set(interaction.user.id, 0);
         const queueContainer = createQueueContainer(
@@ -317,6 +324,9 @@ async function handleButtonInteraction(client, interaction) {
     if (customId.startsWith("queue_") && customId !== "queue") {
         if (!player || !player.current) {
             return interaction.reply({ content: `❌ No music playing. Start with ${getCmd("play")} or ChatPlay!`, flags: MessageFlags.Ephemeral });
+        }
+        if (!canControlMusic(interaction.member, player)) {
+            return interaction.reply({ content: VOICE_CHANNEL_DENIAL, flags: MessageFlags.Ephemeral });
         }
 
         await interaction.deferUpdate();
@@ -365,6 +375,10 @@ async function handleButtonInteraction(client, interaction) {
     const needsPlayer = ["pause_resume", "skip", "previous", "stop", "shuffle", "loop", "autoplay", "vol_up", "vol_down"];
     if (needsPlayer.includes(customId) && !player) {
         return interaction.reply({ content: `❌ No music playing. Start with ${getCmd("play")} or ChatPlay!`, flags: MessageFlags.Ephemeral });
+    }
+
+    if (needsPlayer.includes(customId) && !canControlMusic(interaction.member, player)) {
+        return interaction.reply({ content: VOICE_CHANNEL_DENIAL, flags: MessageFlags.Ephemeral });
     }
 
     // Defer immediately to avoid 3s timeout
@@ -418,8 +432,16 @@ async function handleButtonInteraction(client, interaction) {
                 });
             }
             guildData.stopConfirmPending = null;
-            
-            // If ChatPlay, edit message back to idle state BEFORE destroying player
+
+            clearUpdateInterval(guildData);
+            if (guildData.idleTimeout) {
+                clearTimeout(guildData.idleTimeout);
+                guildData.idleTimeout = null;
+            }
+            guildData.suggestions = [];
+            guildData.previousTracks = [];
+
+            // If ChatPlay, edit message back to idle state
             if (guildData.chatPlayChannelId && guildData.chatPlayMessageId) {
                 try {
                     const container = createChatPlayIdleContainer();
@@ -435,12 +457,29 @@ async function handleButtonInteraction(client, interaction) {
                 } catch (err) {
                     console.error("[Musicify] Failed to edit ChatPlay message on stop:", err.message);
                 }
+            } else if (guildData.playerMessageId && guildData.playerChannelId) {
+                try {
+                    const channel = client.channels.cache.get(guildData.playerChannelId);
+                    if (channel) {
+                        const msg = await channel.messages.fetch(guildData.playerMessageId);
+                        await msg.delete();
+                    }
+                } catch (err) {
+                    // message already deleted
+                }
+                guildData.playerMessageId = null;
+                guildData.playerChannelId = null;
             }
-            
+
             player.queue.clear();
             player.stop();
+
+            if (guildData.twentyFourSeven) {
+                return;
+            }
+
             player.destroy();
-            return; // Don't try to update player message since player is destroyed
+            return;
         }
 
         case "shuffle": {

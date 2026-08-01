@@ -5,8 +5,8 @@ const DATA_DIR = path.join(__dirname, "..", "..", "data");
 const BACKUP_DIR = path.join(DATA_DIR, "backups");
 const DB_PATH = path.join(DATA_DIR, "musicify.db");
 
-const DEFAULT_INTERVAL_MS = 24 * 60 * 60 * 1000;
-const DEFAULT_RETAIN = 14;
+const DEFAULT_INTERVAL_MS = 7 * 24 * 60 * 60 * 1000;
+const DEFAULT_RETAIN = 4;
 
 let schedulerTimer = null;
 
@@ -17,7 +17,7 @@ function getBackupConfig() {
             60_000,
             Number(process.env.BACKUP_INTERVAL_MS) || DEFAULT_INTERVAL_MS
         ),
-        retain: Math.max(5, Number(process.env.BACKUP_RETAIN_COUNT) || DEFAULT_RETAIN),
+        retain: Math.max(2, Number(process.env.BACKUP_RETAIN_COUNT) || DEFAULT_RETAIN),
     };
 }
 
@@ -139,9 +139,13 @@ function startBackupScheduler(db) {
         void runBackup(db);
     }, config.intervalMs);
 
-    const hours = config.intervalMs / (60 * 60 * 1000);
+    const dayMs = 24 * 60 * 60 * 1000;
+    const intervalLabel =
+        config.intervalMs >= dayMs
+            ? `${config.intervalMs / dayMs} day(s)`
+            : `${config.intervalMs / (60 * 60 * 1000)}h`;
     console.log(
-        `[Musicify] Database backups enabled — every ${hours}h, keeping ${config.retain} snapshot(s)`
+        `[Musicify] Database backups enabled — every ${intervalLabel}, keeping ${config.retain} snapshot(s)`
     );
 }
 

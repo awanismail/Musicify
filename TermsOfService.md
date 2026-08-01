@@ -2,7 +2,7 @@
 
 **Last Updated:** August 1, 2026
 
-Welcome to **Musicify**! These Terms of Service ("Terms") govern your access to and use of the Musicify Discord bot and related services (the "Service"), provided by **musicify-dev** ("we," "us," or "our").
+Welcome to **Musicify**! These Terms of Service ("Terms") govern your access to and use of the Musicify Discord bot and related services (the "Service"), provided by **Musicify** ("we," "us," or "our").
 
 By inviting, accessing, or using Musicify in your Discord server, you agree to be bound by these Terms. If you do not agree to these Terms, do not use the Service.
 

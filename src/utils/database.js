@@ -1,83 +1,107 @@
-const fs = require("fs");
-const path = require("path");
+const db = require("../db/sqlite");
+const {
+    camelToColumn,
+    rowToSettings,
+    serializeValue,
+    settingsToColumns,
+} = require("../db/guildColumns");
 
-const DB_PATH = path.join(__dirname, "..", "..", "data", "guilds.json");
+const SELECT_GUILD = db.prepare("SELECT * FROM guilds WHERE guild_id = ?");
+const INSERT_GUILD = db.prepare("INSERT INTO guilds (guild_id) VALUES (?)");
+const SELECT_ALL_GUILDS = db.prepare("SELECT * FROM guilds");
 
-let dbInitialized = false;
+function ensureGuildRow(guildId) {
+    const row = SELECT_GUILD.get(guildId);
+    if (row) return row;
 
-/**
- * Ensure the data directory and file exist (only runs once)
- */
-function ensureDB() {
-    if (dbInitialized) return;
-    const dir = path.dirname(DB_PATH);
-    if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir, { recursive: true });
-    }
-    if (!fs.existsSync(DB_PATH)) {
-        fs.writeFileSync(DB_PATH, "{}", "utf-8");
-    }
-    dbInitialized = true;
+    INSERT_GUILD.run(guildId);
+    return SELECT_GUILD.get(guildId);
 }
 
-/**
- * Read the entire database
- */
-function readDB() {
-    ensureDB();
-    try {
-        const raw = fs.readFileSync(DB_PATH, "utf-8");
-        return JSON.parse(raw);
-    } catch (err) {
-        return {};
-    }
-}
-
-/**
- * Write the entire database
- */
-function writeDB(data) {
-    ensureDB();
-    fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2), "utf-8");
-}
-
-/**
- * Get guild settings from the database
- */
 function getGuildSettings(guildId) {
-    const db = readDB();
-    if (!db[guildId]) {
-        db[guildId] = {};
-        writeDB(db);
-    }
-    return db[guildId];
+    return rowToSettings(ensureGuildRow(guildId));
 }
 
-/**
- * Save a specific guild setting
- */
 function setGuildSetting(guildId, key, value) {
-    const db = readDB();
-    if (!db[guildId]) db[guildId] = {};
-    db[guildId][key] = value;
-    writeDB(db);
+    const column = camelToColumn(key);
+    if (!column) {
+        throw new Error(`Unknown guild setting: ${key}`);
+    }
+
+    ensureGuildRow(guildId);
+    db.prepare(`UPDATE guilds SET ${column} = ? WHERE guild_id = ?`).run(
+        serializeValue(key, value),
+        guildId
+    );
 }
 
-/**
- * Delete a specific guild setting
- */
+function setGuildSettings(guildId, settings) {
+    ensureGuildRow(guildId);
+
+    db.exec("BEGIN");
+    try {
+        const columns = settingsToColumns(settings);
+        for (const [column, value] of Object.entries(columns)) {
+            db.prepare(`UPDATE guilds SET ${column} = ? WHERE guild_id = ?`).run(
+                value,
+                guildId
+            );
+        }
+        db.exec("COMMIT");
+    } catch (err) {
+        db.exec("ROLLBACK");
+        throw err;
+    }
+}
+
 function deleteGuildSetting(guildId, key) {
-    const db = readDB();
-    if (db[guildId]) {
-        delete db[guildId][key];
-        writeDB(db);
+    const column = camelToColumn(key);
+    if (!column) return;
+
+    db.prepare(`UPDATE guilds SET ${column} = NULL WHERE guild_id = ?`).run(guildId);
+}
+
+function persistGuildPlaybackSettings(guildId, guildData) {
+    setGuildSettings(guildId, {
+        defaultVolume: guildData.volume,
+        defaultAutoplay: guildData.autoplay,
+    });
+}
+
+function readDB() {
+    const result = {};
+    for (const row of SELECT_ALL_GUILDS.all()) {
+        result[row.guild_id] = rowToSettings(row);
+    }
+    return result;
+}
+
+function writeDB(data) {
+    db.exec("BEGIN");
+    try {
+        for (const [guildId, settings] of Object.entries(data)) {
+            ensureGuildRow(guildId);
+            const columns = settingsToColumns(settings);
+            for (const [column, value] of Object.entries(columns)) {
+                db.prepare(`UPDATE guilds SET ${column} = ? WHERE guild_id = ?`).run(
+                    value,
+                    guildId
+                );
+            }
+        }
+        db.exec("COMMIT");
+    } catch (err) {
+        db.exec("ROLLBACK");
+        throw err;
     }
 }
 
 module.exports = {
     getGuildSettings,
     setGuildSetting,
+    setGuildSettings,
     deleteGuildSetting,
+    persistGuildPlaybackSettings,
     readDB,
     writeDB,
 };

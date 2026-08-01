@@ -1,57 +1,45 @@
-const { getGuildData, deleteGuildData } = require("../utils/playerStore");
-const { createChatPlayIdleContainer } = require("../utils/components");
-const { MessageFlags } = require("discord.js");
+const { getGuildData } = require("../utils/playerStore");
+const {
+    resetChatPlayToIdle,
+    clearRegularPlayerMessage,
+    scheduleAloneLeave,
+    cancelAloneLeaveIfUsersPresent,
+    cancelAloneLeaveTimer,
+} = require("../services/sessionManager");
 
 module.exports = {
     name: "voiceStateUpdate",
     async execute(client, oldState, newState) {
-        // Check if the bot was disconnected from a voice channel
+        const guildId = oldState.guild.id;
+
+        // Bot was disconnected from voice — reset UI and destroy player
         if (oldState.id === client.user.id && !newState.channelId) {
-            const player = client.riffy.players.get(oldState.guild.id);
+            const player = client.riffy?.players.get(guildId);
             if (player) {
-                await resetChatPlayIfActive(client, oldState.guild.id);
+                await resetChatPlayIfActive(client, guildId);
                 player.destroy();
             }
             return;
         }
 
-        // Check if bot is alone in VC
-        if (oldState.channelId && oldState.channel) {
+        // User joined the bot's voice channel — cancel alone-leave timer
+        if (newState.channelId && !newState.member.user.bot) {
+            const botMember = newState.guild.members.cache.get(client.user.id);
+            if (botMember?.voice?.channelId === newState.channelId) {
+                cancelAloneLeaveIfUsersPresent(client, guildId);
+            }
+        }
+
+        // Last human left the bot's voice channel
+        if (oldState.channelId && oldState.channel && !oldState.member.user.bot) {
             const botMember = oldState.guild.members.cache.get(client.user.id);
-            if (botMember?.voice?.channel) {
-                const members = botMember.voice.channel.members.filter(
-                    (m) => !m.user.bot
-                );
-                if (members.size === 0) {
-                    // Skip auto-disconnect if 24/7 mode is enabled
-                    const guildData = getGuildData(oldState.guild.id);
-                    if (guildData.twentyFourSeven) return;
+            if (botMember?.voice?.channelId !== oldState.channelId) return;
 
-                    // Bot is alone, disconnect after 30 seconds
-                    setTimeout(async () => {
-                        const currentChannel = oldState.guild.members.cache
-                            .get(client.user.id)
-                            ?.voice?.channel;
-                        if (currentChannel) {
-                            const currentMembers = currentChannel.members.filter(
-                                (m) => !m.user.bot
-                            );
-                            if (currentMembers.size === 0) {
-                                // Re-check 24/7 in case it was toggled during the timeout
-                                const currentGuildData = getGuildData(oldState.guild.id);
-                                if (currentGuildData.twentyFourSeven) return;
-
-                                const player = client.riffy.players.get(
-                                    oldState.guild.id
-                                );
-                                if (player) {
-                                    await resetChatPlayIfActive(client, oldState.guild.id);
-                                    player.destroy();
-                                }
-                            }
-                        }
-                    }, 30000);
-                }
+            const members = oldState.channel.members.filter((m) => !m.user.bot);
+            if (members.size === 0) {
+                const guildData = getGuildData(guildId);
+                if (guildData.twentyFourSeven) return;
+                scheduleAloneLeave(client, guildId);
             }
         }
     },
@@ -59,32 +47,12 @@ module.exports = {
 
 async function resetChatPlayIfActive(client, guildId) {
     const guildData = getGuildData(guildId);
-    // Reset ChatPlay to idle
+
     if (guildData.chatPlayChannelId && guildData.chatPlayMessageId) {
-        try {
-            const channel = client.channels.cache.get(guildData.chatPlayChannelId);
-            if (channel) {
-                const msg = await channel.messages.fetch(guildData.chatPlayMessageId);
-                await msg.edit({
-                    components: [createChatPlayIdleContainer()],
-                    attachments: [],
-                    flags: MessageFlags.IsComponentsV2,
-                });
-            }
-        } catch (err) {
-            // message may have been deleted
-        }
+        await resetChatPlayToIdle(client, guildId);
+    } else if (guildData.playerMessageId && guildData.playerChannelId) {
+        await clearRegularPlayerMessage(client, guildData);
     }
-    // Delete regular /play player message
-    else if (guildData.playerMessageId && guildData.playerChannelId) {
-        try {
-            const channel = client.channels.cache.get(guildData.playerChannelId);
-            if (channel) {
-                const msg = await channel.messages.fetch(guildData.playerMessageId);
-                await msg.delete();
-            }
-        } catch (err) {
-            // message already deleted
-        }
-    }
+
+    cancelAloneLeaveTimer(guildData);
 }

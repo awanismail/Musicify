@@ -7,6 +7,8 @@ const path = require("path");
 const config = require("../config");
 const { loadCommands } = require("./handlers/commandHandler");
 const { setupPlayerHandler } = require("./handlers/playerHandler");
+const db = require("./db/sqlite");
+const { runBackup, stopBackupScheduler } = require("./db/backup");
 
 // --- Create Discord Client ---
 const client = new Client({
@@ -91,3 +93,28 @@ if (!token) {
 }
 
 client.login(token);
+
+let shuttingDown = false;
+
+async function shutdown(signal) {
+    if (shuttingDown) return;
+    shuttingDown = true;
+
+    console.log(`[Musicify] ${signal} received — saving database backup...`);
+    stopBackupScheduler();
+    await runBackup(db);
+
+    try {
+        client.destroy();
+    } catch {}
+
+    process.exit(0);
+}
+
+process.on("SIGINT", () => {
+    void shutdown("SIGINT");
+});
+
+process.on("SIGTERM", () => {
+    void shutdown("SIGTERM");
+});

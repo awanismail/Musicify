@@ -9,6 +9,9 @@ class GuildData {
         this.chatPlayChannelId = null;
         this.chatPlayMessageId = null;
         this.chatPlayEnabled = false;
+        this.chatPlaySlowmode = true;
+        this.chatPlayDeleteMessages = true;
+        this.chatPlayPinPlayerMessage = true;
         this.autoplay = false;
         this.loop = "none"; // "none" | "track" | "queue"
         this.volume = 75;
@@ -16,11 +19,13 @@ class GuildData {
         this.previousTracks = [];
         this.suggestions = [];
         this.twentyFourSeven = false;
+        this.boundVoiceChannelId = null;
+        this.aloneLeaveTimeout = null;
+        this.autoplayWatchdog = null;
         this.queuePages = new Map(); // per-user queue page state
         this.updateInterval = null; // 15s musicard auto-update timer
         this.idleTimeout = null; // 30s disconnect timeout
-        this.voiceStateTimeout = null; // voice channel monitoring timeout
-        this.wasPaused = false; // track if music was paused due to empty channel
+        this.stopConfirmPending = null; // user id awaiting stop confirmation
     }
 }
 

@@ -24,6 +24,58 @@ function formatDuration(ms) {
     return `${minutes}:${seconds.toString().padStart(2, "0")}`;
 }
 
+function truncateText(text, max, fallback = "Unknown") {
+    const value = (text || fallback).trim();
+    if (value.length <= max) return value;
+    return `${value.slice(0, Math.max(1, max - 1))}…`;
+}
+
+/** Single-line queue entry — compact for mobile */
+function formatQueueTrackLine(index, track, { titleMax = 34, authorMax = 18 } = {}) {
+    const title = truncateText(track.info?.title, titleMax);
+    const author = truncateText(track.info?.author, authorMax, "?");
+    const duration = formatDuration(track.info?.length);
+    return `-# **${index}.** ${title} — ${author} · \`${duration}\``;
+}
+
+function formatUpNextPreview(queue, maxItems = 3) {
+    if (!queue?.length) {
+        return null;
+    }
+
+    const lines = ["-# **Up next**"];
+    const upcoming = queue.slice(0, maxItems);
+    for (let i = 0; i < upcoming.length; i++) {
+        lines.push(formatQueueTrackLine(i + 1, upcoming[i], { titleMax: 32, authorMax: 16 }));
+    }
+    if (queue.length > maxItems) {
+        lines.push(`-# ***+${queue.length - maxItems} in queue***`);
+    }
+    return lines.join("\n");
+}
+
+/** Discord select option values are capped at 100 chars — use index, not URI */
+function buildSongSuggestionSelectMenu(suggestions) {
+    const selectMenu = new StringSelectMenuBuilder()
+        .setCustomId("song_suggestion")
+        .setPlaceholder("🎶 Pick a similar song")
+        .setMinValues(1)
+        .setMaxValues(1);
+
+    const items = suggestions.slice(0, 10);
+    for (let i = 0; i < items.length; i++) {
+        const suggestion = items[i];
+        selectMenu.addOptions(
+            new StringSelectMenuOptionBuilder()
+                .setLabel(truncateText(suggestion.info?.title, 100))
+                .setDescription(truncateText(suggestion.info?.author, 100, "Unknown Artist"))
+                .setValue(String(i))
+        );
+    }
+
+    return selectMenu;
+}
+
 /**
  * Create the "Now Playing" container using Components V2
  * Design matches the example screenshot with -# subtext
@@ -62,27 +114,14 @@ function createNowPlayingContainer(track, player, guildData, musicardBuffer) {
         )
     );
 
-    // --- Separator ---
-    container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
-
-    // --- Next on Deck ---
-    const queue = player.queue;
-    let nextContent = "**Next on Deck**\n";
-    if (queue && queue.length > 0) {
-        const upcoming = queue.slice(0, 3);
-        for (let i = 0; i < upcoming.length; i++) {
-            const t = upcoming[i];
-            nextContent += `**${i + 1}.** ${(t.info.title || "Unknown").substring(0, 45)} - ${(t.info.author || "Unknown Artist").substring(0, 30)} · ${formatDuration(t.info.length)}\n`;
-        }
-        if (queue.length > 3) {
-            nextContent += `-# *...and ${queue.length - 3} more in queue*`;
-        }
-    } else {
-        nextContent += "-# *No upcoming tracks*";
+    // --- Separator + up next (only when queue has tracks) ---
+    const upNext = formatUpNextPreview(player.queue);
+    if (upNext) {
+        container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
+        container.addTextDisplayComponents(
+            new TextDisplayBuilder().setContent(upNext)
+        );
     }
-    container.addTextDisplayComponents(
-        new TextDisplayBuilder().setContent(nextContent.trim())
-    );
 
     // --- Musicard image ---
     if (musicardBuffer) {
@@ -95,24 +134,10 @@ function createNowPlayingContainer(track, player, guildData, musicardBuffer) {
 
     // --- Song suggestions dropdown ---
     if (guildData.suggestions && guildData.suggestions.length > 0) {
-        const selectMenu = new StringSelectMenuBuilder()
-            .setCustomId("song_suggestion")
-            .setPlaceholder("🎶 Pick a similar song")
-            .setMinValues(1)
-            .setMaxValues(1);
-
-        const suggestions = guildData.suggestions.slice(0, 10);
-        for (const suggestion of suggestions) {
-            selectMenu.addOptions(
-                new StringSelectMenuOptionBuilder()
-                    .setLabel((suggestion.info?.title || "Unknown").substring(0, 100))
-                    .setDescription((suggestion.info?.author || "Unknown Artist").substring(0, 100))
-                    .setValue(suggestion.info?.uri || suggestion.info?.title || "unknown")
-            );
-        }
-
         container.addActionRowComponents(
-            new ActionRowBuilder().addComponents(selectMenu)
+            new ActionRowBuilder().addComponents(
+                buildSongSuggestionSelectMenu(guildData.suggestions)
+            )
         );
     }
 
@@ -174,23 +199,38 @@ function createNowPlayingContainer(track, player, guildData, musicardBuffer) {
 /**
  * Create a ChatPlay idle container (no image, disabled buttons)
  */
-function createChatPlayIdleContainer() {
+function buildChatPlayHeaderContent() {
+    return (
+        "## <:Musicify_Logo:1517828581638541493> Musicify ChatPlay\n" +
+        "-# *Type a song name in this channel to play it!*\n" +
+        "-# I'll search, play it in your voice channel, and keep this message updated."
+    );
+}
+
+function formatChatPlayIdleStatusLine(guildData = {}) {
+    if (guildData.chatPlayEnabled === false) {
+        if (guildData.twentyFourSeven) {
+            return "-# **Status:** Not waiting 24 hours, 7 days a week for a song request...";
+        }
+        return "-# **Status:** Not waiting for a song request...";
+    }
+    if (guildData.twentyFourSeven) {
+        return "-# **Status:** Waiting 24 hours, 7 days a week for a song request...";
+    }
+    return "-# **Status:** Waiting for a song request...";
+}
+
+function createChatPlayIdleContainer(guildData = {}) {
     const container = new ContainerBuilder();
 
     container.addTextDisplayComponents(
-        new TextDisplayBuilder().setContent(
-            "## <:Musicify_Logo:1504329028356673536> Musicify ChatPlay\n" +
-            "-# *Type a song name in this channel to play it!*\n" +
-            "-# I'll search, play it in your voice channel, and keep this message updated."
-        )
+        new TextDisplayBuilder().setContent(buildChatPlayHeaderContent())
     );
 
     container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
 
     container.addTextDisplayComponents(
-        new TextDisplayBuilder().setContent(
-            "-# **Status:** Waiting for a song request..."
-        )
+        new TextDisplayBuilder().setContent(formatChatPlayIdleStatusLine(guildData))
     );
 
     // Disabled control buttons
@@ -215,6 +255,14 @@ function createChatPlayIdleContainer() {
     return container;
 }
 
+function formatChatPlayStatusLine(guildData) {
+    return (
+        `Autoplay: ${guildData.autoplay ? "On" : "Off"}\n` +
+        `Loop: ${capitalize(guildData.loop)}\n` +
+        `Volume: ${guildData.volume}%`
+    );
+}
+
 /**
  * Create a ChatPlay now-playing container (includes ChatPlay header + now playing info)
  */
@@ -223,11 +271,7 @@ function createChatPlayNowPlayingContainer(track, player, guildData, musicardBuf
 
     // --- ChatPlay Header (always visible) ---
     container.addTextDisplayComponents(
-        new TextDisplayBuilder().setContent(
-            "## <:Musicify_Logo:1504329028356673536> Musicify ChatPlay\n" +
-            "-# *Type a song name in this channel to play it!*\n" +
-            "-# I'll search, play it in your voice channel, and keep this message updated."
-        )
+        new TextDisplayBuilder().setContent(buildChatPlayHeaderContent())
     );
 
     container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
@@ -256,34 +300,17 @@ function createChatPlayNowPlayingContainer(track, player, guildData, musicardBuf
 
     // --- Status: Autoplay / Loop / Volume ---
     container.addTextDisplayComponents(
-        new TextDisplayBuilder().setContent(
-            `Autoplay: ${guildData.autoplay ? "On" : "Off"}\n` +
-            `Loop: ${capitalize(guildData.loop)}\n` +
-            `Volume: ${guildData.volume}%`
-        )
+        new TextDisplayBuilder().setContent(formatChatPlayStatusLine(guildData))
     );
 
-    // --- Separator ---
-    container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
-
-    // --- Next on Deck ---
-    const queue = player.queue;
-    let nextContent = "**Next on Deck**\n";
-    if (queue && queue.length > 0) {
-        const upcoming = queue.slice(0, 3);
-        for (let i = 0; i < upcoming.length; i++) {
-            const t = upcoming[i];
-            nextContent += `**${i + 1}.** ${(t.info.title || "Unknown").substring(0, 45)} - ${(t.info.author || "Unknown Artist").substring(0, 30)} · ${formatDuration(t.info.length)}\n`;
-        }
-        if (queue.length > 3) {
-            nextContent += `-# *...and ${queue.length - 3} more in queue*`;
-        }
-    } else {
-        nextContent += "-# *No upcoming tracks*";
+    // --- Separator + up next (only when queue has tracks) ---
+    const upNext = formatUpNextPreview(player.queue);
+    if (upNext) {
+        container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
+        container.addTextDisplayComponents(
+            new TextDisplayBuilder().setContent(upNext)
+        );
     }
-    container.addTextDisplayComponents(
-        new TextDisplayBuilder().setContent(nextContent.trim())
-    );
 
     // --- Musicard image ---
     if (musicardBuffer) {
@@ -296,24 +323,10 @@ function createChatPlayNowPlayingContainer(track, player, guildData, musicardBuf
 
     // --- Song suggestions dropdown ---
     if (guildData.suggestions && guildData.suggestions.length > 0) {
-        const selectMenu = new StringSelectMenuBuilder()
-            .setCustomId("song_suggestion")
-            .setPlaceholder("🎶 Pick a similar song")
-            .setMinValues(1)
-            .setMaxValues(1);
-
-        const suggestions = guildData.suggestions.slice(0, 10);
-        for (const suggestion of suggestions) {
-            selectMenu.addOptions(
-                new StringSelectMenuOptionBuilder()
-                    .setLabel((suggestion.info?.title || "Unknown").substring(0, 100))
-                    .setDescription((suggestion.info?.author || "Unknown Artist").substring(0, 100))
-                    .setValue(suggestion.info?.uri || suggestion.info?.title || "unknown")
-            );
-        }
-
         container.addActionRowComponents(
-            new ActionRowBuilder().addComponents(selectMenu)
+            new ActionRowBuilder().addComponents(
+                buildSongSuggestionSelectMenu(guildData.suggestions)
+            )
         );
     }
 
@@ -367,6 +380,7 @@ function createChatPlayNowPlayingContainer(track, player, guildData, musicardBuf
     );
 
     container.addActionRowComponents(row1, row2);
+
     return container;
 }
 
@@ -375,109 +389,69 @@ function createChatPlayNowPlayingContainer(track, player, guildData, musicardBuf
  */
 function createQueueContainer(queue, currentTrack, page = 0) {
     const container = new ContainerBuilder();
-    const pageSize = 10;
-    const totalTracks = queue ? queue.length : 0;
+    const pageSize = 12;
+    const totalTracks = queue?.length || 0;
     const totalPages = Math.max(1, Math.ceil(totalTracks / pageSize));
 
-    // Clamp page
     if (page < 0) page = 0;
     if (page >= totalPages) page = totalPages - 1;
 
-    // --- Total duration ---
-    let totalDuration = 0;
-    if (currentTrack && currentTrack.info.length) totalDuration += currentTrack.info.length;
-    if (queue && queue.length > 0) {
-        for (const t of queue) {
-            if (t.info.length) totalDuration += t.info.length;
+    const lines = [];
+    lines.push(`### Queue · ${totalTracks}`);
+
+    if (currentTrack) {
+        const title = truncateText(currentTrack.info?.title, 40);
+        const author = truncateText(currentTrack.info?.author, 22, "?");
+        lines.push(
+            `-# **Now Playing:** **${title}** — ${author} · \`${formatDuration(currentTrack.info?.length)}\``
+        );
+        if (queue?.length) {
+            lines.push("");
         }
     }
 
-    // --- Header ---
-    container.addTextDisplayComponents(
-        new TextDisplayBuilder().setContent(
-            `### 📜 Queue\n` +
-            `-# ${totalTracks} track${totalTracks !== 1 ? "s" : ""} · ${formatDuration(totalDuration)} total`
-        )
-    );
-
-    container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
-
-    // --- Now Playing ---
-    if (currentTrack) {
-        container.addTextDisplayComponents(
-            new TextDisplayBuilder().setContent(
-                "**🎶 Now Playing**\n\n" +
-                `**${(currentTrack.info.title || "Unknown").substring(0, 50)}**\n` +
-                `-# ${(currentTrack.info.author || "Unknown Artist").substring(0, 30)} · ${formatDuration(currentTrack.info.length)}`
-            )
-        );
-        container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
-    }
-
-    // --- Queue tracks (numbered like Command Browser) ---
-    if (!queue || queue.length === 0) {
-        container.addTextDisplayComponents(
-            new TextDisplayBuilder().setContent(
-                "**Up Next**\n\n" +
-                "-# *No upcoming tracks in queue*"
-            )
-        );
-    } else {
+    if (queue?.length) {
         const start = page * pageSize;
         const end = Math.min(start + pageSize, queue.length);
-
-        let queueText = "**Up Next**\n\n";
         for (let i = start; i < end; i++) {
-            const t = queue[i];
-            const duration = formatDuration(t.info.length);
-            queueText += `**${i + 1}.** ${(t.info.title || "Unknown").substring(0, 45)}\n`;
-            queueText += `-# ${(t.info.author || "?").substring(0, 25)} · \`${duration}\`\n\n`;
+            lines.push(formatQueueTrackLine(i + 1, queue[i]));
         }
-
-        container.addTextDisplayComponents(
-            new TextDisplayBuilder().setContent(queueText.trim())
-        );
     }
 
-    // --- Pagination ---
-    if (totalPages > 1) {
-        container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
+    container.addTextDisplayComponents(
+        new TextDisplayBuilder().setContent(lines.join("\n"))
+    );
 
-        container.addTextDisplayComponents(
-            new TextDisplayBuilder().setContent(
-                `-# Page ${page + 1} of ${totalPages} · ${totalTracks} tracks`
+    if (totalPages > 1) {
+        container.addActionRowComponents(
+            new ActionRowBuilder().addComponents(
+                new ButtonBuilder()
+                    .setCustomId("queue_first")
+                    .setEmoji("⏮")
+                    .setStyle(ButtonStyle.Secondary)
+                    .setDisabled(page === 0),
+                new ButtonBuilder()
+                    .setCustomId("queue_prev")
+                    .setEmoji("◀️")
+                    .setStyle(ButtonStyle.Secondary)
+                    .setDisabled(page === 0),
+                new ButtonBuilder()
+                    .setCustomId("queue_page_info")
+                    .setLabel(`${page + 1}/${totalPages}`)
+                    .setStyle(ButtonStyle.Primary)
+                    .setDisabled(true),
+                new ButtonBuilder()
+                    .setCustomId("queue_next")
+                    .setEmoji("▶️")
+                    .setStyle(ButtonStyle.Secondary)
+                    .setDisabled(page >= totalPages - 1),
+                new ButtonBuilder()
+                    .setCustomId("queue_last")
+                    .setEmoji("⏭")
+                    .setStyle(ButtonStyle.Secondary)
+                    .setDisabled(page >= totalPages - 1)
             )
         );
-
-        const paginationRow = new ActionRowBuilder().addComponents(
-            new ButtonBuilder()
-                .setCustomId(`queue_first`)
-                .setEmoji("⏮")
-                .setStyle(ButtonStyle.Secondary)
-                .setDisabled(page === 0),
-            new ButtonBuilder()
-                .setCustomId(`queue_prev`)
-                .setEmoji("◀️")
-                .setStyle(ButtonStyle.Secondary)
-                .setDisabled(page === 0),
-            new ButtonBuilder()
-                .setCustomId(`queue_page_info`)
-                .setLabel(`${page + 1}/${totalPages}`)
-                .setStyle(ButtonStyle.Primary)
-                .setDisabled(true),
-            new ButtonBuilder()
-                .setCustomId(`queue_next`)
-                .setEmoji("▶️")
-                .setStyle(ButtonStyle.Secondary)
-                .setDisabled(page >= totalPages - 1),
-            new ButtonBuilder()
-                .setCustomId(`queue_last`)
-                .setEmoji("⏭")
-                .setStyle(ButtonStyle.Secondary)
-                .setDisabled(page >= totalPages - 1)
-        );
-
-        container.addActionRowComponents(paginationRow);
     }
 
     return container;
@@ -496,7 +470,7 @@ function createChatPlayLoadingContainer() {
 
     container.addTextDisplayComponents(
         new TextDisplayBuilder().setContent(
-            "## <:Musicify_Logo:1504329028356673536> Musicify ChatPlay\n" +
+            "## <:Musicify_Logo:1517828581638541493> Musicify ChatPlay\n" +
             "-# *Type a song name in this channel to play it!*\n" +
             "-# I'll search, play it in your voice channel, and keep this message updated."
         )
@@ -531,11 +505,36 @@ function createChatPlayLoadingContainer() {
     return container;
 }
 
+function createStopConfirmContainer(queueLength) {
+    const container = new ContainerBuilder();
+    const songLabel = queueLength === 1 ? "song" : "songs";
+
+    container.addTextDisplayComponents(
+        new TextDisplayBuilder().setContent(
+            "### ⚠️ Stop playback?\n\n" +
+            `There are **${queueLength}** ${songLabel} in the queue.\n\n` +
+            "-# Press **stop** again or confirm below within 15 seconds."
+        )
+    );
+
+    container.addActionRowComponents(
+        new ActionRowBuilder().addComponents(
+            new ButtonBuilder()
+                .setCustomId("stop_confirm")
+                .setLabel("STOP")
+                .setStyle(ButtonStyle.Danger)
+        )
+    );
+
+    return container;
+}
+
 module.exports = {
     createNowPlayingContainer,
     createChatPlayIdleContainer,
     createChatPlayNowPlayingContainer,
     createChatPlayLoadingContainer,
     createQueueContainer,
+    createStopConfirmContainer,
     formatDuration,
 };

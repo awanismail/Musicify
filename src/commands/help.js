@@ -13,6 +13,9 @@ const {
     StringSelectMenuOptionBuilder,
 } = require("discord.js");
 
+const SUPPORTED_PLATFORMS =
+    "Spotify, SoundCloud, Deezer, Apple Music, Tidal, Qobuz & JioSaavn";
+
 const PAGES = {
     home: {
         label: "Home",
@@ -79,7 +82,7 @@ async function buildHelpPage(client, page = "home") {
     // --- Header with bot avatar ---
     const section = new SectionBuilder()
         .addTextDisplayComponents(
-            new TextDisplayBuilder().setContent("# <:Musicify_Logo:1504329028356673536> Musicify")
+            new TextDisplayBuilder().setContent("# <:Musicify_Logo:1517828581638541493> Musicify")
         )
         .setThumbnailAccessory(
             new ThumbnailBuilder().setURL(
@@ -153,7 +156,7 @@ function addHomePage(container, getCmd) {
             `**1.** Join a voice channel\n` +
             `-# Make sure you're connected before requesting a song.\n` +
             `**2.** Use ${getCmd("play")} \`<song name or URL>\`\n` +
-            `-# Supports Spotify, SoundCloud, Deezer & Apple Music.\n` +
+            `-# Supports ${SUPPORTED_PLATFORMS}.\n` +
             `**3.** Control with buttons or commands!\n` +
             `-# Use the interactive player or slash commands.`
         )
@@ -190,7 +193,7 @@ function addMusicPage(container, getCmd) {
     container.addTextDisplayComponents(
         new TextDisplayBuilder().setContent(
             "### 🎶 Command Browser\n" +
-            "-# 17 commands available"
+            "-# 15 commands available"
         )
     );
 
@@ -200,7 +203,7 @@ function addMusicPage(container, getCmd) {
         new TextDisplayBuilder().setContent(
             `**1.** ${getCmd("play")} — Play a song or add it to the queue\n\n` +
             `**2.** ${getCmd("skip")} — Skip the current track\n\n` +
-            `**3.** ${getCmd("stop")} — Stop playback, clear queue & disconnect\n\n` +
+            `**3.** ${getCmd("stop")} — Stop playback and clear the queue\n\n` +
             `**4.** ${getCmd("nowplaying")} — Show the currently playing track\n\n` +
             `**5.** ${getCmd("seek")} — Seek to a position\n\n` +
             `**6.** ${getCmd("queue")} — View the current queue\n\n` +
@@ -209,12 +212,10 @@ function addMusicPage(container, getCmd) {
             `**9.** ${getCmd("shuffle")} — Shuffle all tracks in the queue\n\n` +
             `**10.** ${getCmd("loop")} — Set loop mode for track or queue\n\n` +
             `**11.** ${getCmd("volume")} — Set the playback volume\n\n` +
-            `**12.** ${getCmd("247")} — Toggle 24/7 mode\n\n` +
+            `**12.** ${getCmd("247")} — Toggle 24/7 mode (confirmation required)\n\n` +
             `**13.** ${getCmd("filter")} — Apply an audio filter preset\n\n` +
-            `**14.** ${getCmd("chatplay", "enable")} — Resume listening for song requests\n\n` +
-            `**15.** ${getCmd("chatplay", "disable")} — Pause listening (keeps message)\n\n` +
-            `**16.** ${getCmd("chatplay", "setup")} — Send the persistent player message\n\n` +
-            `**17.** ${getCmd("about")} — Learn more about Musicify`
+            `**14.** ${getCmd("chatplay")} — Set up or manage ChatPlay (enable, disable, delete)\n\n` +
+            `**15.** ${getCmd("about")} — Learn more about Musicify`
         )
     );
 }
@@ -251,11 +252,9 @@ function addFiltersPage(container, getCmd) {
     container.addTextDisplayComponents(
         new TextDisplayBuilder().setContent(
             `### 💬 ChatPlay\n\n` +
-            `**Setup**\n` +
-            `-# ${getCmd("chatplay", "setup")} — Send the persistent player message\n\n` +
-            `**Enable / Disable**\n` +
-            `-# ${getCmd("chatplay", "enable")} — Resume listening for song requests\n` +
-            `-# ${getCmd("chatplay", "disable")} — Pause listening (keeps message)\n\n` +
+            `**Setup & manage**\n` +
+            `-# ${getCmd("chatplay")} — Runs setup if ChatPlay isn't configured yet\n` +
+            `-# If ChatPlay exists, opens a panel to **Enable**, **Disable**, or **Delete** it\n\n` +
             `-# Once set up, just **type a song name** in the channel and Musicify plays it automatically!`
         )
     );
@@ -266,7 +265,8 @@ function addFiltersPage(container, getCmd) {
         new TextDisplayBuilder().setContent(
             `### 🔁 24/7 Mode\n\n` +
             `**Toggle**\n` +
-            `-# ${getCmd("247")} — Turn 24/7 mode on or off\n\n` +
+            `-# ${getCmd("247")} — Stay in VC when idle; confirm before toggling\n\n` +
+            `-# ${getCmd("stop")} — Clears queue; disconnects unless 24/7 is on\n\n` +
             `**How it works**\n` +
             `-# Musicify stays in the voice channel even after the queue ends.\n` +
             `-# Setting persists across bot restarts.`
@@ -342,7 +342,7 @@ function addTroubleshootPage(container, getCmd) {
             "**Bot won't play music / Track Error**\n" +
             "-# The song may be age-restricted or region-blocked.\n" +
             "-# The streaming source may be temporarily unavailable.\n" +
-            "-# **Fix:** Try a different song or paste a direct Spotify/SoundCloud URL.\n\n" +
+            `-# **Fix:** Try a different song or paste a direct URL from ${SUPPORTED_PLATFORMS}.\n\n` +
 
             "**Bot joins but immediately leaves**\n" +
             "-# Musicify may lack Speak/Connect permissions in that channel.\n" +
@@ -361,7 +361,7 @@ function addTroubleshootPage(container, getCmd) {
             `-# **Fix:** Make sure you're in the same VC and not deafened.\n\n` +
 
             `**ChatPlay not responding**\n` +
-            `-# Ensure ChatPlay is enabled: ${getCmd("chatplay", "enable")}.\n` +
+            `-# Ensure ChatPlay is enabled — run ${getCmd("chatplay")} and tap **Enable**.\n` +
             `-# Make sure you're typing in the correct channel.\n` +
             `-# **Fix:** Try disabling and re-enabling it.\n\n` +
 

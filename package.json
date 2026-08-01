@@ -5,9 +5,12 @@
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
-    "deploy": "node src/deploy-commands.js"
+    "deploy": "node src/deploy-commands.js",
+    "backup": "node scripts/backup-db.js",
+    "restore-db": "node scripts/restore-db.js"
   },
   "dependencies": {
+    "bottleneck": "^2.19.5",
     "discord.js": "14.25.1",
     "dotenv": "^16.4.7",
     "musicard": "latest",

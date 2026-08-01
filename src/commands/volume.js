@@ -1,5 +1,6 @@
 const { SlashCommandBuilder, MessageFlags, ContainerBuilder, TextDisplayBuilder } = require("discord.js");
 const { getGuildData } = require("../utils/playerStore");
+const { persistGuildPlaybackSettings } = require("../utils/database");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -35,6 +36,7 @@ module.exports = {
         const guildData = getGuildData(interaction.guild.id);
         guildData.volume = level;
         player.setVolume(level);
+        persistGuildPlaybackSettings(interaction.guild.id, guildData);
 
         // Build a simple volume bar
         const filled = Math.round(level / 10);

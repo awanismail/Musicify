@@ -1,15 +1,52 @@
 const { MessageFlags, AttachmentBuilder } = require("discord.js");
 const { getGuildData, clearUpdateInterval } = require("../utils/playerStore");
-const { createNowPlayingContainer, createChatPlayNowPlayingContainer, createQueueContainer, createChatPlayIdleContainer } = require("../utils/components");
+const { createNowPlayingContainer, createChatPlayNowPlayingContainer, createQueueContainer, createStopConfirmContainer } = require("../utils/components");
 const { generateMusicCard } = require("../utils/musicard");
 const { addNodeDetails } = require("../utils/nodeDetails");
 const { canControlMusic, VOICE_CHANNEL_DENIAL } = require("../utils/permissions");
+const { handleStop, toggleTwentyFourSeven } = require("../services/sessionManager");
+const { build247ResultContainer, build247CancelledContainer } = require("../commands/247");
+const {
+    safeInteractionUpdate,
+    isInteractionExpired,
+    replyExpiredInteraction,
+    buildErrorContainer,
+    buildFeedbackContainer,
+    ephemeralV2,
+} = require("../utils/replies");
+const {
+    handleChatPlaySetupButton,
+    handleChatPlayManageButton,
+    isChatPlaySetupButton,
+    isChatPlayManageButton,
+} = require("./chatPlaySetupHandler");
+const { notifyPlayerFeedback } = require("./chatPlayHandler");
+const { dismissWelcomeMessage } = require("../utils/guildWelcome");
 const config = require("../../config");
+const { getTrackQueuePosition, formatDuplicateTrackMessage } = require("../utils/queueUtils");
+const { persistGuildPlaybackSettings } = require("../utils/database");
 
 /**
  * Handle all button and select menu interactions from the player container
  */
 async function handleButtonInteraction(client, interaction) {
+    if (interaction.isButton()) {
+        const customId = interaction.customId;
+
+        if (customId === "welcome_dismiss") {
+            await dismissWelcomeMessage(interaction);
+            return;
+        }
+
+        if (isChatPlaySetupButton(customId)) {
+            return handleChatPlaySetupButton(client, interaction);
+        }
+
+        if (isChatPlayManageButton(customId)) {
+            return handleChatPlayManageButton(client, interaction);
+        }
+    }
+
     if (!client.riffy) {
         console.warn('[Musicify] Riffy client not initialized; button handler ignored.');
         return;
@@ -31,6 +68,94 @@ async function handleButtonInteraction(client, interaction) {
     const guildId = interaction.guild.id;
     let player = client.riffy.players.get(guildId);
     const guildData = getGuildData(guildId);
+
+    if (interaction.isButton()) {
+        const customId = interaction.customId;
+
+        if (customId === "247_enable" || customId === "247_disable" || customId === "247_cancel") {
+            try {
+                if (customId === "247_cancel") {
+                    await safeInteractionUpdate(interaction, {
+                        components: [build247CancelledContainer()],
+                        flags: MessageFlags.IsComponentsV2,
+                    });
+                    return;
+                }
+
+                if (!interaction.member.voice?.channel) {
+                    return interaction.reply(
+                        ephemeralV2(
+                            buildErrorContainer("**Voice channel required**\n-# Join a voice channel first.")
+                        )
+                    );
+                }
+
+                const enabling = customId === "247_enable";
+
+                await toggleTwentyFourSeven(client, interaction.guild.id, {
+                    voiceChannelId: interaction.member.voice.channel.id,
+                    textChannelId: guildData.chatPlayChannelId || interaction.channel.id,
+                    enabled: enabling,
+                });
+
+                await safeInteractionUpdate(interaction, {
+                    components: [build247ResultContainer(enabling)],
+                    flags: MessageFlags.IsComponentsV2,
+                });
+            } catch (error) {
+                if (isInteractionExpired(error)) {
+                    await replyExpiredInteraction(interaction);
+                } else {
+                    throw error;
+                }
+            }
+            return;
+        }
+
+        if (customId === "stop_confirm") {
+            try {
+                if (!player) {
+                    return interaction.reply(
+                        ephemeralV2(
+                            buildErrorContainer(
+                                "**Nothing playing**\n-# Start music with `/play` or ChatPlay first."
+                            )
+                        )
+                    );
+                }
+                if (!canControlMusic(interaction.member, player)) {
+                    return interaction.reply({ content: VOICE_CHANNEL_DENIAL, flags: MessageFlags.Ephemeral });
+                }
+                if (guildData.stopConfirmPending !== interaction.user.id) {
+                    return interaction.reply(
+                        ephemeralV2(
+                            buildFeedbackContainer(
+                                "### ⚠️ Expired\n\n-# Stop confirmation expired — press **stop** again."
+                            )
+                        )
+                    );
+                }
+
+                guildData.stopConfirmPending = null;
+                await handleStop(client, interaction.guild.id);
+                await safeInteractionUpdate(interaction, {
+                    components: [
+                        buildFeedbackContainer(
+                            "### ⏹ Stopped\n\n-# Playback stopped and queue cleared."
+                        ),
+                    ],
+                    flags: MessageFlags.IsComponentsV2,
+                });
+            } catch (error) {
+                if (isInteractionExpired(error)) {
+                    await replyExpiredInteraction(interaction);
+                } else {
+                    throw error;
+                }
+            }
+            return;
+        }
+    }
 
     // If no player exists but ChatPlay was active, try to recreate it
     if (!player && guildData.chatPlayChannelId && guildData.chatPlayEnabled) {
@@ -278,17 +403,37 @@ async function handleButtonInteraction(client, interaction) {
             return interaction.reply({ content: VOICE_CHANNEL_DENIAL, flags: MessageFlags.Ephemeral });
         }
 
-        await interaction.deferUpdate();
-
-        const selectedUri = interaction.values[0];
-        const suggestion = guildData.suggestions.find(
-            (s) => (s.info?.uri || s.info?.title) === selectedUri
-        );
+        const index = Number.parseInt(interaction.values[0], 10);
+        const suggestion = Number.isInteger(index)
+            ? guildData.suggestions[index]
+            : null;
 
         if (suggestion) {
+            const position = getTrackQueuePosition(player, suggestion.info?.uri);
+            if (position) {
+                return interaction.reply(
+                    ephemeralV2(
+                        buildFeedbackContainer(
+                            `### ⚠️ Duplicate track\n\n-# ${formatDuplicateTrackMessage(suggestion.info?.title, position)}`
+                        )
+                    )
+                );
+            }
+        }
+
+        await interaction.deferUpdate();
+
+        if (suggestion) {
+            const wasIdle = !player.current && !player.playing && !player.paused;
             suggestion.info.requester = interaction.user;
             player.queue.add(suggestion);
-            if (!player.playing && !player.paused && !player.current) player.play();
+            if (wasIdle) player.play();
+
+            const title = suggestion.info?.title || "Unknown";
+            const feedback = wasIdle
+                ? `✅ Now playing **${title}** · *Suggested song*`
+                : `✅ Added **${title}** — **#${player.queue.length}** in queue · *Suggested song*`;
+            await notifyPlayerFeedback(client, interaction.guild.id, feedback, 3000);
         }
 
         return;
@@ -366,7 +511,11 @@ async function handleButtonInteraction(client, interaction) {
                 flags: MessageFlags.IsComponentsV2,
             });
         } catch (err) {
-            console.error("[Musicify] Queue pagination error:", err.message);
+            if (isInteractionExpired(err)) {
+                await replyExpiredInteraction(interaction);
+            } else {
+                console.error("[Musicify] Queue pagination error:", err.message);
+            }
         }
         return;
     }
@@ -415,70 +564,36 @@ async function handleButtonInteraction(client, interaction) {
         }
 
         case "stop": {
-            // If ChatPlay and 5+ songs in queue, ask for confirmation first
             const queueLength = player.queue?.length || 0;
             const isChatPlay = guildData.chatPlayChannelId && guildData.chatPlayMessageId;
-            if (isChatPlay && queueLength >= 5 && !guildData.stopConfirmPending) {
+            if (isChatPlay && queueLength >= 20) {
+                if (guildData.stopConfirmPending === interaction.user.id) {
+                    guildData.stopConfirmPending = null;
+                    await handleStop(client, interaction.guild.id);
+                    return;
+                }
+                if (guildData.stopConfirmPending) {
+                    return interaction.followUp(
+                        ephemeralV2(
+                            buildFeedbackContainer(
+                                "### ⚠️ Stop pending\n\n-# Someone else is confirming a stop — wait for them to finish."
+                            )
+                        )
+                    );
+                }
+
                 guildData.stopConfirmPending = interaction.user.id;
-                // Clear confirmation after 15 seconds
                 setTimeout(() => {
                     if (guildData.stopConfirmPending === interaction.user.id) {
                         guildData.stopConfirmPending = null;
                     }
                 }, 15000);
-                return interaction.followUp({
-                    content: `⚠️ There are **${queueLength} songs** in the queue. Click stop again within 15 seconds to confirm.`,
-                    flags: MessageFlags.Ephemeral,
-                });
+                return interaction.followUp(
+                    ephemeralV2(createStopConfirmContainer(queueLength))
+                );
             }
             guildData.stopConfirmPending = null;
-
-            clearUpdateInterval(guildData);
-            if (guildData.idleTimeout) {
-                clearTimeout(guildData.idleTimeout);
-                guildData.idleTimeout = null;
-            }
-            guildData.suggestions = [];
-            guildData.previousTracks = [];
-
-            // If ChatPlay, edit message back to idle state
-            if (guildData.chatPlayChannelId && guildData.chatPlayMessageId) {
-                try {
-                    const container = createChatPlayIdleContainer();
-                    const channel = client.channels.cache.get(guildData.chatPlayChannelId);
-                    if (channel) {
-                        const msg = await channel.messages.fetch(guildData.chatPlayMessageId);
-                        await msg.edit({
-                            components: [container],
-                            attachments: [],
-                            flags: MessageFlags.IsComponentsV2,
-                        });
-                    }
-                } catch (err) {
-                    console.error("[Musicify] Failed to edit ChatPlay message on stop:", err.message);
-                }
-            } else if (guildData.playerMessageId && guildData.playerChannelId) {
-                try {
-                    const channel = client.channels.cache.get(guildData.playerChannelId);
-                    if (channel) {
-                        const msg = await channel.messages.fetch(guildData.playerMessageId);
-                        await msg.delete();
-                    }
-                } catch (err) {
-                    // message already deleted
-                }
-                guildData.playerMessageId = null;
-                guildData.playerChannelId = null;
-            }
-
-            player.queue.clear();
-            player.stop();
-
-            if (guildData.twentyFourSeven) {
-                return;
-            }
-
-            player.destroy();
+            await handleStop(client, interaction.guild.id);
             return;
         }
 
@@ -508,6 +623,7 @@ async function handleButtonInteraction(client, interaction) {
 
         case "autoplay": {
             guildData.autoplay = !guildData.autoplay;
+            persistGuildPlaybackSettings(player.guildId, guildData);
             needsVisualUpdate = true;
             break;
         }
@@ -515,6 +631,7 @@ async function handleButtonInteraction(client, interaction) {
         case "vol_down": {
             guildData.volume = Math.max(0, guildData.volume - 10);
             player.setVolume(guildData.volume);
+            persistGuildPlaybackSettings(player.guildId, guildData);
             needsVisualUpdate = true;
             break;
         }
@@ -523,6 +640,7 @@ async function handleButtonInteraction(client, interaction) {
         case "vol_up": {
             guildData.volume = Math.min(100, guildData.volume + 10);
             player.setVolume(guildData.volume);
+            persistGuildPlaybackSettings(player.guildId, guildData);
             needsVisualUpdate = true;
             break;
         }

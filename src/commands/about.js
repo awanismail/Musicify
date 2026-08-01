@@ -25,7 +25,7 @@ module.exports = {
             new SectionBuilder()
                 .addTextDisplayComponents(
                     new TextDisplayBuilder().setContent(
-                        "# <:Musicify_Logo:1504329028356673536> About Musicify"
+                        "# <:Musicify_Logo:1517828581638541493> About Musicify"
                     )
                 )
                 .setThumbnailAccessory(

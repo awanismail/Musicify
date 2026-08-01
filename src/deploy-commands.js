@@ -19,7 +19,7 @@ const rest = new REST({ version: "10" }).setToken(process.env.BOT_TOKEN);
 
 (async () => {
     try {
-        console.log(`[Musicify] Registering ${commands.length} slash commands...`);
+        console.log(`[Musicify] Registering ${commands.length} slash commands globally…`);
 
         await rest.put(Routes.applicationCommands(process.env.CLIENT_ID), {
             body: commands,
@@ -28,5 +28,6 @@ const rest = new REST({ version: "10" }).setToken(process.env.BOT_TOKEN);
         console.log("[Musicify] Slash commands registered successfully!");
     } catch (error) {
         console.error("[Musicify] Failed to register commands:", error);
+        process.exit(1);
     }
 })();

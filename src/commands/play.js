@@ -1,5 +1,6 @@
-const { SlashCommandBuilder, MessageFlags, ContainerBuilder, TextDisplayBuilder, SeparatorBuilder } = require("discord.js");
-const { getGuildData } = require("../utils/playerStore");
+const { SlashCommandBuilder, MessageFlags, ContainerBuilder, TextDisplayBuilder } = require("discord.js");
+const { buildErrorContainer, buildFeedbackContainer, ephemeralV2 } = require("../utils/replies");
+const { playQuery } = require("../services/playQuery");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -11,153 +12,93 @@ module.exports = {
 
     async execute(interaction, client) {
         const query = interaction.options.getString("query");
-        if (/(?:youtube\.com|youtu\.be)/i.test(query)) {
-            return interaction.reply({
-                content: "❌ YouTube links are currently not supported.",
-                flags: MessageFlags.Ephemeral,
-            });
-        }
-        const member = interaction.member;
 
+        if (/(?:youtube\.com|youtu\.be)/i.test(query)) {
+            return interaction.reply(
+                ephemeralV2(
+                    buildErrorContainer(
+                        "**YouTube not supported**\n-# YouTube links are currently not supported."
+                    )
+                )
+            );
+        }
+
+        const member = interaction.member;
         if (!member.voice?.channel) {
-            return interaction.reply({
-                content: "❌ You need to be in a voice channel!",
-                flags: MessageFlags.Ephemeral,
-            });
+            return interaction.reply(
+                ephemeralV2(
+                    buildErrorContainer("**Voice channel required**\n-# Join a voice channel first.")
+                )
+            );
         }
 
         await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
-        const guildData = getGuildData(interaction.guild.id);
+        const result = await playQuery(client, {
+            guild: interaction.guild,
+            member,
+            query,
+            textChannelId: interaction.channel.id,
+            source: "slash",
+        });
 
-        // Create or get player
-        let player = client.riffy.players.get(interaction.guild.id);
-        if (!player) {
-            player = client.riffy.createConnection({
-                guildId: interaction.guild.id,
-                voiceChannel: member.voice.channel.id,
-                textChannel: interaction.channel.id,
-                deaf: true,
-            });
-            guildData.playerChannelId = interaction.channel.id;
-        }
-
-        // Set volume
-        player.setVolume(guildData.volume);
-
-        try {
-            const result = await client.riffy.resolve({
-                query: query,
-                requester: interaction.user,
-            });
-
-            const { loadType, tracks, playlistInfo } = result;
-
-            // Handle all Lavalink v3 + v4 loadType variants
-            if (
-                loadType === "playlist" ||
-                loadType === "PLAYLIST_LOADED"
-            ) {
-                const duplicates = [];
-                const addedTracks = [];
-                
-                for (const track of tracks) {
-                    track.info.requester = interaction.user;
-                    
-                    // Check for duplicates
-                    const isDuplicate = player.queue.some(existingTrack => 
-                        existingTrack.info.uri === track.info.uri
-                    ) || (player.current && player.current.info.uri === track.info.uri);
-                    
-                    if (isDuplicate) {
-                        duplicates.push(track.info.title || "Unknown");
-                    } else {
-                        player.queue.add(track);
-                        addedTracks.push(track.info.title || "Unknown");
-                    }
-                }
-
-                let content = "### ✅ Playlist Added\n\n" +
-                    "**Playlist**\n" +
-                    `-# ${playlistInfo?.name || "Unknown Playlist"}\n\n` +
-                    "**Tracks**\n" +
-                    `-# ${addedTracks.length} of ${tracks.length} songs added to queue`;
-                    
-                if (duplicates.length > 0) {
-                    content += `\n\n⚠️ **Duplicates Skipped**\n-# ${duplicates.length} songs already in queue`;
-                }
-
-                const container = new ContainerBuilder();
-                container.addTextDisplayComponents(
-                    new TextDisplayBuilder().setContent(content)
+        if (!result.ok) {
+            const isSoft =
+                result.type === "lavalink_down" ||
+                result.type === "vc_mismatch" ||
+                result.type === "duplicate";
+            let container;
+            if (result.type === "duplicate") {
+                container = buildFeedbackContainer(
+                    `### ⚠️ Duplicate track\n\n-# ${result.message}`
                 );
-                await interaction.editReply({
-                    components: [container],
-                    flags: MessageFlags.IsComponentsV2,
-                });
-
-                if (!player.playing && !player.paused && !player.current) player.play();
-            } else if (
-                loadType === "search" ||
-                loadType === "track" ||
-                loadType === "SEARCH_RESULT" ||
-                loadType === "TRACK_LOADED"
-            ) {
-                const track = tracks[0];
-                if (!track) {
-                    return interaction.editReply({ content: "❌ No results found." });
-                }
-                
-                // Check for duplicate
-                const isDuplicate = player.queue.some(existingTrack => 
-                    existingTrack.info.uri === track.info.uri
-                ) || (player.current && player.current.info.uri === track.info.uri);
-                
-                if (isDuplicate) {
-                    const container = new ContainerBuilder();
-                    container.addTextDisplayComponents(
-                        new TextDisplayBuilder().setContent(
-                            "### ⚠️ Duplicate Detected\n\n" +
-                            "**Track**\n" +
-                            `-# ${track.info.title}\n\n` +
-                            "**Status**\n" +
-                            `-# Already in queue or currently playing`
-                        )
-                    );
-                    return await interaction.editReply({
-                        components: [container],
-                        flags: MessageFlags.IsComponentsV2,
-                    });
-                }
-                
-                track.info.requester = interaction.user;
-                player.queue.add(track);
-
-                const container = new ContainerBuilder();
-                container.addTextDisplayComponents(
-                    new TextDisplayBuilder().setContent(
-                        "### ✅ Track Added\n\n" +
-                        "**Title**\n" +
-                        `-# ${track.info.title}\n\n` +
-                        "**Artist**\n" +
-                        `-# ${track.info.author}\n\n` +
-                        "**Position**\n" +
-                        `-# #${player.queue.length} in queue`
-                    )
-                );
-                await interaction.editReply({
-                    components: [container],
-                    flags: MessageFlags.IsComponentsV2,
-                });
-
-                if (!player.playing && !player.paused && !player.current) player.play();
             } else {
-                console.log(`[Musicify] Unhandled loadType: "${loadType}"`);
-                return interaction.editReply({ content: `❌ No results found. (loadType: ${loadType})` });
+                container = isSoft
+                    ? buildFeedbackContainer(result.message)
+                    : buildErrorContainer(result.message);
             }
-        } catch (error) {
-            console.error("[Musicify] Play error:", error);
-            return interaction.editReply({ content: "❌ An error occurred while searching." });
+            return interaction.editReply(ephemeralV2(container));
         }
+
+        if (result.type === "playlist") {
+            let content =
+                "### ✅ Playlist Added\n\n" +
+                `**${result.playlistName}**\n\n` +
+                "**Tracks**\n" +
+                `-# ${result.addedCount} of ${result.totalCount} songs added to queue`;
+
+            if (result.duplicates.length > 0) {
+                content += `\n\n**Duplicates Skipped**\n-# ${result.duplicates.length} songs already in queue`;
+            }
+
+            const container = new ContainerBuilder();
+            container.addTextDisplayComponents(new TextDisplayBuilder().setContent(content));
+            return interaction.editReply({
+                components: [container],
+                flags: MessageFlags.IsComponentsV2,
+            });
+        }
+
+        let positionLine = "-# Starting playback now";
+        if (result.queuePosition) {
+            positionLine = `-# #${result.queuePosition} in queue`;
+        }
+
+        const container = new ContainerBuilder();
+        container.addTextDisplayComponents(
+            new TextDisplayBuilder().setContent(
+                "### ✅ Track Added\n\n" +
+                "**Title**\n" +
+                `-# ${result.title}\n\n` +
+                "**Artist**\n" +
+                `-# ${result.author}\n\n` +
+                "**Position**\n" +
+                positionLine
+            )
+        );
+        return interaction.editReply({
+            components: [container],
+            flags: MessageFlags.IsComponentsV2,
+        });
     },
 };

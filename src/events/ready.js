@@ -4,6 +4,13 @@ const path = require("path");
 const { readDB } = require("../utils/database");
 const { getGuildData } = require("../utils/playerStore");
 const { startStatusMonitor } = require("../services/statusMonitor");
+const db = require("../db/sqlite");
+const { startBackupScheduler } = require("../db/backup");
+const {
+    restoreSessionFromDatabase,
+    reconnectTwentyFourSeven,
+    recreateChatPlayMessage,
+} = require("../services/sessionManager");
 
 module.exports = {
     name: "clientReady",
@@ -16,6 +23,7 @@ module.exports = {
         client.riffy.init(client.user.id);
 
         startStatusMonitor(client);
+        startBackupScheduler(db);
 
         // Cycling statuses
         const statuses = [
@@ -42,7 +50,7 @@ module.exports = {
             });
         }, 120000); // 2 minutes
 
-        // --- Restore ChatPlay channels from JSON database ---
+        // --- Restore ChatPlay channels from SQLite database ---
         try {
             const db = readDB();
             let restoredCount = 0;
@@ -53,6 +61,17 @@ module.exports = {
                 if (!guild) continue;
 
                 const guildData = getGuildData(guildId);
+                restoreSessionFromDatabase(guildId, settings);
+
+                if (typeof settings.chatPlaySlowmode === "boolean") {
+                    guildData.chatPlaySlowmode = settings.chatPlaySlowmode;
+                }
+                if (typeof settings.chatPlayDeleteMessages === "boolean") {
+                    guildData.chatPlayDeleteMessages = settings.chatPlayDeleteMessages;
+                }
+                if (typeof settings.chatPlayPinPlayerMessage === "boolean") {
+                    guildData.chatPlayPinPlayerMessage = settings.chatPlayPinPlayerMessage;
+                }
 
                 // Restore ChatPlay state with message validation
                 if (settings.chatPlayChannelId) {
@@ -80,22 +99,10 @@ module.exports = {
                         guildData.chatPlayMessageId = null;
                     }
 
-                    // If message is invalid, create a new idle message
-                    if (!guildData.chatPlayMessageId && guildData.chatPlayEnabled) {
+                    // If message is invalid, create a new player message
+                    if (!guildData.chatPlayMessageId) {
                         try {
-                            const { createChatPlayIdleContainer } = require("../utils/components");
-                            const container = createChatPlayIdleContainer();
-                            const channel = client.channels.cache.get(settings.chatPlayChannelId);
-                            if (channel) {
-                                const chatMsg = await channel.send({
-                                    components: [container],
-                                    flags: MessageFlags.IsComponentsV2,
-                                });
-                                guildData.chatPlayMessageId = chatMsg.id;
-                                // Update database with new message ID
-                                const { setGuildSetting } = require("../utils/database");
-                                setGuildSetting(guildId, "chatPlayMessageId", chatMsg.id);
-                            }
+                            await recreateChatPlayMessage(client, guildId);
                         } catch (err) {
                             console.error(`[Musicify] Failed to recreate ChatPlay message for guild ${guildId}:`, err.message);
                         }
@@ -103,11 +110,18 @@ module.exports = {
 
                     restoredCount++;
                 }
+            }
 
-                // Restore 24/7 mode
-                if (settings.twentyFourSeven) {
-                    guildData.twentyFourSeven = true;
-                }
+            const reconnectTargets = Object.entries(db).filter(
+                ([, settings]) => settings.twentyFourSeven && settings.boundVoiceChannelId
+            );
+
+            if (reconnectTargets.length > 0) {
+                setTimeout(async () => {
+                    for (const [guildId] of reconnectTargets) {
+                        await reconnectTwentyFourSeven(client, guildId);
+                    }
+                }, 3000);
             }
 
             if (restoredCount > 0) {
@@ -156,7 +170,7 @@ module.exports = {
                             }
                         }
                     }
-                }, 2000); // Wait 2 seconds for Lavalink to be fully connected
+                }, 5000); 
             }
         } catch (err) {
             console.error("[Musicify] Failed to restore from database:", err.message);

@@ -1,8 +1,6 @@
-const fs = require("fs");
-const path = require("path");
 const config = require("../../config");
+const db = require("../db/sqlite");
 
-const INCIDENTS_PATH = path.join(__dirname, "..", "..", "data", "incidents.json");
 const MAX_INCIDENTS = 50;
 
 const UNIMPORTANT_PATTERNS = [
@@ -12,33 +10,48 @@ const UNIMPORTANT_PATTERNS = [
     "ECONNRESET",
 ];
 
-let incidents = [];
-let loaded = false;
+const SELECT_RECENT = db.prepare(`
+    SELECT timestamp, component, description
+    FROM incidents
+    ORDER BY timestamp DESC
+    LIMIT ?
+`);
 
-function ensureLoaded() {
-    if (loaded) return;
+const SELECT_ALL = db.prepare(`
+    SELECT timestamp, component, description
+    FROM incidents
+    ORDER BY timestamp DESC
+`);
 
-    const dir = path.dirname(INCIDENTS_PATH);
-    if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir, { recursive: true });
-    }
+const SELECT_BY_COMPONENT = db.prepare(`
+    SELECT timestamp, component, description
+    FROM incidents
+    WHERE component = ?
+    ORDER BY timestamp DESC
+`);
 
-    if (fs.existsSync(INCIDENTS_PATH)) {
-        try {
-            const parsed = JSON.parse(fs.readFileSync(INCIDENTS_PATH, "utf-8"));
-            incidents = Array.isArray(parsed) ? parsed : [];
-        } catch {
-            incidents = [];
-        }
-    }
+const SELECT_DUPLICATE = db.prepare(`
+    SELECT 1
+    FROM incidents
+    WHERE component = ?
+      AND description = ?
+      AND timestamp > ?
+    LIMIT 1
+`);
 
-    loaded = true;
-}
+const INSERT_INCIDENT = db.prepare(`
+    INSERT INTO incidents (timestamp, component, description)
+    VALUES (?, ?, ?)
+`);
 
-function saveIncidents() {
-    ensureLoaded();
-    fs.writeFileSync(INCIDENTS_PATH, JSON.stringify(incidents, null, 2), "utf-8");
-}
+const DELETE_OLDEST = db.prepare(`
+    DELETE FROM incidents
+    WHERE id IN (
+        SELECT id FROM incidents
+        ORDER BY timestamp ASC
+        LIMIT ?
+    )
+`);
 
 function isImportantIncident(description) {
     const lowerDesc = description.toLowerCase();
@@ -55,60 +68,47 @@ function anonymizeNodeNames(description) {
     return result;
 }
 
+function trimIncidents() {
+    const count = db.prepare("SELECT COUNT(*) AS count FROM incidents").get().count;
+    if (count > MAX_INCIDENTS) {
+        DELETE_OLDEST.run(count - MAX_INCIDENTS);
+    }
+}
+
 function recordIncident(component, description) {
     if (!isImportantIncident(description)) {
         return false;
     }
 
-    ensureLoaded();
-
     const anonymizedDesc = anonymizeNodeNames(description);
     const now = Date.now();
-    const FIVE_MINUTES = 5 * 60 * 1000;
-    const isDuplicate = incidents.some(
-        (i) =>
-            i.component === component &&
-            i.description === anonymizedDesc &&
-            now - i.timestamp < FIVE_MINUTES
-    );
+    const fiveMinutesAgo = now - 5 * 60 * 1000;
 
-    if (isDuplicate) {
+    if (SELECT_DUPLICATE.get(component, anonymizedDesc, fiveMinutesAgo)) {
         return false;
     }
 
-    incidents.unshift({
-        timestamp: now,
-        component,
-        description: anonymizedDesc,
-    });
-
-    if (incidents.length > MAX_INCIDENTS) {
-        incidents.length = MAX_INCIDENTS;
-    }
-
-    saveIncidents();
+    INSERT_INCIDENT.run(now, component, anonymizedDesc);
+    trimIncidents();
     return true;
 }
 
 function getIncidents() {
-    ensureLoaded();
-    return [...incidents];
+    return SELECT_ALL.all();
 }
 
 function getIncidentsForComponent(component) {
-    ensureLoaded();
-    return incidents.filter((i) => i.component === component);
+    return SELECT_BY_COMPONENT.all(component);
 }
 
 function formatIncidents(limit = 4) {
-    ensureLoaded();
+    const incidents = SELECT_RECENT.all(limit);
 
     if (incidents.length === 0) {
         return "-# No incidents reported.";
     }
 
     return incidents
-        .slice(0, limit)
         .map(
             (i) =>
                 `-# <t:${Math.floor(i.timestamp / 1000)}:t> · ${i.component}: ${i.description}`
@@ -117,8 +117,7 @@ function formatIncidents(limit = 4) {
 }
 
 function formatPastIncidents(days = 7) {
-    ensureLoaded();
-
+    const incidents = SELECT_ALL.all();
     const lines = [];
     const now = new Date();
 

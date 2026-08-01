@@ -1,11 +1,10 @@
-const fs = require("fs");
-const path = require("path");
 const { WebhookClient, MessageFlags } = require("discord.js");
 const config = require("../../config");
 const { buildStatusContainer } = require("../utils/statusPage");
+const { getAppSetting, setAppSetting, deleteAppSetting } = require("../db/appSettings");
 
-const STATUS_STORE_PATH = path.join(__dirname, "..", "..", "data", "status-webhook.json");
 const UPDATE_INTERVAL_MS = 60 * 1000;
+const STATUS_MESSAGE_KEY = "status_webhook_message_id";
 
 let webhookClient = null;
 let messageId = null;
@@ -14,24 +13,15 @@ let lastSnapshot = null;
 let activeClient = null;
 
 function loadMessageId() {
-    if (!fs.existsSync(STATUS_STORE_PATH)) return null;
-
-    try {
-        const data = JSON.parse(fs.readFileSync(STATUS_STORE_PATH, "utf-8"));
-        return data.messageId || null;
-    } catch {
-        return null;
-    }
+    return getAppSetting(STATUS_MESSAGE_KEY);
 }
 
 function saveMessageId(id) {
-    const dir = path.dirname(STATUS_STORE_PATH);
-    if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir, { recursive: true });
+    if (id) {
+        setAppSetting(STATUS_MESSAGE_KEY, id);
+    } else {
+        deleteAppSetting(STATUS_MESSAGE_KEY);
     }
-
-    const payload = id ? { messageId: id } : {};
-    fs.writeFileSync(STATUS_STORE_PATH, JSON.stringify(payload, null, 2), "utf-8");
 }
 
 function getStatusSnapshot(client) {

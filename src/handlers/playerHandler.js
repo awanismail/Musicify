@@ -1,10 +1,16 @@
-const { MessageFlags, AttachmentBuilder, ContainerBuilder, TextDisplayBuilder } = require("discord.js");
+const { MessageFlags, AttachmentBuilder } = require("discord.js");
 const { getGuildData, clearUpdateInterval } = require("../utils/playerStore");
-const { createNowPlayingContainer, createChatPlayIdleContainer, createChatPlayNowPlayingContainer } = require("../utils/components");
+const { createNowPlayingContainer, createChatPlayNowPlayingContainer } = require("../utils/components");
 const { generateMusicCard } = require("../utils/musicard");
 const { recordIncident } = require("../utils/incidents");
 const { scheduleStatusUpdate } = require("../services/statusMonitor");
+const {
+    cancelScheduledLeave,
+    handleQueueEnd,
+    handlePlayerDisconnect,
+} = require("../services/sessionManager");
 const config = require("../../config");
+const { limitedResolve, PRIORITY_SUGGESTIONS } = require("../utils/resolveLimiter");
 
 const UPDATE_INTERVAL_MS = 15 * 1000; // 15 seconds
 const LAVALINK_RECONNECT_INTERVAL_MS = 30 * 60 * 1000;
@@ -193,14 +199,12 @@ function setupPlayerHandler(client) {
                 }
             }
 
-            // Clear any idle timeout
-            if (guildData.idleTimeout) {
-                clearTimeout(guildData.idleTimeout);
-                guildData.idleTimeout = null;
+            // Clear any pending leave timers
+            cancelScheduledLeave(guildData);
+            if (guildData.autoplayWatchdog) {
+                clearTimeout(guildData.autoplayWatchdog);
+                guildData.autoplayWatchdog = null;
             }
-
-            // Start voice channel monitoring
-            startVoiceChannelMonitoring(client, player.guildId);
 
             // Generate musicard image
             const musicardBuffer = await generateMusicCard(track, player, guildData);
@@ -226,9 +230,11 @@ function setupPlayerHandler(client) {
             // Fetch suggestions for the dropdown
             try {
                 const searchQuery = `${track.info.author} ${track.info.title}`;
-                const result = await client.riffy.resolve({
+                const result = await limitedResolve(client, {
                     query: searchQuery,
                     requester: track.info.requester,
+                    guildId: player.guildId,
+                    priority: PRIORITY_SUGGESTIONS,
                 });
                 if (result.tracks && result.tracks.length > 1) {
                     guildData.suggestions = result.tracks
@@ -246,223 +252,64 @@ function setupPlayerHandler(client) {
     // --- Queue End ---
     client.riffy.on("queueEnd", async (player) => {
         try {
-            const guildData = getGuildData(player.guildId);
-
-            // Stop the auto-update interval
-            clearUpdateInterval(guildData);
-
-            if (guildData.autoplay) {
-                player.autoplay(player);
-                return;
-            }
-
-            // 24/7 mode: stay in VC, just update the message
-            const stayInVC = guildData.twentyFourSeven;
-
-            // If this is a ChatPlay session, edit the message to idle state
-            if (guildData.chatPlayChannelId && guildData.chatPlayMessageId) {
-                const container = createChatPlayIdleContainer();
-                const channel = client.channels.cache.get(guildData.chatPlayChannelId);
-                if (channel) {
-                    try {
-                        const msg = await channel.messages.fetch(guildData.chatPlayMessageId);
-                        await msg.edit({
-                            components: [container],
-                            attachments: [],
-                            flags: MessageFlags.IsComponentsV2,
-                        });
-                    } catch (err) {
-                        // message deleted
-                    }
-                }
-            } else if (guildData.playerMessageId && guildData.playerChannelId) {
-                // For regular /play: delete the old message
-                try {
-                    const channel = client.channels.cache.get(guildData.playerChannelId);
-                    if (channel) {
-                        const msg = await channel.messages.fetch(guildData.playerMessageId);
-                        await msg.delete();
-                    }
-                } catch (err) {
-                    // message already deleted
-                }
-                guildData.playerMessageId = null;
-                guildData.playerChannelId = null;
-            }
-
-            // If NOT 24/7, disconnect after a delay
-            if (!stayInVC) {
-                // Clear existing timeout if any
-                if (guildData.idleTimeout) clearTimeout(guildData.idleTimeout);
-                
-                guildData.idleTimeout = setTimeout(() => {
-                    try {
-                        const currentPlayer = client.riffy.players.get(player.guildId);
-                        // Check if player exists and is not actively playing
-                        if (currentPlayer && !currentPlayer.playing && !currentPlayer.paused && !currentPlayer.current) {
-                            currentPlayer.destroy();
-                        }
-                    } catch (err) {
-                        // player already destroyed
-                    }
-                    guildData.idleTimeout = null;
-                }, 30000); // 30s idle timeout
-            }
-
-            // Clear suggestions
-            guildData.suggestions = [];
+            await handleQueueEnd(client, player);
         } catch (error) {
             console.error("[Musicify] queueEnd error:", error);
         }
     });
 
+    // --- Track End (safety net for idle UI) ---
+    client.riffy.on("trackEnd", async (player) => {
+        try {
+            const guildData = getGuildData(player.guildId);
+            if (guildData.loop !== "none") return;
+            if (guildData.autoplay) return;
+
+            const hasQueue = player.queue?.length > 0;
+            if (!hasQueue && !player.current) {
+                await handleQueueEnd(client, player);
+            }
+        } catch (error) {
+            console.error("[Musicify] trackEnd error:", error);
+        }
+    });
+
     // --- Player Disconnect ---
     client.riffy.on("playerDisconnect", async (player) => {
-        const guildData = getGuildData(player.guildId);
-        clearUpdateInterval(guildData);
-        stopVoiceChannelMonitoring(player.guildId);
-        
-        // Reset ChatPlay to idle if active (safety net for force disconnects)
-        if (guildData.chatPlayChannelId && guildData.chatPlayMessageId) {
-            try {
-                const { createChatPlayIdleContainer } = require("../utils/components");
-                const { MessageFlags } = require("discord.js");
-                const channel = client.channels.cache.get(guildData.chatPlayChannelId);
-                if (channel) {
-                    const msg = await channel.messages.fetch(guildData.chatPlayMessageId);
-                    await msg.edit({
-                        components: [createChatPlayIdleContainer()],
-                        attachments: [],
-                        flags: MessageFlags.IsComponentsV2,
-                    });
-                }
-            } catch (err) {
-                // message may have been deleted
-            }
+        try {
+            await handlePlayerDisconnect(client, player);
+        } catch (error) {
+            console.error("[Musicify] playerDisconnect error:", error);
         }
-        // Delete regular player message if it exists (normal /play sessions)
-        else if (guildData.playerMessageId && guildData.playerChannelId) {
-            try {
-                const channel = client.channels.cache.get(guildData.playerChannelId);
-                if (channel) {
-                    const msg = await channel.messages.fetch(guildData.playerMessageId);
-                    await msg.delete();
-                }
-            } catch (err) {
-                // message already deleted
-            }
-        }
-        
-        guildData.playerMessageId = null;
-        guildData.playerChannelId = null;
-        guildData.suggestions = [];
-        guildData.previousTracks = [];
-        if (guildData.idleTimeout) clearTimeout(guildData.idleTimeout);
-        guildData.idleTimeout = null;
     });
 
     // --- Track Error / Stuck ---
     client.riffy.on("trackError", async (player, track, payload) => {
         console.error(`[Musicify] Track error in ${player.guildId} for "${track.info.title}":`, payload.error || payload);
-        const guildData = getGuildData(player.guildId);
-        if (guildData.playerChannelId) {
-            const channel = client.channels.cache.get(guildData.playerChannelId);
-            if (channel) {
-                channel.send(`❌ Failed to play **${track.info.title}** (Lavalink Error). Skipping...`).catch(() => {});
-            }
-        }
+        const { notifyPlayerFeedback } = require("./chatPlayHandler");
+        const { refreshChatPlayPlayer } = require("../services/chatPlayPlayer");
+        await notifyPlayerFeedback(
+            client,
+            player.guildId,
+            `❌ Failed to play **${track.info.title}** — skipping...`,
+            6000
+        );
+        await refreshChatPlayPlayer(client, player.guildId);
     });
 
     client.riffy.on("trackStuck", async (player, track, payload) => {
         console.warn(`[Musicify] Track stuck in ${player.guildId} for "${track.info.title}" (${payload.thresholdMs}ms)`);
-        const guildData = getGuildData(player.guildId);
-        if (guildData.playerChannelId) {
-            const channel = client.channels.cache.get(guildData.playerChannelId);
-            if (channel) {
-                channel.send(`⚠️ Track stuck: **${track.info.title}**. Skipping...`).catch(() => {});
-            }
-        }
+        const { notifyPlayerFeedback } = require("./chatPlayHandler");
+        await notifyPlayerFeedback(
+            client,
+            player.guildId,
+            `⚠️ **${track.info.title}** got stuck — skipping...`,
+            6000
+        );
     });
 }
 
-/**
- * Start monitoring voice channel for auto-pause/resume functionality
- */
-function startVoiceChannelMonitoring(client, guildId) {
-    const guildData = getGuildData(guildId);
-    
-    // Clear existing timeout
-    if (guildData.voiceStateTimeout) {
-        clearTimeout(guildData.voiceStateTimeout);
-    }
-    
-    // Check voice channel state every 5 seconds
-    guildData.voiceStateTimeout = setInterval(() => {
-        checkVoiceChannelState(client, guildId);
-    }, 5000);
-}
-
-/**
- * Check voice channel state and pause/resume accordingly
- */
-function checkVoiceChannelState(client, guildId) {
-    const guildData = getGuildData(guildId);
-    const player = client.riffy.players.get(guildId);
-    
-    if (!player || !player.voiceChannel) return;
-    
-    const voiceChannel = client.channels.cache.get(player.voiceChannel);
-    if (!voiceChannel) return;
-    
-    const membersInChannel = voiceChannel.members.filter(member => !member.user.bot);
-    const hasUsers = membersInChannel.size > 0;
-    
-    // Auto-pause when channel becomes empty
-    if (!hasUsers && !player.paused && player.playing) {
-        player.pause(true);
-        guildData.wasPaused = true;
-        
-        // Send notification to text channel
-        if (guildData.playerChannelId) {
-            const channel = client.channels.cache.get(guildData.playerChannelId);
-            if (channel) {
-                const container = new ContainerBuilder();
-                container.addTextDisplayComponents(
-                    new TextDisplayBuilder().setContent("### ⏸️ Music paused\n-# Voice channel is empty. I'll resume when someone joins!")
-                );
-                channel.send({ components: [container], flags: MessageFlags.IsComponentsV2 }).catch(() => {});
-            }
-        }
-    }
-
-    // Auto-resume when users rejoin
-    if (hasUsers && guildData.wasPaused && player.paused) {
-        player.pause(false);
-        guildData.wasPaused = false;
-
-        // Send notification to text channel
-        if (guildData.playerChannelId) {
-            const channel = client.channels.cache.get(guildData.playerChannelId);
-            if (channel) {
-                const container = new ContainerBuilder();
-                container.addTextDisplayComponents(
-                    new TextDisplayBuilder().setContent("### ▶️ Music resumed\n-# Welcome back!")
-                );
-                channel.send({ components: [container], flags: MessageFlags.IsComponentsV2 }).catch(() => {});
-            }
-        }
-    }
-}
-
-/**
- * Stop voice channel monitoring
- */
-function stopVoiceChannelMonitoring(guildId) {
-    const guildData = getGuildData(guildId);
-    if (guildData.voiceStateTimeout) {
-        clearTimeout(guildData.voiceStateTimeout);
-        guildData.voiceStateTimeout = null;
-    }
-}
-
-module.exports = { setupPlayerHandler, startVoiceChannelMonitoring, stopVoiceChannelMonitoring };
+module.exports = {
+    setupPlayerHandler,
+    refreshPlayerMessage,
+};

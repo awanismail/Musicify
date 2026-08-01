@@ -31,7 +31,7 @@ You may run your own instance of Musicify. If you self-host, you are responsible
 
 ## 5. Limitation of Liability
 
-To the maximum extent permitted by law, musicify-dev shall not be liable for any indirect, incidental, special, consequential, or punitive damages, or any loss of profits or revenues, whether incurred directly or indirectly, or any loss of data, use, goodwill, or other intangible losses, resulting from (a) your use or inability to use the Service; (b) any unauthorized access to or use of systems hosting the Service and/or any information stored therein; or (c) content accessed through third-party audio platforms.
+To the maximum extent permitted by law, Musicify shall not be liable for any indirect, incidental, special, consequential, or punitive damages, or any loss of profits or revenues, whether incurred directly or indirectly, or any loss of data, use, goodwill, or other intangible losses, resulting from (a) your use or inability to use the Service; (b) any unauthorized access to or use of systems hosting the Service and/or any information stored therein; or (c) content accessed through third-party audio platforms.
 
 ## 6. Changes to the Terms
 

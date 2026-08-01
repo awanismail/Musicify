@@ -2,7 +2,7 @@
 
 **Last Updated:** August 1, 2026
 
-This Privacy Policy explains how **musicify-dev** ("we," "us," or "our") collects, uses, and stores information when you use the **Musicify** Discord bot (the "Service").
+This Privacy Policy explains how **Musicify** ("we," "us," or "our") collects, uses, and stores information when you use the **Musicify** Discord bot (the "Service").
 
 By inviting or using Musicify, you agree to the practices described in this Privacy Policy.
 

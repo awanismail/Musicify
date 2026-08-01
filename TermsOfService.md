@@ -23,7 +23,7 @@ By inviting, accessing, or using Musicify in your Discord server, you agree to b
 
 ## 3. Intellectual Property
 
-Musicify is an open-source project. The source code is available on GitHub at [codebymitch/Musicify](https://github.com/codebymitch/Musicify). You may view, fork, and modify the code in accordance with its open-source license. The Musicify branding, logos, and custom assets remain the property of musicify-dev.
+Musicify is an open-source project. The source code is available on GitHub at [codebymitch/Musicify](https://github.com/codebymitch/Musicify). You may view, fork, and modify the code in accordance with its open-source license. The Musicify branding, logos, and custom assets remain the property of Musicify.
 
 ## 4. Self-Hosting
 

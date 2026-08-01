@@ -53,6 +53,14 @@ module.exports = {
 
         container.addTextDisplayComponents(
             new TextDisplayBuilder().setContent(
+                "**Legal**\n" +
+                "-# [Privacy Policy](https://github.com/codebymitch/Musicify/blob/main/PrivacyPolicy.md) · " +
+                "[Terms of Service](https://github.com/codebymitch/Musicify/blob/main/TermsOfService.md)"
+            )
+        );
+
+        container.addTextDisplayComponents(
+            new TextDisplayBuilder().setContent(
                 "-# Musicify is [open source](https://github.com/codebymitch/Musicify). Built by a passionate team of developers."
             )
         );

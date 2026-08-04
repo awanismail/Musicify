@@ -1,13 +1,13 @@
-const { SlashCommandBuilder, MessageFlags } = require("discord.js");
+const { MessageFlags } = require("discord.js");
+const { slashMeta, getT } = require("../i18n");
 const { buildStatusContainer } = require("../utils/statusPage");
 
 module.exports = {
-    data: new SlashCommandBuilder()
-        .setName("status")
-        .setDescription("Check the current status of Musicify's systems"),
+    data: slashMeta("status"),
 
     async execute(interaction, client) {
-        const container = buildStatusContainer(client);
+        const t = getT(interaction, client);
+        const container = buildStatusContainer(client, { t });
 
         return interaction.reply({
             components: [container],

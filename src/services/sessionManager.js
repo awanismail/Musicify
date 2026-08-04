@@ -6,6 +6,7 @@ const {
     createChatPlayNowPlayingContainer,
 } = require("../utils/components");
 const { generateMusicCard } = require("../utils/musicard");
+const { getT } = require("../i18n");
 
 const IDLE_LEAVE_MS = 30 * 1000;
 const ALONE_LEAVE_MS = 30 * 1000;
@@ -36,13 +37,15 @@ async function resetChatPlayToIdle(client, guildId) {
     const guildData = getGuildData(guildId);
     if (!guildData.chatPlayChannelId || !guildData.chatPlayMessageId) return;
 
+    const t = getT.forGuild(guildId, client);
+
     try {
         const channel = client.channels.cache.get(guildData.chatPlayChannelId);
         if (!channel) return;
 
         const msg = await channel.messages.fetch(guildData.chatPlayMessageId);
         await msg.edit({
-            components: [createChatPlayIdleContainer(guildData)],
+            components: [createChatPlayIdleContainer(t, guildData)],
             attachments: [],
             flags: MessageFlags.IsComponentsV2,
         });
@@ -62,6 +65,7 @@ async function recreateChatPlayMessage(client, guildId) {
         const channel = client.channels.cache.get(guildData.chatPlayChannelId);
         if (!channel) return null;
 
+        const t = getT.forGuild(guildId, client);
         const player = client.riffy?.players?.get(guildId);
         let container;
         let files = [];
@@ -69,6 +73,7 @@ async function recreateChatPlayMessage(client, guildId) {
         if (player?.current) {
             const musicardBuffer = await generateMusicCard(player.current, player, guildData);
             container = createChatPlayNowPlayingContainer(
+                t,
                 player.current,
                 player,
                 guildData,
@@ -78,7 +83,7 @@ async function recreateChatPlayMessage(client, guildId) {
                 files.push(new AttachmentBuilder(musicardBuffer, { name: "musicard.png" }));
             }
         } else {
-            container = createChatPlayIdleContainer(guildData);
+            container = createChatPlayIdleContainer(t, guildData);
         }
 
         const chatMsg = await channel.send({
@@ -92,7 +97,7 @@ async function recreateChatPlayMessage(client, guildId) {
 
         if (guildData.chatPlayPinPlayerMessage) {
             const { pinChatPlayPlayerMessage } = require("../utils/chatPlaySetup");
-            await pinChatPlayPlayerMessage(channel, chatMsg, channel.guild.members.me);
+            await pinChatPlayPlayerMessage(channel, chatMsg, channel.guild.members.me, t);
         }
 
         console.log(`[Musicify] Recreated ChatPlay message for guild ${guildId}`);

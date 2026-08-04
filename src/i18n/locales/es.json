@@ -1,0 +1,495 @@
+{
+  "slash": {
+    "about": { "description": "Más información sobre Musicify" },
+    "play": {
+      "description": "Reproduce una canción o añádela a la cola",
+      "options": { "query": "Nombre de la canción o URL" }
+    },
+    "help": { "description": "Muestra todos los comandos y funciones de Musicify" },
+    "queue": {
+      "description": "Muestra la cola actual",
+      "options": { "page": "Número de página" }
+    },
+    "nowplaying": { "description": "Muestra la pista que se está reproduciendo" },
+    "skip": { "description": "Salta la pista actual" },
+    "stop": { "description": "Detiene la reproducción y vacía la cola (se desconecta salvo que el modo 24/7 esté activo)" },
+    "volume": {
+      "description": "Ajusta el volumen de reproducción",
+      "options": { "level": "Nivel de volumen (0-100)" }
+    },
+    "remove": {
+      "description": "Elimina una pista de la cola",
+      "options": { "position": "Posición de la pista a eliminar (desde 1)" }
+    },
+    "shuffle": { "description": "Mezcla la cola" },
+    "move": {
+      "description": "Mueve una pista a otra posición en la cola",
+      "options": { "from": "Posición actual de la pista (desde 1)", "to": "Nueva posición de la pista (desde 1)" }
+    },
+    "seek": {
+      "description": "Salta a una posición concreta de la pista",
+      "options": { "time": "Momento al que saltar (p. ej. 1:30 o 90)" }
+    },
+    "loop": {
+      "description": "Configura el modo de repetición",
+      "options": { "mode": "Modo de repetición" },
+      "choices": { "mode": { "off": "Desactivado", "track": "Pista", "queue": "Cola" } }
+    },
+    "filter": {
+      "description": "Aplica filtros de audio al reproductor",
+      "options": { "preset": "Preset de filtro a aplicar" },
+      "choices": {
+        "preset": {
+          "bassboost": "🔊 Bass Boost",
+          "nightcore": "🌙 Nightcore",
+          "vaporwave": "🌊 Vaporwave",
+          "8d": "🎧 Audio 8D",
+          "tremolo": "〰️ Tremolo",
+          "vibrato": "🎸 Vibrato",
+          "karaoke": "🎤 Karaoke",
+          "lowpass": "🔈 Low Pass",
+          "slowmode": "🐌 Modo lento",
+          "distortion": "💥 Distorsión",
+          "reset": "❌ Restablecer todo"
+        }
+      }
+    },
+    "247": { "description": "Activa o desactiva el modo 24/7 — el bot permanece en el canal de voz aunque la cola esté vacía" },
+    "chatplay": { "description": "Configura o gestiona ChatPlay en este servidor" },
+    "clear": { "description": "Vacía la cola sin detener la pista actual" },
+    "status": { "description": "Consulta el estado actual de los sistemas de Musicify" },
+    "stats": { "description": "Muestra las estadísticas de Musicify" },
+    "language": { "description": "Configura el idioma del bot para este servidor" }
+  },
+  "common": {
+    "on": "Activado",
+    "off": "Desactivado",
+    "none": "Ninguno",
+    "unknown": "Desconocido",
+    "unknownArtist": "Artista desconocido",
+    "playlist": "Lista de reproducción",
+    "na": "N/D",
+    "anotherVoiceChannel": "otro canal de voz",
+    "cancel": "Cancelar",
+    "supportServer": "Servidor de soporte",
+    "vote": "⭐ Votar",
+    "supportedPlatforms": "Spotify, SoundCloud, Deezer, Apple Music, Tidal, Qobuz y JioSaavn",
+    "labels": {
+      "title": "**Título**",
+      "artist": "**Artista**",
+      "position": "**Posición**",
+      "status": "**Estado**",
+      "track": "**Pista**",
+      "level": "**Nivel**",
+      "volume": "**Volumen**",
+      "mode": "**Modo**",
+      "preset": "**Preset**",
+      "removed": "**Eliminado**",
+      "nowPlaying": "**Reproduciendo ahora**",
+      "tracks": "**Pistas**"
+    }
+  },
+  "errors": {
+    "unexpected": "**Algo salió mal**\n-# Ocurrió un error inesperado. Inténtalo de nuevo.",
+    "interactionFailed": "**Algo salió mal**\n-# Esa interacción falló. Inténtalo de nuevo.",
+    "timedOut": "**Tiempo agotado**\n-# Esa interacción expiró — ejecuta el comando de nuevo.",
+    "errorHeading": "### ❌ Error",
+    "noActivePlayer": "❌ No hay ningún reproductor activo.",
+    "voiceChannelRequired": "❌ ¡Tienes que estar en un canal de voz!",
+    "voiceChannelRequiredFormatted": "**Canal de voz requerido**\n-# Únete primero a un canal de voz.",
+    "sameVoiceChannel": "❌ Tienes que estar en el mismo canal de voz que el bot para usar estos controles.",
+    "nothingPlaying": "❌ No se está reproduciendo nada en este momento.",
+    "noMusicPlaying": "❌ No hay música en reproducción. ¡Empieza con {{cmdPlay}} o ChatPlay!",
+    "youtubeNotSupported": "**YouTube no compatible**\n-# Los enlaces de YouTube no están soportados por ahora.",
+    "noResults": "**Sin resultados**\n-# Nada coincidió con esa búsqueda.",
+    "searchFailed": "**Búsqueda fallida**\n-# Algo salió mal al buscar. Inténtalo de nuevo.",
+    "voicePermissions": {
+      "noVc": "❌ ¡Tienes que unirte primero a un canal de voz!",
+      "userConnect": "❌ No tienes permiso de **Conectar** en ese canal de voz.\n-# Únete a un canal al que puedas conectarte o pide acceso a un moderador.",
+      "botMissing": "❌ Algo salió mal al comprobar los permisos del bot. Inténtalo de nuevo.",
+      "botView": "❌ No puedo ver ese canal de voz.\n-# Concede **Ver canal** al bot en ese canal.",
+      "botConnect": "❌ No tengo permiso de **Conectar** en tu canal de voz.\n-# Pide a un moderador que conceda Conectar (y Hablar) a Musicify.",
+      "botSpeak": "❌ No tengo permiso de **Hablar** en tu canal de voz.\n-# Pide a un moderador que conceda Hablar a Musicify."
+    },
+    "voiceChannel": {
+      "mismatch247": "❌ El modo 24/7 está conectado a **{{name}}**.\n-# Únete a ese canal o usa `/247` para desactivar el 24/7 antes de reproducir aquí.",
+      "mismatchPlayer": "❌ Ya estoy en **{{name}}**.\n-# Únete a ese canal de voz para solicitar canciones."
+    },
+    "lavalink": {
+      "unavailable": "❌ **Lavalink no está disponible** — la búsqueda de música no puede ejecutarse ahora mismo.\n-# Inténtalo en un momento o consulta {{statusRef}} para ver el estado del nodo."
+    },
+    "rateLimit": {
+      "message": "⏳ **Ve más despacio**, estás enviando solicitudes demasiado rápido.\n-# Espera unos segundos entre canciones. También puede aplicarse el modo lento del canal."
+    },
+    "permissions": {
+      "voiceChannelDenial": "❌ Tienes que estar en el mismo canal de voz que el bot para usar estos controles."
+    }
+  },
+  "duplicate": {
+    "heading": "### ⚠️ Pista duplicada",
+    "playing": "¡**{{title}}** ya se está reproduciendo!",
+    "queued": "¡**{{title}}** ya está en la cola en la posición **#{{position}}**!"
+  },
+  "player": {
+    "autoplay": "Reproducción automática: {{value}}",
+    "loop": "Repetición: {{value}}",
+    "volume": "Volumen: {{value}}%",
+    "nowPlayingHeader": "**Reproduciendo ahora — {{title}}**",
+    "byArtist": "-# De {{author}}",
+    "requestedBy": "-# Solicitada por <@{{userId}}>",
+    "upNext": "-# **A continuación**",
+    "moreInQueue": "-# ***+{{count}} en cola***",
+    "startingPlayback": "-# Iniciando reproducción ahora",
+    "inQueue": "-# #{{position}} en cola",
+    "queueTrackLine": "-# **{{index}}.** {{title}} — {{author}} · `{{duration}}`",
+    "queueNowPlayingLine": "-# **Reproduciendo ahora:** **{{title}}** — {{author}} · `{{duration}}`"
+  },
+  "components": {
+    "suggestionsPlaceholder": "🎶 Elige una canción similar",
+    "queueHeading": "### Cola · {{count}}",
+    "stopConfirm": {
+      "heading": "### ⚠️ ¿Detener la reproducción?",
+      "bodySingular": "Hay **{{count}}** canción en la cola.",
+      "bodyPlural": "Hay **{{count}}** canciones en la cola.",
+      "footer": "-# Pulsa **stop** de nuevo o confirma abajo en 15 segundos.",
+      "button": "DETENER"
+    },
+    "chatplay": {
+      "header": "## <:Musicify_Logo:1517828581638541493> Musicify ChatPlay\n-# *¡Escribe el nombre de una canción en este canal para reproducirla!*\n-# Buscaré, la reproduciré en tu canal de voz y mantendré este mensaje actualizado.",
+      "statusWaiting": "-# **Estado:** Esperando una solicitud de canción...",
+      "statusWaiting247": "-# **Estado:** Esperando solicitudes de canción 24 horas al día, 7 días a la semana...",
+      "statusNotWaiting": "-# **Estado:** No esperando solicitudes de canción...",
+      "statusNotWaiting247": "-# **Estado:** No esperando solicitudes de canción 24 horas al día, 7 días a la semana...",
+      "statusLoading": "-# **Estado:** Buscando tu canción..."
+    }
+  },
+  "commands": {
+    "about": {
+      "heading": "# <:Musicify_Logo:1517828581638541493> Acerca de Musicify",
+      "whatIs": "**¿Qué es Musicify?**\n-# Un bot de música para Discord centrado en ChatPlay que ofrece\n-# streaming de música de alta calidad directamente en tus canales de voz.",
+      "poweredBy": "**Desarrollado con**\n-# [discord.js](https://discord.js.org/) · [Riffy](https://riffy.js.org/) · [Musicard](https://www.npmjs.com/package/musicard)",
+      "features": "**Funciones**\n-# • **Tarjetas de reproducción** con barras de progreso\n-# • Más de **10 presets de filtros** de audio\n-# • **Gestión inteligente de la cola** con paginación\n-# • **ChatPlay** — solicitudes instantáneas de canciones\n-# • Controles **interactivos con botones**",
+      "legal": "**Legal**\n-# [Política de privacidad](https://github.com/codebymitch/Musicify/blob/main/PrivacyPolicy.md) · [Términos de servicio](https://github.com/codebymitch/Musicify/blob/main/TermsOfService.md)",
+      "footer": "-# Musicify es [código abierto](https://github.com/codebymitch/Musicify). Creado por un equipo apasionado de desarrolladores."
+    },
+    "play": {
+      "playlistHeading": "### ✅ Lista de reproducción añadida",
+      "tracksLine": "**Pistas**\n-# {{addedCount}} de {{totalCount}} canciones añadidas a la cola",
+      "duplicatesSkipped": "**Duplicados omitidos**\n-# {{count}} canciones ya estaban en la cola",
+      "trackHeading": "### ✅ Pista añadida"
+    },
+    "nowplaying": {
+      "emptyHeading": "### 🎶 Reproduciendo ahora",
+      "emptyStatus": "**Estado**\n-# No se está reproduciendo nada en este momento."
+    },
+    "skip": { "successHeading": "### ⏭ Saltada" },
+    "stop": {
+      "noActivePlayer": "**Sin reproductor activo**\n-# No se está reproduciendo nada en este momento.",
+      "stayed247": "### ⏹ Detenido\n\n**Estado**\n-# Cola vaciada. Permaneciendo en el canal de voz (modo 24/7).",
+      "disconnected": "### ⏹ Detenido\n\n**Estado**\n-# Cola vaciada y desconectado del canal de voz."
+    },
+    "volume": {
+      "successHeading": "### 🔊 Volumen actualizado",
+      "levelLine": "-# {{level}}%"
+    },
+    "remove": {
+      "invalidPosition": "❌ Posición no válida. La cola tiene **{{count}}** pista(s).",
+      "successHeading": "### 🗑️ Pista eliminada",
+      "wasAt": "**Estaba en**\n-# Posición #{{position}}",
+      "queueRemaining": "**Cola**\n-# {{count}} pista(s) restante(s)"
+    },
+    "shuffle": {
+      "emptyQueue": "❌ La cola está vacía, no hay nada que mezclar.",
+      "successHeading": "### 🔀 Mezclada",
+      "tracksLine": "-# {{count}} canciones aleatorizadas"
+    },
+    "move": {
+      "invalidPosition": "❌ Posición no válida. La cola tiene **{{count}}** pista(s).",
+      "samePosition": "❌ Las posiciones de origen y destino son iguales.",
+      "successHeading": "### ↕️ Pista movida",
+      "positionLine": "-# #{{from}} → #{{to}}"
+    },
+    "seek": {
+      "invalidFormat": "❌ Formato de tiempo no válido. Usa `1:30` o `90`.",
+      "pastDuration": "❌ No se puede saltar más allá de la duración de la pista ({{duration}}).",
+      "successHeading": "### ⏩ Salto realizado",
+      "positionLine": "-# {{current}} / {{total}}"
+    },
+    "loop": { "successHeading": "### {{emoji}} Repetición actualizada" },
+    "filter": {
+      "presets": {
+        "bassboost": "Bass Boost",
+        "nightcore": "Nightcore",
+        "vaporwave": "Vaporwave",
+        "8d": "Audio 8D",
+        "tremolo": "Tremolo",
+        "vibrato": "Vibrato",
+        "karaoke": "Karaoke",
+        "lowpass": "Low Pass",
+        "slowmode": "Modo lento",
+        "distortion": "Distorsión"
+      },
+      "unknownPreset": "❌ Preset de filtro desconocido.",
+      "applyFailed": "❌ No se pudo aplicar **{{name}}**. Es posible que no esté soportado por el nodo actual.",
+      "resetHeading": "### ❌ Filtros restablecidos",
+      "resetStatus": "-# Se han eliminado todos los filtros de audio.",
+      "successHeading": "### {{emoji}} Filtro aplicado"
+    },
+    "247": {
+      "confirmHeading": "### Modo 24/7",
+      "enabledStatus": "**Estado actual**\n-# Activado — permanezco en voz aunque la cola esté vacía.",
+      "enabledPrompt": "**¿Desactivar 24/7?**\n-# Saldré del canal de voz cuando se detenga la reproducción y la cola esté vacía.",
+      "disabledStatus": "**Estado actual**\n-# Inactivo — me voy cuando la cola está vacía.",
+      "disabledPrompt": "**¿Activar 24/7?**\n-# Permaneceré conectado a tu canal de voz incluso entre canciones.",
+      "joinVcNote": "\n\n-# Únete a un canal de voz para activar o desactivar el 24/7.",
+      "disableButton": "Desactivar 24/7",
+      "enableButton": "Activar 24/7",
+      "resultEnabled": "### ✅ 24/7 activado\n\n**Estado**\n-# Permaneceré en el canal de voz aunque no se esté reproduciendo nada.",
+      "resultDisabled": "### ⏹ 24/7 desactivado\n\n**Estado**\n-# Saldré del canal de voz cuando la cola esté vacía.",
+      "cancelledHeading": "### Cancelado",
+      "cancelledBody": "-# El modo 24/7 no se modificó."
+    },
+    "chatplay": {
+      "permissionSetup": "**Permiso requerido**\n-# Necesitas **Gestionar canales** o **Administrador** para configurar ChatPlay.",
+      "permissionManage": "**Permiso requerido**\n-# Necesitas **Gestionar canales** o **Administrador** para gestionar ChatPlay.",
+      "missingPermissions": "**Permisos faltantes**\n-# Musicify necesita **Ver canal**, **Enviar mensajes**, **Insertar enlaces** y **Conectar y hablar** en un canal de voz antes de que ChatPlay pueda configurarse."
+    },
+    "clear": {
+      "alreadyEmpty": "❌ La cola ya está vacía.",
+      "successHeading": "### 🗑️ Cola vaciada",
+      "removedSingular": "-# {{count}} pista eliminada de la cola",
+      "removedPlural": "-# {{count}} pistas eliminadas de la cola"
+    },
+    "stats": {
+      "heading": "### <:Musicify_Logo:1517828581638541493> Estadísticas",
+      "botId": "**ID del bot**",
+      "uptime": "**Tiempo activo**",
+      "uptimeTimezoneNote": "-# *Horas mostradas en tu zona horaria local*",
+      "ping": "**Ping**",
+      "runtime": "**Tiempo de ejecución**",
+      "guilds": "**Servidores**",
+      "users": "**Usuarios**",
+      "channels": "**Canales**",
+      "activePlayers": "**Reproductores activos**",
+      "lavalinkNodes": "**Nodos Lavalink**",
+      "heapUsed": "**Heap usado**",
+      "heapTotal": "**Heap total**",
+      "rss": "**RSS**"
+    },
+    "language": {
+      "heading": "### 🌐 Idioma del servidor",
+      "description": "-# Elige el idioma de este servidor. **Automático** es el valor predeterminado cuando Musicify se une.\n-# Al fijarlo, comandos, reproductor, ChatPlay y la ayuda usan ese idioma para todos.\n-# **Automático** usa el idioma de Discord de cada miembro en comandos, y el idioma del servidor en la interfaz compartida.",
+      "current": "**Actual:** {{language}}",
+      "currentAuto": "**Actual:** Automático ({{language}})",
+      "viewOnlyNote": "-# Solo los administradores pueden cambiar el idioma del servidor.",
+      "setSuccess": "### ✅ Idioma actualizado\n\n-# Idioma del servidor configurado en **{{language}}**.",
+      "resetSuccess": "### ✅ Idioma actualizado\n\n-# Idioma del servidor restablecido a **Automático** ({{language}}).",
+      "permissionDenied": "**Permiso requerido**\n-# Necesitas **Administrador** para cambiar el idioma del servidor.",
+      "buttons": { "auto": "Automático" }
+    }
+  },
+  "help": {
+    "placeholder": "📖 Navegar por las secciones de ayuda",
+    "header": "# <:Musicify_Logo:1517828581638541493> Musicify",
+    "pages": {
+      "home": { "label": "Inicio", "description": "Resumen e inicio rápido" },
+      "music": { "label": "Comandos de música", "description": "Reproducir, saltar, cola y más" },
+      "filters": { "label": "Filtros y extras", "description": "Filtros de audio, 24/7 y ChatPlay" },
+      "controls": { "label": "Controles del reproductor", "description": "Guía de botones" },
+      "troubleshoot": { "label": "Solución de problemas", "description": "Problemas comunes y soluciones" },
+      "support": { "label": "Soporte", "description": "Obtener ayuda e informar de errores" }
+    },
+    "home": {
+      "welcome": "### 👋 ¡Bienvenido a Musicify!\n-# Tu bot de música para Discord, sencillo, rápido y lleno de funciones.",
+      "quickStart": "**Inicio rápido**\n\n**1.** Únete a un canal de voz\n-# Asegúrate de estar conectado antes de solicitar una canción.\n**2.** Usa {{cmdPlay}} `<nombre de canción o URL>`\n-# Compatible con {{platforms}}.\n**3.** ¡Controla con botones o comandos!\n-# Usa el reproductor interactivo o los comandos de barra.",
+      "features": "**Funciones**\n-# • Menú desplegable de **sugerencias de canciones** — 10 pistas similares\n-# • Más de **10 presets de filtros** de audio\n-# • **ChatPlay** — escribe nombres de canciones para reproducir al instante\n-# • **Gestión inteligente de la cola** con paginación\n-# • **Modo 24/7** — nunca abandona el canal de voz",
+      "openSource": "-# Musicify es [código abierto](https://github.com/codebymitch/Musicify)."
+    },
+    "music": {
+      "heading": "### 🎶 Explorador de comandos\n-# 15 comandos disponibles",
+      "list": "**1.** {{cmdPlay}} — Reproduce una canción o añádela a la cola\n\n**2.** {{cmdSkip}} — Salta la pista actual\n\n**3.** {{cmdStop}} — Detiene la reproducción y vacía la cola\n\n**4.** {{cmdNowplaying}} — Muestra la pista que se está reproduciendo\n\n**5.** {{cmdSeek}} — Salta a una posición\n\n**6.** {{cmdQueue}} — Muestra la cola actual\n\n**7.** {{cmdRemove}} — Elimina una pista de la cola\n\n**8.** {{cmdMove}} — Cambia la posición de una pista\n\n**9.** {{cmdShuffle}} — Mezcla todas las pistas de la cola\n\n**10.** {{cmdLoop}} — Configura el modo de repetición para pista o cola\n\n**11.** {{cmdVolume}} — Ajusta el volumen de reproducción\n\n**12.** {{cmd247}} — Activa o desactiva el modo 24/7 (requiere confirmación)\n\n**13.** {{cmdFilter}} — Aplica un preset de filtro de audio\n\n**14.** {{cmdChatplay}} — Configura o gestiona ChatPlay (activar, desactivar, eliminar)\n\n**15.** {{cmdAbout}} — Más información sobre Musicify"
+    },
+    "filters": {
+      "heading": "### 🎛️ Filtros de audio\n-# {{cmdFilter}} `<preset>` — Aplica un filtro de audio",
+      "presets": "**Presets disponibles**\n\n**🔊 Bass Boost**\n-# Refuerzo intenso de graves\n\n**🌙 Nightcore**\n-# Acelerado + tono más alto\n\n**🌊 Vaporwave**\n-# Ralentizado + tono más bajo\n\n**🎧 Audio 8D**\n-# Efecto envolvente rotativo\n\n**〰️ Tremolo**\n-# Oscilación de volumen\n\n**🎸 Vibrato**\n-# Oscilación de tono\n\n**🎤 Karaoke**\n-# Reducción de voz\n\n**🔈 Low Pass**\n-# Efecto apagado / subacuático\n\n**🐌 Modo lento**\n-# Velocidad de reproducción reducida\n\n**💥 Distorsión**\n-# Efecto de audio distorsionado\n\n-# Usa **❌ Restablecer todo** para eliminar todos los filtros activos.",
+      "chatplayHeading": "### 💬 ChatPlay",
+      "chatplaySetup": "**Configuración y gestión**\n-# {{cmdChatplay}} — Ejecuta la configuración si ChatPlay aún no está configurado\n-# Si ChatPlay ya existe, abre un panel para **Activar**, **Desactivar** o **Eliminar**",
+      "chatplayUsage": "-# Una vez configurado, ¡solo **escribe el nombre de una canción** en el canal y Musicify la reproducirá automáticamente!",
+      "247Heading": "### 🔁 Modo 24/7",
+      "247Toggle": "**Alternar**\n-# {{cmd247}} — Permanece en el canal de voz en inactividad; confirma antes de alternar\n\n-# {{cmdStop}} — Vacía la cola; se desconecta salvo que el 24/7 esté activo",
+      "247HowItWorks": "**Cómo funciona**\n-# Musicify permanece en el canal de voz incluso después de que termine la cola.\n-# La configuración persiste tras reiniciar el bot."
+    },
+    "controls": {
+      "heading": "### 🎮 Controles del reproductor con botones\n-# Cuando se reproduce una pista, Musicify muestra botones interactivos.",
+      "row1": "**Fila 1 — Reproducción**\n\n**🔀 Mezclar**\n-# Aleatoriza el orden de la cola\n\n**⏮️ Anterior**\n-# Vuelve a la última pista reproducida\n\n**⏸️ Pausa / Reproducir**\n-# Alterna la reproducción\n\n**⏭️ Saltar**\n-# Salta a la siguiente pista\n\n**🔁 Repetir**\n-# Ciclo: Desactivado → Pista → Cola",
+      "row2": "**Fila 2 — Extras**\n\n**📻 Reproducción automática**\n-# Encola canciones similares automáticamente cuando termina la cola\n\n**🔉 Vol↓  ·  🔊 Vol↑**\n-# Ajusta el volumen ±10%\n\n**⏹️ Detener**\n-# Detiene la reproducción y se desconecta\n\n**📜 Cola**\n-# Abre el visor de cola",
+      "suggestions": "**🎵 Sugerencias de canciones**\n-# Aparece un menú desplegable con hasta **10 pistas similares** debajo de los botones.\n-# ¡Selecciona una para añadirla a la cola al instante!"
+    },
+    "troubleshoot": {
+      "heading": "### 🛠️ Solución de problemas\n-# Problemas comunes y cómo solucionarlos.",
+      "wontPlay": "**El bot no reproduce música / Error de pista**\n-# La canción puede tener restricción de edad o bloqueo regional.\n-# La fuente de streaming puede no estar disponible temporalmente.\n-# **Solución:** Prueba otra canción o pega una URL directa de {{platforms}}.",
+      "joinsLeaves": "**El bot entra pero se va inmediatamente**\n-# Musicify puede no tener permisos de Hablar/Conectar en ese canal.\n-# La canción solicitada puede haber fallado al cargarse.\n-# **Solución:** Comprueba los permisos del bot e intenta otra canción.",
+      "noSound": "**Sin sonido pero el bot está en el canal de voz**\n-# Comprueba si el bot está en pausa — usa el botón ▶️.\n-# Comprueba el volumen con {{cmdVolume}}.\n-# **Solución:** Asegúrate de estar en el mismo canal de voz y de no estar ensordecido.",
+      "chatplayNotResponding": "**ChatPlay no responde**\n-# Asegúrate de que ChatPlay esté activado — ejecuta {{cmdChatplay}} y pulsa **Activar**.\n-# Comprueba que estás escribiendo en el canal correcto.\n-# **Solución:** Prueba a desactivarlo y volver a activarlo.",
+      "noActivePlayer": "**Los botones dicen \"No hay reproductor activo\"**\n-# El reproductor se cerró cuando terminó la pista.\n-# **Solución:** ¡Reproduce una canción nueva con {{cmdPlay}} para empezar de cero!",
+      "language": "**Idioma incorrecto / el bot responde en otro idioma**\n-# Usa {{cmdLanguage}} para ver el idioma actual del servidor.\n-# **Solución:** Pide a un admin que fije el idioma, o usa **Automático** si quieres tu idioma de Discord en los comandos.",
+      "languageAuto": "**Comandos y ChatPlay en idiomas distintos**\n-# Con **Automático** (predeterminado), tus respuestas siguen *tu* idioma de Discord; ChatPlay y el reproductor siguen el idioma del *servidor*.\n-# Si tu idioma no está soportado, tus respuestas usan **inglés** (soportados: inglés, español, portugués, francés, alemán).\n-# **Solución:** Pide a un admin que fije un idioma para todos en {{cmdLanguage}}, o cambia tu idioma o el del servidor a uno soportado.",
+      "languageCommunity": "**No puedo cambiar el idioma del servidor en Discord (Automático sigue en inglés)**\n-# Discord solo permite fijar el idioma del servidor si **Comunidad** está activada.\n-# Actívala en **Configuración del servidor → Activar Comunidad**, luego cámbialo en **Configuración del servidor → Resumen de Comunidad → Idioma principal del servidor**.\n-# **Solución:** O pide a un admin que fije el idioma de Musicify con {{cmdLanguage}} — no hace falta Comunidad."
+    },
+    "support": {
+      "heading": "### 🤝 Soporte y enlaces\n-# Obtén ayuda, informa de errores o descubre más.",
+      "needHelp": "**¿Necesitas ayuda o encontraste un error?**\n-# Nuestro equipo está listo para ayudarte con cualquier problema.",
+      "joinSupportServer": "Unirse al servidor de soporte",
+      "reportBug": "**Cómo informar de un error**\n\n**1.** Anota qué comando estabas usando\n-# Incluye el comando exacto y cualquier error mostrado.\n\n**2.** Únete a nuestro servidor de soporte\n-# Usa el botón **Unirse al servidor de soporte** de arriba.\n\n**3.** Abre un ticket\n-# O pregunta en el canal de soporte.\n\n**4.** Adjunta pruebas\n-# ¡Las capturas de pantalla o grabaciones nos ayudan a solucionarlo más rápido!",
+      "botInfo": "**Comandos de información del bot**\n**1.** {{cmdStats}}\n-# Ver ping, tiempo activo y memoria\n**2.** {{cmdStatus}}\n-# Ver el estado de conexión de Lavalink\n**3.** {{cmdHelp}}\n-# ¡Estás aquí!",
+      "footer": "-# Musicify es [código abierto](https://github.com/codebymitch/Musicify)."
+    }
+  },
+  "chatplay": {
+    "setup": {
+      "stepHeader": "## <:Musicify_Logo:1517828581638541493> Musicify ChatPlay\n-# Paso {{step}} de {{totalSteps}}",
+      "channelTitle": "**Canal de ChatPlay**",
+      "channelDescription": "-# ChatPlay se configurará en {{channel}}.",
+      "unknownChannel": "Canal desconocido",
+      "behaviourHeading": "**Comportamiento del canal**\n-# Pulsa el interruptor junto a cada opción.",
+      "slowmodeTitle": "**Modo lento (5 s)** *(recomendado)*",
+      "slowmodeDescription": "Reduce el spam en el canal de solicitudes.",
+      "slowmodeOn": "5 segundos",
+      "deleteMessagesTitle": "**Eliminar solicitudes automáticamente** *(recomendado)*",
+      "deleteMessagesDescription": "Elimina los mensajes de canciones para mantener el canal limpio.",
+      "pinTitle": "**Fijar mensaje del reproductor** *(recomendado)*",
+      "pinDescription": "Fija el mensaje del reproductor para que sea fácil de encontrar.",
+      "247Title": "**Modo 24/7**",
+      "247Description": "Únete a un canal de voz para activarlo — el bot permanece en ese canal 24/7.",
+      "reviewHeading": "**Revisar y confirmar**",
+      "reviewChannel": "-# Canal: {{channel}}",
+      "reviewSettings": "**Tu configuración**\n-# Revisa tus opciones antes de crear ChatPlay.",
+      "editButton": "Editar",
+      "continueButton": "Continuar",
+      "backButton": "Atrás",
+      "createButton": "Crear ChatPlay",
+      "cancelledHeading": "### Configuración cancelada",
+      "cancelledBody": "-# ChatPlay no se modificó.",
+      "modalTitle": "Editar canal de ChatPlay",
+      "modalChannelLabel": "Canal de ChatPlay",
+      "modalChannelDescription": "Donde los miembros escriben nombres de canciones para solicitar música",
+      "modalPlaceholder": "Elige un canal de texto",
+      "manageHeading": "## <:Musicify_Logo:1517828581638541493> Musicify ChatPlay",
+      "manageEnabled": "Activado en {{channel}}",
+      "manageDisabled": "Desactivado en {{channel}}",
+      "manageSettings": "**Tu configuración**",
+      "manage247Description": "-# Pulsa **{{action}}** para alternar, o usa {{cmd247}}.",
+      "turnOn": "Activar",
+      "turnOff": "Desactivar",
+      "enableButton": "Activar",
+      "disableButton": "Desactivar",
+      "deleteButton": "Eliminar ChatPlay",
+      "deleteConfirmHeading": "## ⚠️ Eliminar ChatPlay",
+      "deleteConfirmPermanent": "**Esta acción es permanente**",
+      "deleteConfirmRemovedFrom": "-# ChatPlay se eliminará de {{channel}}.",
+      "deleteConfirmWhatDeleted": "**Qué se eliminará**\n-# • El mensaje del reproductor en este canal\n-# • Toda la configuración de ChatPlay de este servidor",
+      "deleteConfirmFooter": "-# Esto no se puede deshacer. Pulsa **Confirmar** para continuar.",
+      "confirmButton": "Confirmar",
+      "deletedHeading": "### 🗑 ChatPlay eliminado",
+      "deletedRemoved": "**Eliminado**\n-# ChatPlay se ha eliminado de este servidor.",
+      "deletedSetupAgain": "**Configurar de nuevo**\n-# Ejecuta `/chatplay` en tu canal de música para empezar de cero.",
+      "successHeading": "### ✅ ChatPlay está activo",
+      "successTryIt": "**Pruébalo ahora**",
+      "successStep1": "1. Únete a un canal de voz",
+      "successStep2": "2. Escribe el nombre de una canción en {{channel}}",
+      "successPinned": "-# Mensaje del reproductor fijado en este canal.",
+      "successRecommendedPin": "**Recomendado**\n• Fija el mensaje del reproductor para que permanezca visible",
+      "success247Enabled": "-# El modo 24/7 está activado — el bot permanecerá en voz entre canciones.",
+      "successManage": "**Gestionar**\n-# Ejecuta `/chatplay` para activar, desactivar o eliminar ChatPlay.",
+      "warningPinFailed": "No se pudo fijar el mensaje del reproductor — concede **Fijar mensajes** o **Gestionar mensajes** en este canal.",
+      "warningPinPermission": "No se pudo fijar el mensaje del reproductor — comprueba el permiso **Fijar mensajes**.",
+      "warning247NotEnabled": "No se activó el 24/7 — únete a un canal de voz y ejecuta `/247` para activarlo.",
+      "warningSlowmodeFailed": "No se pudo actualizar el modo lento — comprueba el permiso **Gestionar canales**.",
+      "warningSlowmodeNotApplied": "No se aplicó el modo lento — concede **Gestionar canales** en este canal.",
+      "errorChannelGone": "El canal de configuración ya no existe."
+    },
+    "handlers": {
+      "notConfigured": "**Sin configurar**\n-# ChatPlay no está configurado. Ejecuta `/chatplay` para configurarlo.",
+      "setupExpired": "**Configuración expirada**\n-# Ejecuta `/chatplay` de nuevo para empezar otra vez.",
+      "notYourSetup": "**No es tu configuración**\n-# Solo quien inició la configuración puede usar estos botones.",
+      "notYourSetupChannel": "**No es tu configuración**\n-# Solo quien inició la configuración puede cambiar el canal.",
+      "channelMissing": "**Canal no encontrado**\n-# El canal de configuración fue eliminado. Ejecuta `/chatplay` de nuevo.",
+      "permissionFinish": "**Permiso requerido**\n-# Necesitas **Gestionar canales** o **Administrador** para finalizar la configuración.",
+      "setupFailed": "**Configuración fallida**\n-# {{message}}",
+      "noChannelSelected": "**Ningún canal seleccionado**\n-# Elige un canal de texto e inténtalo de nuevo.",
+      "invalidChannel": "**Canal no válido**\n-# ChatPlay necesita un canal de texto donde los miembros puedan enviar mensajes.",
+      "missingPermissionsChannel": "**Permisos faltantes**\n-# Musicify necesita **Ver canal**, **Enviar mensajes**, **Insertar enlaces** y **Conectar y hablar** en un canal de voz antes de que ChatPlay pueda usar ese canal.",
+      "joinVcEnable247": "**Únete a un canal de voz**\n-# Únete primero a un canal de voz — el bot permanecerá en ese canal 24/7.",
+      "joinVcChange247": "**Únete a un canal de voz**\n-# Únete a un canal de voz para cambiar el modo 24/7."
+    },
+    "feedback": {
+      "playlistAdded": "✅ ¡Añadidas **{{addedCount}}** de **{{totalCount}}** pistas de **{{playlistName}}**!",
+      "duplicatesSkipped": "⚠️ Se omitieron {{count}} duplicado(s): {{list}}",
+      "nowPlaying": "✅ Reproduciendo ahora **{{title}}**!",
+      "addedToQueue": "✅ Añadida **{{title}}** — **#{{position}}** en cola!"
+    }
+  },
+  "handlers": {
+    "button": {
+      "nothingPlaying": "**Nada en reproducción**\n-# Inicia la música con `/play` o ChatPlay primero.",
+      "stopExpired": "### ⚠️ Expirado\n\n-# La confirmación de detener expiró — pulsa **stop** de nuevo.",
+      "stopStopped": "### ⏹ Detenido\n\n-# Reproducción detenida y cola vaciada.",
+      "stopPending": "### ⚠️ Detener pendiente\n\n-# Alguien más está confirmando una detención — espera a que termine.",
+      "suggestionNowPlaying": "✅ Reproduciendo ahora **{{title}}** · *Canción sugerida*",
+      "suggestionAdded": "✅ Añadida **{{title}}** — **#{{position}}** en cola · *Canción sugerida*"
+    }
+  },
+  "status": {
+    "lavalinkUnavailable": "Lavalink no disponible — la reproducción puede no funcionar",
+    "someNodesOffline": "Algunos nodos Lavalink están desconectados",
+    "allOperational": "Todos los sistemas operativos",
+    "connected": "Conectado",
+    "disconnected": "Desconectado",
+    "majorIssues": "Se detectaron problemas graves del sistema",
+    "someIssues": "Algunos sistemas presentan problemas",
+    "knownOutages": "Interrupciones conocidas",
+    "recentIncidents": "**Incidentes recientes**",
+    "noIncidents": "-# No se han reportado incidentes.",
+    "incidentLine": "-# <t:{{timestamp}}:t> · {{component}}: {{description}}",
+    "buttons": {
+      "supportServer": "Servidor de soporte",
+      "reportIssue": "Informar de un problema",
+      "suggest": "Sugerir"
+    },
+    "uptimeHeading": "**Tiempo activo**",
+    "uptimeTimezoneNote": "-# *Horas mostradas en tu zona horaria local*",
+    "nodesHeading": "### Estadísticas de nodos Lavalink",
+    "nodesAvailable": "-# {{connected}}/{{total}} nodos disponibles",
+    "nodesPlaceholder": "📡 Selecciona un nodo",
+    "mainNode": "Nodo principal",
+    "nodeN": "Nodo {{index}}",
+    "nodeHealthHeading": "**Estado del nodo**",
+    "nodeHealthLine": "-# {{emoji}} **{{name}}** — {{status}}",
+    "lastUpdated": "-# Última actualización <t:{{timestamp}}:R>",
+    "nodeOffline": "-# *El nodo está desconectado — no hay estadísticas disponibles.*",
+    "restVersion": "**Versión Rest**",
+    "playersHeading": "**Reproductores**",
+    "playersActive": "**Activos**",
+    "playersTotal": "**Total**",
+    "playersLine": "**Reproductores**\n-# 🎶 Activos: {{active}}  •  📻 Total: {{total}}",
+    "cpuHeading": "**CPU**",
+    "cpuCores": "**Núcleos**",
+    "cpuSystemLoad": "**Carga del sistema**",
+    "cpuLavalinkLoad": "**Carga de Lavalink**",
+    "cpuLine": "**CPU**\n-# 🖥️ Núcleos: {{cores}}  •  ⚙️ Sistema: {{sysLoad}}  •  🔧 Lavalink: {{llLoad}}",
+    "noCpuData": "-# *No hay datos de CPU disponibles*",
+    "restVersionLine": "-# Versión Rest: {{version}}"
+  },
+  "welcome": {
+    "heading": "## 👋 ¡Bienvenido a Musicify!",
+    "chatplayLine": "- Usa {{cmdChatplay}} para activar **ChatPlay** — escribe nombres de canciones en un canal para reproducir al instante",
+    "quickStartHeading": "**Inicio rápido**",
+    "step1": "1. Únete a un canal de voz",
+    "step2": "2. Usa {{cmdPlay}} `<nombre de canción o URL>` — compatible con {{platforms}}",
+    "step3": "3. Controla la reproducción con botones interactivos o comandos de barra",
+    "languageLine": "-# El idioma está en **Automático** por defecto — el bot sigue el idioma de Discord de este servidor. Los admins pueden fijar un idioma con {{cmdLanguage}}.",
+    "footer": "- Si necesitas ayuda o encontraste un error, únete a nuestro [servidor de soporte](https://discord.gg/MRjEUhDCpZ), ejecuta {{cmdStatus}} para ver si los sistemas del bot están en línea, o consulta el repositorio [GitHub](https://github.com/codebymitch/Musicify) de código abierto.",
+    "deleteNotice": "-# Este mensaje se eliminará <t:{{timestamp}}:R>",
+    "dismissButton": "Eliminar mensaje ahora"
+  }
+}

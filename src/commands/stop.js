@@ -1,23 +1,23 @@
-const { SlashCommandBuilder, MessageFlags, ContainerBuilder, TextDisplayBuilder } = require("discord.js");
+const { MessageFlags, ContainerBuilder, TextDisplayBuilder } = require("discord.js");
 const { handleStop } = require("../services/sessionManager");
+const { slashMeta, getT } = require("../i18n");
 const { buildErrorContainer, ephemeralV2 } = require("../utils/replies");
 
 module.exports = {
-    data: new SlashCommandBuilder()
-        .setName("stop")
-        .setDescription("Stop playback and clear the queue (disconnects unless 24/7 is on)"),
+    data: slashMeta("stop"),
 
     async execute(interaction, client) {
+        const t = getT(interaction, client);
         const player = client.riffy.players.get(interaction.guild.id);
         if (!player) {
             return interaction.reply(
-                ephemeralV2(buildErrorContainer("**No active player**\n-# Nothing is playing right now."))
+                ephemeralV2(buildErrorContainer(t("commands.stop.noActivePlayer"), t))
             );
         }
 
         if (!interaction.member.voice?.channel) {
             return interaction.reply(
-                ephemeralV2(buildErrorContainer("**Voice channel required**\n-# Join a voice channel first."))
+                ephemeralV2(buildErrorContainer(t("errors.voiceChannelRequiredFormatted"), t))
             );
         }
 
@@ -26,9 +26,7 @@ module.exports = {
         const container = new ContainerBuilder();
         container.addTextDisplayComponents(
             new TextDisplayBuilder().setContent(
-                stayed
-                    ? "### ⏹ Stopped\n\n**Status**\n-# Queue cleared. Staying in voice channel (24/7 mode)."
-                    : "### ⏹ Stopped\n\n**Status**\n-# Queue cleared and disconnected from voice channel."
+                stayed ? t("commands.stop.stayed247") : t("commands.stop.disconnected")
             )
         );
         await interaction.reply({

@@ -1,5 +1,4 @@
 const {
-    SlashCommandBuilder,
     MessageFlags,
     ContainerBuilder,
     TextDisplayBuilder,
@@ -10,13 +9,13 @@ const {
     ButtonBuilder,
     ButtonStyle,
 } = require("discord.js");
+const { slashMeta, getT } = require("../i18n");
 
 module.exports = {
-    data: new SlashCommandBuilder()
-        .setName("about")
-        .setDescription("Learn more about Musicify"),
+    data: slashMeta("about"),
 
     async execute(interaction, client) {
+        const t = getT(interaction, client);
         const container = new ContainerBuilder();
 
         const botAvatar = client.user.displayAvatarURL({ size: 256 });
@@ -24,9 +23,7 @@ module.exports = {
         container.addSectionComponents(
             new SectionBuilder()
                 .addTextDisplayComponents(
-                    new TextDisplayBuilder().setContent(
-                        "# <:Musicify_Logo:1517828581638541493> About Musicify"
-                    )
+                    new TextDisplayBuilder().setContent(t("commands.about.heading"))
                 )
                 .setThumbnailAccessory(
                     new ThumbnailBuilder().setURL(botAvatar)
@@ -37,43 +34,29 @@ module.exports = {
 
         container.addTextDisplayComponents(
             new TextDisplayBuilder().setContent(
-                "**What is Musicify?**\n" +
-                "-# A ChatPlay-focused Discord music bot that delivers high-quality\n" +
-                "-# music streaming directly to your voice channels.\n\n" +
-                "**Powered By**\n" +
-                "-# [discord.js](https://discord.js.org/) · [Riffy](https://riffy.js.org/) · [Musicard](https://www.npmjs.com/package/musicard)\n\n" +
-                "**Features**\n" +
-                "-# • **Rich now-playing cards** with progress bars\n" +
-                "-# • **10+ audio filter** presets\n" +
-                "-# • **Smart queue management** with pagination\n" +
-                "-# • **ChatPlay** — instant song requests\n" +
-                "-# • **Interactive button-based** controls"
+                `${t("commands.about.whatIs")}\n\n` +
+                `${t("commands.about.poweredBy")}\n\n` +
+                t("commands.about.features")
             )
         );
 
         container.addTextDisplayComponents(
-            new TextDisplayBuilder().setContent(
-                "**Legal**\n" +
-                "-# [Privacy Policy](https://github.com/codebymitch/Musicify/blob/main/PrivacyPolicy.md) · " +
-                "[Terms of Service](https://github.com/codebymitch/Musicify/blob/main/TermsOfService.md)"
-            )
+            new TextDisplayBuilder().setContent(t("commands.about.legal"))
         );
 
         container.addTextDisplayComponents(
-            new TextDisplayBuilder().setContent(
-                "-# Musicify is [open source](https://github.com/codebymitch/Musicify). Built by a passionate team of developers."
-            )
+            new TextDisplayBuilder().setContent(t("commands.about.footer"))
         );
 
         container.addSeparatorComponents(new SeparatorBuilder().setDivider(false));
 
         const row = new ActionRowBuilder().addComponents(
             new ButtonBuilder()
-                .setLabel("Support Server")
+                .setLabel(t("common.supportServer"))
                 .setURL("https://discord.gg/MRjEUhDCpZ")
                 .setStyle(ButtonStyle.Link),
             new ButtonBuilder()
-                .setLabel("⭐ Vote")
+                .setLabel(t("common.vote"))
                 .setURL("https://top.gg/bot/1502977716196999309/vote")
                 .setStyle(ButtonStyle.Link)
         );

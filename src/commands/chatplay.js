@@ -1,5 +1,6 @@
-const { SlashCommandBuilder, MessageFlags, PermissionFlagsBits } = require("discord.js");
+const { MessageFlags, PermissionFlagsBits } = require("discord.js");
 const { getGuildData } = require("../utils/playerStore");
+const { slashMeta, getT } = require("../i18n");
 const { buildErrorContainer, ephemeralV2 } = require("../utils/replies");
 const { createSession, auditChannelPermissions } = require("../utils/chatPlaySetupSession");
 const {
@@ -15,25 +16,19 @@ function canManageChatPlay(memberPermissions) {
     );
 }
 
-async function startChatPlaySetup(interaction) {
+async function startChatPlaySetup(interaction, client) {
+    const t = getT(interaction, client);
+
     if (!canManageChatPlay(interaction.memberPermissions)) {
         return interaction.reply(
-            ephemeralV2(
-                buildErrorContainer(
-                    "**Permission required**\n-# You need **Manage Channels** or **Administrator** to set up ChatPlay."
-                )
-            )
+            ephemeralV2(buildErrorContainer(t("commands.chatplay.permissionSetup"), t))
         );
     }
 
     const { canProceed } = auditChannelPermissions(interaction.guild, interaction.channel);
     if (!canProceed) {
         return interaction.reply(
-            ephemeralV2(
-                buildErrorContainer(
-                    "**Missing permissions**\n-# Musicify needs **View Channel**, **Send Messages**, **Embed Links**, and **Connect & Speak** in a voice channel before ChatPlay can be set up."
-                )
-            )
+            ephemeralV2(buildErrorContainer(t("commands.chatplay.missingPermissions"), t))
         );
     }
 
@@ -42,7 +37,8 @@ async function startChatPlaySetup(interaction) {
         interaction.user.id,
         interaction.channel.id
     );
-    const container = buildSetupStep2Container(session, interaction.guild);
+    const tGuild = getT.forGuild(interaction.guild.id, client);
+    const container = buildSetupStep2Container(tGuild, session, interaction.guild);
 
     await interaction.reply({
         components: [container],
@@ -51,29 +47,27 @@ async function startChatPlaySetup(interaction) {
 }
 
 module.exports = {
-    data: new SlashCommandBuilder()
-        .setName("chatplay")
-        .setDescription("Set up or manage ChatPlay in this server"),
+    data: slashMeta("chatplay"),
 
-    async execute(interaction) {
+    async execute(interaction, client) {
+        const t = getT(interaction, client);
         const guildData = getGuildData(interaction.guild.id);
 
         if (!hasChatPlayConfigured(guildData)) {
-            return startChatPlaySetup(interaction);
+            return startChatPlaySetup(interaction, client);
         }
 
         if (!canManageChatPlay(interaction.memberPermissions)) {
             return interaction.reply(
-                ephemeralV2(
-                    buildErrorContainer(
-                        "**Permission required**\n-# You need **Manage Channels** or **Administrator** to manage ChatPlay."
-                    )
-                )
+                ephemeralV2(buildErrorContainer(t("commands.chatplay.permissionManage"), t))
             );
         }
 
+        const tGuild = getT.forGuild(interaction.guild.id, client);
         await interaction.reply({
-            components: [await buildChatPlayManageContainer(guildData, interaction.guild, interaction.client)],
+            components: [
+                await buildChatPlayManageContainer(tGuild, guildData, interaction.guild, interaction.client),
+            ],
             flags: MessageFlags.Ephemeral | MessageFlags.IsComponentsV2,
         });
     },

@@ -1,22 +1,27 @@
-const { SlashCommandBuilder, MessageFlags, AttachmentBuilder, ContainerBuilder, TextDisplayBuilder, SeparatorBuilder } = require("discord.js");
+const {
+    MessageFlags,
+    AttachmentBuilder,
+    ContainerBuilder,
+    TextDisplayBuilder,
+} = require("discord.js");
+const { slashMeta, getT } = require("../i18n");
 const { getGuildData } = require("../utils/playerStore");
-const { createNowPlayingContainer, formatDuration } = require("../utils/components");
+const { createNowPlayingContainer } = require("../utils/components");
 const { generateMusicCard } = require("../utils/musicard");
 
 module.exports = {
-    data: new SlashCommandBuilder()
-        .setName("nowplaying")
-        .setDescription("Show the currently playing track"),
+    data: slashMeta("nowplaying"),
 
     async execute(interaction, client) {
+        const t = getT(interaction, client);
         const player = client.riffy.players.get(interaction.guild.id);
+
         if (!player || !player.current) {
             const container = new ContainerBuilder();
             container.addTextDisplayComponents(
                 new TextDisplayBuilder().setContent(
-                    "### 🎶 Now Playing\n\n" +
-                    "**Status**\n" +
-                    "-# Nothing is playing right now."
+                    `${t("commands.nowplaying.emptyHeading")}\n\n` +
+                    t("commands.nowplaying.emptyStatus")
                 )
             );
             return interaction.reply({
@@ -29,7 +34,13 @@ module.exports = {
 
         const guildData = getGuildData(interaction.guild.id);
         const musicardBuffer = await generateMusicCard(player.current, player, guildData);
-        const container = createNowPlayingContainer(player.current, player, guildData, musicardBuffer);
+        const container = createNowPlayingContainer(
+            t,
+            player.current,
+            player,
+            guildData,
+            musicardBuffer
+        );
 
         const files = [];
         if (musicardBuffer) {

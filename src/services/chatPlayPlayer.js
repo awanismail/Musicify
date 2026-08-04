@@ -6,6 +6,7 @@ const {
     createChatPlayNowPlayingContainer,
 } = require("../utils/components");
 const { generateMusicCard } = require("../utils/musicard");
+const { getT } = require("../i18n");
 
 async function editChatPlayMessage(client, guildId, container, files = []) {
     const guildData = getGuildData(guildId);
@@ -30,15 +31,18 @@ async function editChatPlayMessage(client, guildId, container, files = []) {
 }
 
 async function showChatPlayLoading(client, guildId) {
-    return editChatPlayMessage(client, guildId, createChatPlayLoadingContainer());
+    const t = getT.forGuild(guildId, client);
+    return editChatPlayMessage(client, guildId, createChatPlayLoadingContainer(t));
 }
 
 async function refreshChatPlayPlayer(client, guildId) {
     const guildData = getGuildData(guildId);
     if (!guildData.chatPlayChannelId || !guildData.chatPlayMessageId) return;
 
+    const t = getT.forGuild(guildId, client);
+
     if (!guildData.chatPlayEnabled) {
-        await editChatPlayMessage(client, guildId, createChatPlayIdleContainer(guildData));
+        await editChatPlayMessage(client, guildId, createChatPlayIdleContainer(t, guildData));
         return;
     }
 
@@ -46,6 +50,7 @@ async function refreshChatPlayPlayer(client, guildId) {
     if (player?.current) {
         const musicardBuffer = await generateMusicCard(player.current, player, guildData);
         const container = createChatPlayNowPlayingContainer(
+            t,
             player.current,
             player,
             guildData,
@@ -58,7 +63,7 @@ async function refreshChatPlayPlayer(client, guildId) {
         return;
     }
 
-    await editChatPlayMessage(client, guildId, createChatPlayIdleContainer(guildData));
+    await editChatPlayMessage(client, guildId, createChatPlayIdleContainer(t, guildData));
 }
 
 module.exports = {

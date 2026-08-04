@@ -1,46 +1,43 @@
-const { SlashCommandBuilder, MessageFlags, ContainerBuilder, TextDisplayBuilder } = require("discord.js");
+const { MessageFlags, ContainerBuilder, TextDisplayBuilder } = require("discord.js");
+const { slashMeta, getT } = require("../i18n");
+const { replyError } = require("../utils/replies");
 
 module.exports = {
-    data: new SlashCommandBuilder()
-        .setName("clear")
-        .setDescription("Clear the queue without stopping the current track"),
+    data: slashMeta("clear"),
 
     async execute(interaction, client) {
+        const t = getT(interaction, client);
         const player = client.riffy.players.get(interaction.guild.id);
-        
+
         if (!player) {
-            return interaction.reply({
-                content: "❌ No active player.",
-                flags: MessageFlags.Ephemeral,
-            });
+            return replyError(interaction, { key: "errors.noActivePlayer" }, { t });
         }
 
         if (!interaction.member.voice?.channel) {
-            return interaction.reply({
-                content: "❌ You need to be in a voice channel!",
-                flags: MessageFlags.Ephemeral,
-            });
+            return replyError(interaction, { key: "errors.voiceChannelRequired" }, { t });
         }
 
         const queueLength = player.queue?.length || 0;
-        
+
         if (queueLength === 0) {
-            return interaction.reply({
-                content: "❌ The queue is already empty.",
-                flags: MessageFlags.Ephemeral,
-            });
+            return replyError(interaction, t("commands.clear.alreadyEmpty"), { t });
         }
 
         player.queue.clear();
 
+        const removedLine =
+            queueLength === 1
+                ? t("commands.clear.removedSingular", { count: queueLength })
+                : t("commands.clear.removedPlural", { count: queueLength });
+
         const container = new ContainerBuilder();
         container.addTextDisplayComponents(
             new TextDisplayBuilder().setContent(
-                "### 🗑️ Queue Cleared\n\n" +
-                "**Removed**\n" +
-                `-# ${queueLength} track${queueLength === 1 ? "" : "s"} removed from queue\n\n` +
-                "**Now Playing**\n" +
-                `-# ${player.current?.info?.title || "Nothing"}`
+                `${t("commands.clear.successHeading")}\n\n` +
+                `${t("common.labels.removed")}\n` +
+                `${removedLine}\n\n` +
+                `${t("common.labels.nowPlaying")}\n` +
+                `-# ${player.current?.info?.title || t("common.none")}`
             )
         );
 

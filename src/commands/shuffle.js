@@ -1,31 +1,24 @@
-const { SlashCommandBuilder, MessageFlags, ContainerBuilder, TextDisplayBuilder } = require("discord.js");
+const { MessageFlags, ContainerBuilder, TextDisplayBuilder } = require("discord.js");
+const { slashMeta, getT } = require("../i18n");
+const { replyError } = require("../utils/replies");
 
 module.exports = {
-    data: new SlashCommandBuilder()
-        .setName("shuffle")
-        .setDescription("Shuffle the queue"),
+    data: slashMeta("shuffle"),
 
     async execute(interaction, client) {
+        const t = getT(interaction, client);
         const player = client.riffy.players.get(interaction.guild.id);
+
         if (!player) {
-            return interaction.reply({
-                content: "❌ No active player.",
-                flags: MessageFlags.Ephemeral,
-            });
+            return replyError(interaction, { key: "errors.noActivePlayer" }, { t });
         }
 
         if (!interaction.member.voice?.channel) {
-            return interaction.reply({
-                content: "❌ You need to be in a voice channel!",
-                flags: MessageFlags.Ephemeral,
-            });
+            return replyError(interaction, { key: "errors.voiceChannelRequired" }, { t });
         }
 
         if (player.queue.length === 0) {
-            return interaction.reply({
-                content: "❌ Queue is empty, nothing to shuffle.",
-                flags: MessageFlags.Ephemeral,
-            });
+            return replyError(interaction, t("commands.shuffle.emptyQueue"), { t });
         }
 
         player.queue.shuffle();
@@ -33,9 +26,9 @@ module.exports = {
         const container = new ContainerBuilder();
         container.addTextDisplayComponents(
             new TextDisplayBuilder().setContent(
-                "### 🔀 Shuffled\n\n" +
-                "**Tracks**\n" +
-                `-# ${player.queue.length} songs randomized`
+                `${t("commands.shuffle.successHeading")}\n\n` +
+                `${t("common.labels.tracks")}\n` +
+                t("commands.shuffle.tracksLine", { count: player.queue.length })
             )
         );
         await interaction.reply({

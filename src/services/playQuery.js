@@ -1,18 +1,18 @@
 const { getGuildData } = require("../utils/playerStore");
-const { isLavalinkAvailable, getLavalinkUnavailableMessage } = require("../utils/lavalink");
-const { getVoiceChannelMismatch, formatVoiceChannelMismatch } = require("../utils/voiceChannel");
+const { isLavalinkAvailable, getLavalinkUnavailableError } = require("../utils/lavalink");
+const { getVoiceChannelMismatch, getVoiceChannelMismatchError } = require("../utils/voiceChannel");
 const { getVoicePermissionError } = require("../utils/voicePermissions");
+const { VOICE_ERROR_KEYS } = require("../i18n");
 const {
     limitedResolve,
     ResolveRateLimitError,
-    RATE_LIMIT_MESSAGE,
 } = require("../utils/resolveLimiter");
 const {
     classifyResolveResult,
     getPlaylistDisplayName,
     queueResolvedTracks,
 } = require("../utils/resolveResult");
-const { getTrackQueuePosition, formatDuplicateTrackMessage } = require("../utils/queueUtils");
+const { getTrackQueuePosition, getDuplicateTrackError } = require("../utils/queueUtils");
 const { showChatPlayLoading, refreshChatPlayPlayer } = require("./chatPlayPlayer");
 
 const YOUTUBE_PATTERN = /(?:youtube\.com|youtu\.be)/i;
@@ -21,10 +21,7 @@ function isYouTubeQuery(query) {
     return YOUTUBE_PATTERN.test(query);
 }
 
-/**
- * Resolve a query and queue track(s). Shared by /play and ChatPlay.
- */
-async function playQuery(client, { guild, member, query, textChannelId, source }) {
+async function playQuery(client, { guild, member, query, textChannelId, source, t }) {
     const guildId = guild.id;
     const guildData = getGuildData(guildId);
     const isChatPlay = source === "chatplay";
@@ -33,20 +30,24 @@ async function playQuery(client, { guild, member, query, textChannelId, source }
         return {
             ok: false,
             type: "youtube_blocked",
-            message: "**YouTube not supported**\n-# YouTube links are currently not supported.",
+            error: { key: "errors.youtubeNotSupported" },
         };
     }
 
     const voiceError = getVoicePermissionError(member, guild);
     if (voiceError) {
-        return { ok: false, type: voiceError.code, message: voiceError.message };
+        return {
+            ok: false,
+            type: voiceError.code,
+            error: { key: VOICE_ERROR_KEYS[voiceError.code] },
+        };
     }
 
     if (!isLavalinkAvailable(client)) {
         return {
             ok: false,
             type: "lavalink_down",
-            message: await getLavalinkUnavailableMessage(client),
+            error: await getLavalinkUnavailableError(client),
         };
     }
 
@@ -57,7 +58,7 @@ async function playQuery(client, { guild, member, query, textChannelId, source }
         return {
             ok: false,
             type: "vc_mismatch",
-            message: formatVoiceChannelMismatch(guild, mismatch),
+            error: getVoiceChannelMismatchError(guild, mismatch),
         };
     }
 
@@ -98,7 +99,7 @@ async function playQuery(client, { guild, member, query, textChannelId, source }
             result = {
                 ok: false,
                 type: "no_results",
-                message: "**No results**\n-# Nothing matched that search.",
+                error: { key: "errors.noResults" },
             };
             return result;
         }
@@ -130,7 +131,7 @@ async function playQuery(client, { guild, member, query, textChannelId, source }
             result = {
                 ok: false,
                 type: "no_results",
-                message: "**No results**\n-# Nothing matched that search.",
+                error: { key: "errors.noResults" },
             };
             return result;
         }
@@ -140,7 +141,7 @@ async function playQuery(client, { guild, member, query, textChannelId, source }
             result = {
                 ok: false,
                 type: "duplicate",
-                message: formatDuplicateTrackMessage(track.info.title, duplicatePosition),
+                error: getDuplicateTrackError(track.info.title, duplicatePosition, t),
                 title: track.info.title,
             };
             return result;
@@ -176,7 +177,7 @@ async function playQuery(client, { guild, member, query, textChannelId, source }
             result = {
                 ok: false,
                 type: "rate_limit",
-                message: error.message,
+                error: { key: "errors.rateLimit.message" },
             };
             return result;
         }
@@ -185,9 +186,9 @@ async function playQuery(client, { guild, member, query, textChannelId, source }
         result = {
             ok: false,
             type: "error",
-            message: isLavalinkAvailable(client)
-                ? "**Search failed**\n-# Something went wrong while searching. Try again."
-                : await getLavalinkUnavailableMessage(client),
+            error: isLavalinkAvailable(client)
+                ? { key: "errors.searchFailed" }
+                : await getLavalinkUnavailableError(client),
         };
         return result;
     } finally {
@@ -208,5 +209,4 @@ async function playQuery(client, { guild, member, query, textChannelId, source }
 module.exports = {
     playQuery,
     isYouTubeQuery,
-    RATE_LIMIT_MESSAGE,
 };

@@ -33,12 +33,12 @@ async function getStatusCommandRef(client) {
     }
 }
 
-async function getLavalinkUnavailableMessage(client) {
+async function getLavalinkUnavailableError(client) {
     const statusRef = await getStatusCommandRef(client);
-    return (
-        "❌ **Lavalink is unavailable** — music search can't run right now.\n" +
-        `-# Try again shortly or check ${statusRef} for node status.`
-    );
+    return {
+        key: "errors.lavalink.unavailable",
+        params: { statusRef },
+    };
 }
 
 module.exports = {
@@ -46,5 +46,5 @@ module.exports = {
     countConnectedNodes,
     isLavalinkAvailable,
     getStatusCommandRef,
-    getLavalinkUnavailableMessage,
+    getLavalinkUnavailableError,
 };

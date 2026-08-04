@@ -1,5 +1,4 @@
 const {
-    SlashCommandBuilder,
     MessageFlags,
     ContainerBuilder,
     TextDisplayBuilder,
@@ -8,22 +7,20 @@ const {
     ButtonStyle,
 } = require("discord.js");
 const { getGuildSettings } = require("../utils/database");
+const { slashMeta, getT } = require("../i18n");
 
-function build247ConfirmContainer(isEnabled, inVoiceChannel = true) {
+function build247ConfirmContainer(t, isEnabled, inVoiceChannel = true) {
     const container = new ContainerBuilder();
-    const voiceNote = inVoiceChannel
-        ? ""
-        : "\n\n-# Join a voice channel to enable or disable 24/7.";
+    const voiceNote = inVoiceChannel ? "" : t("commands.247.joinVcNote");
 
     if (isEnabled) {
         container.addTextDisplayComponents(
             new TextDisplayBuilder().setContent(
-                "### 24/7 Mode\n\n" +
-                "**Current status**\n" +
-                "-# Enabled — I stay in voice even when the queue is empty.\n\n" +
-                "**Disable 24/7?**\n" +
-                "-# I'll leave the voice channel once playback stops and the queue is empty." +
-                voiceNote
+                `${t("commands.247.confirmHeading")}\n\n` +
+                    t("commands.247.enabledStatus") +
+                    "\n\n" +
+                    t("commands.247.enabledPrompt") +
+                    voiceNote
             )
         );
 
@@ -31,23 +28,22 @@ function build247ConfirmContainer(isEnabled, inVoiceChannel = true) {
             new ActionRowBuilder().addComponents(
                 new ButtonBuilder()
                     .setCustomId("247_disable")
-                    .setLabel("Disable 24/7")
+                    .setLabel(t("commands.247.disableButton"))
                     .setStyle(ButtonStyle.Danger),
                 new ButtonBuilder()
                     .setCustomId("247_cancel")
-                    .setLabel("Cancel")
+                    .setLabel(t("common.cancel"))
                     .setStyle(ButtonStyle.Secondary)
             )
         );
     } else {
         container.addTextDisplayComponents(
             new TextDisplayBuilder().setContent(
-                "### 24/7 Mode\n\n" +
-                "**Current status**\n" +
-                "-# Inactive — I leave when the queue is empty.\n\n" +
-                "**Enable 24/7?**\n" +
-                "-# I'll stay connected to your voice channel even between songs." +
-                voiceNote
+                `${t("commands.247.confirmHeading")}\n\n` +
+                    t("commands.247.disabledStatus") +
+                    "\n\n" +
+                    t("commands.247.disabledPrompt") +
+                    voiceNote
             )
         );
 
@@ -55,11 +51,11 @@ function build247ConfirmContainer(isEnabled, inVoiceChannel = true) {
             new ActionRowBuilder().addComponents(
                 new ButtonBuilder()
                     .setCustomId("247_enable")
-                    .setLabel("Enable 24/7")
+                    .setLabel(t("commands.247.enableButton"))
                     .setStyle(ButtonStyle.Success),
                 new ButtonBuilder()
                     .setCustomId("247_cancel")
-                    .setLabel("Cancel")
+                    .setLabel(t("common.cancel"))
                     .setStyle(ButtonStyle.Secondary)
             )
         );
@@ -68,37 +64,36 @@ function build247ConfirmContainer(isEnabled, inVoiceChannel = true) {
     return container;
 }
 
-function build247ResultContainer(isEnabled) {
+function build247ResultContainer(t, isEnabled) {
     const container = new ContainerBuilder();
     container.addTextDisplayComponents(
         new TextDisplayBuilder().setContent(
-            isEnabled
-                ? "### ✅ 24/7 Enabled\n\n**Status**\n-# I'll stay in the voice channel even when nothing is playing."
-                : "### ⏹ 24/7 Disabled\n\n**Status**\n-# I'll leave the voice channel when the queue is empty."
+            isEnabled ? t("commands.247.resultEnabled") : t("commands.247.resultDisabled")
         )
     );
     return container;
 }
 
-function build247CancelledContainer() {
+function build247CancelledContainer(t) {
     const container = new ContainerBuilder();
     container.addTextDisplayComponents(
-        new TextDisplayBuilder().setContent("### Cancelled\n\n-# 24/7 mode was not changed.")
+        new TextDisplayBuilder().setContent(
+            `${t("commands.247.cancelledHeading")}\n\n${t("commands.247.cancelledBody")}`
+        )
     );
     return container;
 }
 
 module.exports = {
-    data: new SlashCommandBuilder()
-        .setName("247")
-        .setDescription("Toggle 24/7 mode — bot stays in VC even when queue is empty"),
+    data: slashMeta("247"),
 
-    async execute(interaction) {
+    async execute(interaction, client) {
+        const t = getT(interaction, client);
         const isEnabled = Boolean(getGuildSettings(interaction.guild.id).twentyFourSeven);
         const inVoiceChannel = Boolean(interaction.member.voice?.channel);
 
         await interaction.reply({
-            components: [build247ConfirmContainer(isEnabled, inVoiceChannel)],
+            components: [build247ConfirmContainer(t, isEnabled, inVoiceChannel)],
             flags: MessageFlags.Ephemeral | MessageFlags.IsComponentsV2,
         });
     },

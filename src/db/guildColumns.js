@@ -9,6 +9,7 @@ const GUILD_COLUMN_MAP = {
     boundVoiceChannelId: "bound_voice_channel_id",
     defaultVolume: "default_volume",
     defaultAutoplay: "default_autoplay",
+    locale: "locale",
 };
 
 const BOOLEAN_KEYS = new Set([

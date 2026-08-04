@@ -20,13 +20,12 @@ const { createChatPlayIdleContainer } = require("./components");
 const { toggleTwentyFourSeven } = require("../services/sessionManager");
 const { deleteSession } = require("./chatPlaySetupSession");
 
-const SETUP_LOGO = "<:Musicify_Logo:1517828581638541493>";
 const SETUP_STEPS = 2;
 const EMOJI_UNCHECKED = { id: "1522858566141214844", name: "Musicify_Unchecked" };
 const EMOJI_CHECKED = { id: "1522858608478388275", name: "Musicify_Checked" };
 
-function buildSetupStepHeader(step) {
-    return `## ${SETUP_LOGO} Musicify ChatPlay\n-# Step ${step} of ${SETUP_STEPS}`;
+function buildSetupStepHeader(t, step) {
+    return t("chatplay.setup.stepHeader", { step, totalSteps: SETUP_STEPS });
 }
 
 function buildToggleButton(customId, enabled) {
@@ -58,7 +57,7 @@ async function deletePinNotification(channel) {
     }
 }
 
-async function pinChatPlayPlayerMessage(channel, message, botMember) {
+async function pinChatPlayPlayerMessage(channel, message, botMember, t) {
     const perms = botMember?.permissionsIn(channel);
     const canPin =
         perms?.has(PermissionFlagsBits.PinMessages) ||
@@ -67,8 +66,7 @@ async function pinChatPlayPlayerMessage(channel, message, botMember) {
     if (!canPin) {
         return {
             ok: false,
-            warning:
-                "Couldn't pin the player message — grant **Pin Messages** or **Manage Messages** in this channel.",
+            warning: t("chatplay.setup.warningPinFailed"),
         };
     }
 
@@ -79,44 +77,46 @@ async function pinChatPlayPlayerMessage(channel, message, botMember) {
     } catch (err) {
         return {
             ok: false,
-            warning: "Couldn't pin the player message — check **Pin Messages** permission.",
+            warning: t("chatplay.setup.warningPinPermission"),
         };
     }
 }
 
-function buildChannelSection(session, guild) {
+function buildChannelSection(t, session, guild) {
     const channel = guild.channels.cache.get(session.channelId);
-    const channelLine = channel ? `<#${session.channelId}>` : "Unknown channel";
+    const channelLine = channel
+        ? `<#${session.channelId}>`
+        : t("chatplay.setup.unknownChannel");
 
     return new SectionBuilder()
         .addTextDisplayComponents(
             new TextDisplayBuilder().setContent(
-                `**ChatPlay channel**\n-# ChatPlay will be set up in ${channelLine}.`
+                `${t("chatplay.setup.channelTitle")}\n-# ${t("chatplay.setup.channelDescription", { channel: channelLine })}`
             )
         )
         .setButtonAccessory(
             new ButtonBuilder()
                 .setCustomId("cp_setup_change_channel")
-                .setLabel("Edit")
+                .setLabel(t("chatplay.setup.editButton"))
                 .setStyle(ButtonStyle.Secondary)
         );
 }
 
-function buildChangeChannelModal() {
+function buildChangeChannelModal(t) {
     const channelSelect = new ChannelSelectMenuBuilder()
         .setCustomId("cp_setup_channel_select")
-        .setPlaceholder("Choose a text channel")
+        .setPlaceholder(t("chatplay.setup.modalPlaceholder"))
         .setRequired(true)
         .addChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement);
 
     const channelLabel = new LabelBuilder()
-        .setLabel("ChatPlay channel")
-        .setDescription("Where members type song names to request music")
+        .setLabel(t("chatplay.setup.modalChannelLabel"))
+        .setDescription(t("chatplay.setup.modalChannelDescription"))
         .setChannelSelectMenuComponent(channelSelect);
 
     return new ModalBuilder()
         .setCustomId("cp_setup_change_channel_modal")
-        .setTitle("Edit ChatPlay channel")
+        .setTitle(t("chatplay.setup.modalTitle"))
         .addLabelComponents(channelLabel);
 }
 
@@ -134,19 +134,20 @@ function buildReviewSection(title, description, customId, valueLabel) {
         );
 }
 
-function buildManage247Section(guildData, command247) {
+function buildManage247Section(t, guildData, command247) {
     const enable247 = Boolean(guildData.twentyFourSeven);
+    const action = enable247 ? t("chatplay.setup.turnOff") : t("chatplay.setup.turnOn");
 
     return new SectionBuilder()
         .addTextDisplayComponents(
             new TextDisplayBuilder().setContent(
-                `**24/7 mode**\n-# Click **${enable247 ? "Turn off" : "Turn on"}** to toggle, or use ${command247}.`
+                `${t("chatplay.setup.247Title")}\n-# ${t("chatplay.setup.manage247Description", { action, cmd247: command247 })}`
             )
         )
         .setButtonAccessory(
             new ButtonBuilder()
                 .setCustomId("cp_manage_toggle_247")
-                .setLabel(enable247 ? "Turn off" : "Turn on")
+                .setLabel(action)
                 .setStyle(enable247 ? ButtonStyle.Secondary : ButtonStyle.Success)
         );
 }
@@ -160,74 +161,75 @@ async function getCommandMention(client, name) {
     return `\`/${name}\``;
 }
 
-const SETUP_BEHAVIOURS = [
-    {
-        title: "**Slowmode (5s)** *(recommended)*",
-        description: "Reduces spam in the request channel.",
-        toggleCustomId: "cp_setup_toggle_slowmode",
-        reviewCustomId: "cp_setup_review_slowmode",
-        isEnabled: (session) => session.slowmode,
-        reviewValue: (session) => (session.slowmode ? "5 seconds" : "Off"),
-    },
-    {
-        title: "**Auto-delete requests** *(recommended)*",
-        description: "Removes song messages to keep the channel clean.",
-        toggleCustomId: "cp_setup_toggle_deletemsg",
-        reviewCustomId: "cp_setup_review_deletemsg",
-        isEnabled: (session) => session.deleteMessages,
-        reviewValue: (session) => (session.deleteMessages ? "On" : "Off"),
-    },
-    {
-        title: "**Pin player message** *(recommended)*",
-        description: "Pins the player message so it stays easy to find.",
-        toggleCustomId: "cp_setup_toggle_pin",
-        reviewCustomId: "cp_setup_review_pin",
-        isEnabled: (session) => session.pinPlayerMessage,
-        reviewValue: (session) => (session.pinPlayerMessage ? "On" : "Off"),
-    },
-    {
-        title: "**24/7 mode**",
-        description: "Join a VC to enable — bot stays in that channel 24/7.",
-        toggleCustomId: "cp_setup_toggle_247",
-        reviewCustomId: "cp_setup_review_247",
-        isEnabled: (session) => session.enable247,
-        reviewValue: (session) => (session.enable247 ? "On" : "Off"),
-    },
-];
-
-function getBehaviourDescription(option, session, guild) {
-    if (typeof option.getDescription === "function") {
-        return option.getDescription(session, guild);
-    }
-    return option.description;
+function getSetupBehaviours(t) {
+    return [
+        {
+            title: t("chatplay.setup.slowmodeTitle"),
+            description: t("chatplay.setup.slowmodeDescription"),
+            toggleCustomId: "cp_setup_toggle_slowmode",
+            reviewCustomId: "cp_setup_review_slowmode",
+            isEnabled: (session) => session.slowmode,
+            reviewValue: (session) =>
+                session.slowmode ? t("chatplay.setup.slowmodeOn") : t("common.off"),
+        },
+        {
+            title: t("chatplay.setup.deleteMessagesTitle"),
+            description: t("chatplay.setup.deleteMessagesDescription"),
+            toggleCustomId: "cp_setup_toggle_deletemsg",
+            reviewCustomId: "cp_setup_review_deletemsg",
+            isEnabled: (session) => session.deleteMessages,
+            reviewValue: (session) =>
+                session.deleteMessages ? t("common.on") : t("common.off"),
+        },
+        {
+            title: t("chatplay.setup.pinTitle"),
+            description: t("chatplay.setup.pinDescription"),
+            toggleCustomId: "cp_setup_toggle_pin",
+            reviewCustomId: "cp_setup_review_pin",
+            isEnabled: (session) => session.pinPlayerMessage,
+            reviewValue: (session) =>
+                session.pinPlayerMessage ? t("common.on") : t("common.off"),
+        },
+        {
+            title: t("chatplay.setup.247Title"),
+            description: t("chatplay.setup.247Description"),
+            toggleCustomId: "cp_setup_toggle_247",
+            reviewCustomId: "cp_setup_review_247",
+            isEnabled: (session) => session.enable247,
+            reviewValue: (session) =>
+                session.enable247 ? t("common.on") : t("common.off"),
+        },
+    ];
 }
 
-function buildSetupStep2Container(session, guild) {
+function stripRecommended(title) {
+    return title.replace(/ \*\(recommended\)\*/g, "");
+}
+
+function buildSetupStep2Container(t, session, guild) {
     const container = new ContainerBuilder();
     container.addTextDisplayComponents(
-        new TextDisplayBuilder().setContent(buildSetupStepHeader(1))
+        new TextDisplayBuilder().setContent(buildSetupStepHeader(t, 1))
     );
 
     container.addSeparatorComponents(new SeparatorBuilder().setDivider(false));
 
-    container.addSectionComponents(buildChannelSection(session, guild));
+    container.addSectionComponents(buildChannelSection(t, session, guild));
 
     container.addSeparatorComponents(new SeparatorBuilder().setDivider(false));
 
     container.addTextDisplayComponents(
-        new TextDisplayBuilder().setContent(
-            "**Channel behaviour**\n" +
-            "-# Tap the toggle next to each option."
-        )
+        new TextDisplayBuilder().setContent(t("chatplay.setup.behaviourHeading"))
     );
 
     container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
 
+    const behaviours = getSetupBehaviours(t);
     container.addSectionComponents(
-        ...SETUP_BEHAVIOURS.map((option) =>
+        ...behaviours.map((option) =>
             buildBehaviourSection(
                 option.title,
-                getBehaviourDescription(option, session, guild),
+                option.description,
                 option.toggleCustomId,
                 option.isEnabled(session)
             )
@@ -239,11 +241,11 @@ function buildSetupStep2Container(session, guild) {
     const navRow = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
             .setCustomId("cp_setup_cancel")
-            .setLabel("Cancel")
+            .setLabel(t("common.cancel"))
             .setStyle(ButtonStyle.Secondary),
         new ButtonBuilder()
             .setCustomId("cp_setup_continue")
-            .setLabel("Continue")
+            .setLabel(t("chatplay.setup.continueButton"))
             .setStyle(ButtonStyle.Primary)
     );
 
@@ -251,38 +253,35 @@ function buildSetupStep2Container(session, guild) {
     return container;
 }
 
-function stripRecommended(title) {
-    return title.replace(/ \*\(recommended\)\*/g, "");
-}
-
-function buildSetupStep3Container(session, guild) {
+function buildSetupStep3Container(t, session, guild) {
     const channel = guild.channels.cache.get(session.channelId);
+    const channelLine = channel
+        ? `<#${session.channelId}>`
+        : t("chatplay.setup.unknownChannel");
+    const behaviours = getSetupBehaviours(t);
 
     const container = new ContainerBuilder();
     container.addTextDisplayComponents(
         new TextDisplayBuilder().setContent(
-            `${buildSetupStepHeader(2)}\n\n` +
-            "**Review & confirm**\n" +
-            `-# Channel: ${channel ? `<#${session.channelId}>` : "Unknown"}`
+            `${buildSetupStepHeader(t, 2)}\n\n` +
+                `${t("chatplay.setup.reviewHeading")}\n` +
+                t("chatplay.setup.reviewChannel", { channel: channelLine })
         )
     );
 
     container.addSeparatorComponents(new SeparatorBuilder().setDivider(false));
 
     container.addTextDisplayComponents(
-        new TextDisplayBuilder().setContent(
-            "**Your settings**\n" +
-            "-# Review your choices before creating ChatPlay."
-        )
+        new TextDisplayBuilder().setContent(t("chatplay.setup.reviewSettings"))
     );
 
     container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
 
     container.addSectionComponents(
-        ...SETUP_BEHAVIOURS.map((option) =>
+        ...behaviours.map((option) =>
             buildReviewSection(
                 stripRecommended(option.title),
-                getBehaviourDescription(option, session, guild),
+                option.description,
                 option.reviewCustomId,
                 option.reviewValue(session, guild)
             )
@@ -294,11 +293,11 @@ function buildSetupStep3Container(session, guild) {
     const row = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
             .setCustomId("cp_setup_back")
-            .setLabel("Back")
+            .setLabel(t("chatplay.setup.backButton"))
             .setStyle(ButtonStyle.Secondary),
         new ButtonBuilder()
             .setCustomId("cp_setup_confirm")
-            .setLabel("Create ChatPlay")
+            .setLabel(t("chatplay.setup.createButton"))
             .setStyle(ButtonStyle.Success)
     );
 
@@ -306,11 +305,11 @@ function buildSetupStep3Container(session, guild) {
     return container;
 }
 
-function buildSetupCancelledContainer() {
+function buildSetupCancelledContainer(t) {
     const container = new ContainerBuilder();
     container.addTextDisplayComponents(
         new TextDisplayBuilder().setContent(
-            "### Setup cancelled\n\n-# ChatPlay was not changed."
+            `${t("chatplay.setup.cancelledHeading")}\n\n${t("chatplay.setup.cancelledBody")}`
         )
     );
     return container;
@@ -320,60 +319,60 @@ function hasChatPlayConfigured(guildData) {
     return Boolean(guildData.chatPlayChannelId);
 }
 
-function buildManageSettingsSections(guildData, command247) {
+function buildManageSettingsSections(t, guildData, command247) {
     const slowmode = guildData.chatPlaySlowmode !== false;
     const deleteMessages = guildData.chatPlayDeleteMessages !== false;
     const pinPlayer = guildData.chatPlayPinPlayerMessage !== false;
 
     return [
         buildReviewSection(
-            "**Slowmode (5s)**",
-            "Reduces spam in the request channel.",
+            stripRecommended(t("chatplay.setup.slowmodeTitle")),
+            t("chatplay.setup.slowmodeDescription"),
             "cp_manage_review_slowmode",
-            slowmode ? "5 seconds" : "Off"
+            slowmode ? t("chatplay.setup.slowmodeOn") : t("common.off")
         ),
         buildReviewSection(
-            "**Auto-delete requests**",
-            "Removes song messages to keep the channel clean.",
+            stripRecommended(t("chatplay.setup.deleteMessagesTitle")),
+            t("chatplay.setup.deleteMessagesDescription"),
             "cp_manage_review_deletemsg",
-            deleteMessages ? "On" : "Off"
+            deleteMessages ? t("common.on") : t("common.off")
         ),
         buildReviewSection(
-            "**Pin player message**",
-            "Pins the player message so it stays easy to find.",
+            stripRecommended(t("chatplay.setup.pinTitle")),
+            t("chatplay.setup.pinDescription"),
             "cp_manage_review_pin",
-            pinPlayer ? "On" : "Off"
+            pinPlayer ? t("common.on") : t("common.off")
         ),
-        buildManage247Section(guildData, command247),
+        buildManage247Section(t, guildData, command247),
     ];
 }
 
-async function buildChatPlayManageContainer(guildData, guild, client) {
+async function buildChatPlayManageContainer(t, guildData, guild, client) {
     const command247 = await getCommandMention(client, "247");
     const channel = guild.channels.cache.get(guildData.chatPlayChannelId);
-    const channelLine = channel ? `<#${guildData.chatPlayChannelId}>` : "Unknown channel";
+    const channelLine = channel
+        ? `<#${guildData.chatPlayChannelId}>`
+        : t("chatplay.setup.unknownChannel");
     const statusLine = guildData.chatPlayEnabled
-        ? `Enabled in ${channelLine}`
-        : `Disabled in ${channelLine}`;
+        ? t("chatplay.setup.manageEnabled", { channel: channelLine })
+        : t("chatplay.setup.manageDisabled", { channel: channelLine });
 
     const container = new ContainerBuilder();
     container.addTextDisplayComponents(
         new TextDisplayBuilder().setContent(
-            `## ${SETUP_LOGO} Musicify ChatPlay\n\n` +
-            "**Status**\n" +
-            `-# ${statusLine}`
+            `${t("chatplay.setup.manageHeading")}\n\n` + "**Status**\n" + `-# ${statusLine}`
         )
     );
 
     container.addSeparatorComponents(new SeparatorBuilder().setDivider(false));
 
     container.addTextDisplayComponents(
-        new TextDisplayBuilder().setContent("**Your settings**")
+        new TextDisplayBuilder().setContent(t("chatplay.setup.manageSettings"))
     );
 
     container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
 
-    container.addSectionComponents(...buildManageSettingsSections(guildData, command247));
+    container.addSectionComponents(...buildManageSettingsSections(t, guildData, command247));
 
     container.addSeparatorComponents(new SeparatorBuilder().setDivider(false));
 
@@ -381,17 +380,17 @@ async function buildChatPlayManageContainer(guildData, guild, client) {
         new ActionRowBuilder().addComponents(
             new ButtonBuilder()
                 .setCustomId("cp_manage_enable")
-                .setLabel("Enable")
+                .setLabel(t("chatplay.setup.enableButton"))
                 .setStyle(ButtonStyle.Success)
                 .setDisabled(Boolean(guildData.chatPlayEnabled)),
             new ButtonBuilder()
                 .setCustomId("cp_manage_disable")
-                .setLabel("Disable")
+                .setLabel(t("chatplay.setup.disableButton"))
                 .setStyle(ButtonStyle.Secondary)
                 .setDisabled(!guildData.chatPlayEnabled),
             new ButtonBuilder()
                 .setCustomId("cp_manage_delete")
-                .setLabel("Delete ChatPlay")
+                .setLabel(t("chatplay.setup.deleteButton"))
                 .setStyle(ButtonStyle.Danger)
         )
     );
@@ -399,20 +398,20 @@ async function buildChatPlayManageContainer(guildData, guild, client) {
     return container;
 }
 
-function buildChatPlayDeleteConfirmContainer(guildData, guild) {
+function buildChatPlayDeleteConfirmContainer(t, guildData, guild) {
     const channel = guild.channels.cache.get(guildData.chatPlayChannelId);
-    const channelLine = channel ? `<#${guildData.chatPlayChannelId}>` : "Unknown channel";
+    const channelLine = channel
+        ? `<#${guildData.chatPlayChannelId}>`
+        : t("chatplay.setup.unknownChannel");
 
     const container = new ContainerBuilder();
     container.addTextDisplayComponents(
         new TextDisplayBuilder().setContent(
-            "## ⚠️ Delete ChatPlay\n\n" +
-            "**This action is permanent**\n" +
-            `-# ChatPlay will be removed from ${channelLine}.\n\n` +
-            "**What will be deleted**\n" +
-            "-# • The player message in this channel\n" +
-            "-# • All ChatPlay settings for this server\n\n" +
-            "-# This cannot be undone. Press **Confirm** to proceed."
+            `${t("chatplay.setup.deleteConfirmHeading")}\n\n` +
+                `${t("chatplay.setup.deleteConfirmPermanent")}\n` +
+                `${t("chatplay.setup.deleteConfirmRemovedFrom", { channel: channelLine })}\n\n` +
+                `${t("chatplay.setup.deleteConfirmWhatDeleted")}\n\n` +
+                t("chatplay.setup.deleteConfirmFooter")
         )
     );
 
@@ -422,11 +421,11 @@ function buildChatPlayDeleteConfirmContainer(guildData, guild) {
         new ActionRowBuilder().addComponents(
             new ButtonBuilder()
                 .setCustomId("cp_manage_delete_confirm")
-                .setLabel("Confirm")
+                .setLabel(t("chatplay.setup.confirmButton"))
                 .setStyle(ButtonStyle.Danger),
             new ButtonBuilder()
                 .setCustomId("cp_manage_delete_cancel")
-                .setLabel("Cancel")
+                .setLabel(t("common.cancel"))
                 .setStyle(ButtonStyle.Secondary)
         )
     );
@@ -434,15 +433,13 @@ function buildChatPlayDeleteConfirmContainer(guildData, guild) {
     return container;
 }
 
-function buildChatPlayDeletedContainer() {
+function buildChatPlayDeletedContainer(t) {
     const container = new ContainerBuilder();
     container.addTextDisplayComponents(
         new TextDisplayBuilder().setContent(
-            "### 🗑 ChatPlay Deleted\n\n" +
-            "**Removed**\n" +
-            "-# ChatPlay has been removed from this server.\n\n" +
-            "**Set up again**\n" +
-            "-# Run `/chatplay` in your music channel to start fresh."
+            `${t("chatplay.setup.deletedHeading")}\n\n` +
+                `${t("chatplay.setup.deletedRemoved")}\n\n` +
+                t("chatplay.setup.deletedSetupAgain")
         )
     );
     return container;
@@ -493,22 +490,22 @@ async function deleteChatPlay(client, guild, guildData) {
     });
 }
 
-function buildSetupSuccessContainer(session, guild, extras = {}) {
+function buildSetupSuccessContainer(t, session, guild, extras = {}) {
     const lines = [
-        "### ✅ ChatPlay is live\n",
-        "**Try it now**",
-        "1. Join a voice channel",
-        `2. Type a song name in <#${session.channelId}>`,
+        t("chatplay.setup.successHeading"),
+        t("chatplay.setup.successTryIt"),
+        t("chatplay.setup.successStep1"),
+        t("chatplay.setup.successStep2", { channel: `<#${session.channelId}>` }),
     ];
 
     if (session.pinPlayerMessage && !extras.pinWarning) {
-        lines.push("", "-# Player message pinned in this channel.");
+        lines.push("", t("chatplay.setup.successPinned"));
     } else if (!session.pinPlayerMessage) {
-        lines.push("", "**Recommended**", "• Pin the player message so it stays visible");
+        lines.push("", t("chatplay.setup.successRecommendedPin"));
     }
 
     if (session.enable247) {
-        lines.push("-# 24/7 mode is enabled — the bot will stay in voice between songs.");
+        lines.push(t("chatplay.setup.success247Enabled"));
     }
 
     if (extras.twentyFourSevenWarning) {
@@ -523,7 +520,7 @@ function buildSetupSuccessContainer(session, guild, extras = {}) {
         lines.push("", "**Note**", `-# ${extras.pinWarning}`);
     }
 
-    lines.push("", "**Manage**", "-# Run `/chatplay` to enable, disable, or delete ChatPlay.");
+    lines.push("", t("chatplay.setup.successManage"));
 
     const container = new ContainerBuilder();
     container.addTextDisplayComponents(
@@ -532,13 +529,13 @@ function buildSetupSuccessContainer(session, guild, extras = {}) {
     return container;
 }
 
-async function finalizeChatPlaySetup(client, session, guild, { voiceChannelId = null } = {}) {
+async function finalizeChatPlaySetup(client, session, guild, { voiceChannelId = null, t } = {}) {
     const guildId = session.guildId;
     const guildData = getGuildData(guildId);
     const channel = guild.channels.cache.get(session.channelId);
 
     if (!channel) {
-        throw new Error("Setup channel no longer exists.");
+        throw new Error(t("chatplay.setup.errorChannelGone"));
     }
 
     if (guildData.chatPlayChannelId && guildData.chatPlayMessageId) {
@@ -569,12 +566,11 @@ async function finalizeChatPlaySetup(client, session, guild, { voiceChannelId = 
                 enabled: true,
             });
         } else {
-            twentyFourSevenWarning =
-                "24/7 wasn't enabled — join a voice channel and run `/247` to turn it on.";
+            twentyFourSevenWarning = t("chatplay.setup.warning247NotEnabled");
         }
     }
 
-    const container = createChatPlayIdleContainer(guildData);
+    const container = createChatPlayIdleContainer(t, guildData);
     const chatMsg = await channel.send({
         components: [container],
         flags: MessageFlags.IsComponentsV2,
@@ -594,14 +590,14 @@ async function finalizeChatPlaySetup(client, session, guild, { voiceChannelId = 
                 session.slowmode ? "ChatPlay setup — prevents spam" : "ChatPlay setup — slowmode disabled"
             );
         } catch (err) {
-            slowmodeWarning = "Couldn't update slowmode — check **Manage Channels** permission.";
+            slowmodeWarning = t("chatplay.setup.warningSlowmodeFailed");
         }
     } else if (session.slowmode) {
-        slowmodeWarning = "Slowmode wasn't applied — grant **Manage Channels** in this channel.";
+        slowmodeWarning = t("chatplay.setup.warningSlowmodeNotApplied");
     }
 
     if (session.pinPlayerMessage) {
-        const pinResult = await pinChatPlayPlayerMessage(channel, chatMsg, botMember);
+        const pinResult = await pinChatPlayPlayerMessage(channel, chatMsg, botMember, t);
         if (!pinResult.ok) {
             pinWarning = pinResult.warning;
         }

@@ -1,54 +1,54 @@
-const { SlashCommandBuilder, MessageFlags, ContainerBuilder, TextDisplayBuilder } = require("discord.js");
+const { MessageFlags, ContainerBuilder, TextDisplayBuilder } = require("discord.js");
+const { slashMeta, getT, applySlashOption } = require("../i18n");
+const { buildErrorContainer, ephemeralV2 } = require("../utils/replies");
 
 module.exports = {
-    data: new SlashCommandBuilder()
-        .setName("remove")
-        .setDescription("Remove a track from the queue")
-        .addIntegerOption((opt) =>
-            opt
-                .setName("position")
-                .setDescription("Position of the track to remove (1-based)")
-                .setRequired(true)
-                .setMinValue(1)
-        ),
+    data: slashMeta("remove").addIntegerOption((opt) =>
+        applySlashOption(
+            opt.setName("position").setRequired(true).setMinValue(1),
+            "remove",
+            "position"
+        )
+    ),
 
     async execute(interaction, client) {
+        const t = getT(interaction, client);
         const player = client.riffy.players.get(interaction.guild.id);
         if (!player) {
-            return interaction.reply({
-                content: "❌ No active player.",
-                flags: MessageFlags.Ephemeral,
-            });
+            return interaction.reply(
+                ephemeralV2(buildErrorContainer(t("errors.noActivePlayer"), t))
+            );
         }
 
         if (!interaction.member.voice?.channel) {
-            return interaction.reply({
-                content: "❌ You need to be in a voice channel!",
-                flags: MessageFlags.Ephemeral,
-            });
+            return interaction.reply(
+                ephemeralV2(buildErrorContainer(t("errors.voiceChannelRequired"), t))
+            );
         }
 
         const pos = interaction.options.getInteger("position");
         if (pos > player.queue.length) {
-            return interaction.reply({
-                content: `❌ Invalid position. Queue has **${player.queue.length}** track(s).`,
-                flags: MessageFlags.Ephemeral,
-            });
+            return interaction.reply(
+                ephemeralV2(
+                    buildErrorContainer(
+                        t("commands.remove.invalidPosition", { count: player.queue.length }),
+                        t
+                    )
+                )
+            );
         }
 
         const removed = player.queue.splice(pos - 1, 1);
-        const trackName = removed[0]?.info?.title || "Unknown";
+        const trackName = removed[0]?.info?.title || t("common.unknown");
 
         const container = new ContainerBuilder();
         container.addTextDisplayComponents(
             new TextDisplayBuilder().setContent(
-                "### 🗑️ Track Removed\n\n" +
-                "**Track**\n" +
-                `-# ${trackName}\n\n` +
-                "**Was at**\n" +
-                `-# Position #${pos}\n\n` +
-                "**Queue**\n" +
-                `-# ${player.queue.length} track(s) remaining`
+                `${t("commands.remove.successHeading")}\n\n` +
+                    `${t("common.labels.track")}\n` +
+                    `-# ${trackName}\n\n` +
+                    `${t("commands.remove.wasAt", { position: pos })}\n\n` +
+                    t("commands.remove.queueRemaining", { count: player.queue.length })
             )
         );
         await interaction.reply({

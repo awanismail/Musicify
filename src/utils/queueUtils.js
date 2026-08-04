@@ -1,7 +1,3 @@
-/**
- * Find where a track URI appears in the player (now playing or queued).
- * Queue positions are 1-indexed.
- */
 function getTrackQueuePosition(player, uri) {
     if (!player || !uri) return null;
 
@@ -17,18 +13,21 @@ function getTrackQueuePosition(player, uri) {
     return null;
 }
 
-function formatDuplicateTrackMessage(title, position) {
-    const safeTitle = title || "Unknown";
+function getDuplicateTrackError(title, position, t) {
+    const safeTitle = title || (t ? t("common.unknown") : "Unknown");
     if (!position) return null;
 
     if (position.type === "playing") {
-        return `**${safeTitle}** is already playing!`;
+        return { key: "duplicate.playing", params: { title: safeTitle } };
     }
 
-    return `**${safeTitle}** is already in the queue at **#${position.position}**!`;
+    return {
+        key: "duplicate.queued",
+        params: { title: safeTitle, position: position.position },
+    };
 }
 
 module.exports = {
     getTrackQueuePosition,
-    formatDuplicateTrackMessage,
+    getDuplicateTrackError,
 };

@@ -1,38 +1,33 @@
-const { SlashCommandBuilder, MessageFlags, ContainerBuilder, TextDisplayBuilder } = require("discord.js");
+const { MessageFlags, ContainerBuilder, TextDisplayBuilder } = require("discord.js");
+const { slashMeta, getT, applySlashOption } = require("../i18n");
+const { buildErrorContainer, ephemeralV2 } = require("../utils/replies");
 
 module.exports = {
-    data: new SlashCommandBuilder()
-        .setName("move")
-        .setDescription("Move a track to a different position in the queue")
+    data: slashMeta("move")
         .addIntegerOption((opt) =>
-            opt
-                .setName("from")
-                .setDescription("Current position of the track (1-based)")
-                .setRequired(true)
-                .setMinValue(1)
+            applySlashOption(
+                opt.setName("from").setRequired(true).setMinValue(1),
+                "move",
+                "from"
+            )
         )
         .addIntegerOption((opt) =>
-            opt
-                .setName("to")
-                .setDescription("New position for the track (1-based)")
-                .setRequired(true)
-                .setMinValue(1)
+            applySlashOption(opt.setName("to").setRequired(true).setMinValue(1), "move", "to")
         ),
 
     async execute(interaction, client) {
+        const t = getT(interaction, client);
         const player = client.riffy.players.get(interaction.guild.id);
         if (!player) {
-            return interaction.reply({
-                content: "❌ No active player.",
-                flags: MessageFlags.Ephemeral,
-            });
+            return interaction.reply(
+                ephemeralV2(buildErrorContainer(t("errors.noActivePlayer"), t))
+            );
         }
 
         if (!interaction.member.voice?.channel) {
-            return interaction.reply({
-                content: "❌ You need to be in a voice channel!",
-                flags: MessageFlags.Ephemeral,
-            });
+            return interaction.reply(
+                ephemeralV2(buildErrorContainer(t("errors.voiceChannelRequired"), t))
+            );
         }
 
         const from = interaction.options.getInteger("from");
@@ -40,17 +35,20 @@ module.exports = {
         const queueLen = player.queue.length;
 
         if (from > queueLen || to > queueLen) {
-            return interaction.reply({
-                content: `❌ Invalid position. Queue has **${queueLen}** track(s).`,
-                flags: MessageFlags.Ephemeral,
-            });
+            return interaction.reply(
+                ephemeralV2(
+                    buildErrorContainer(
+                        t("commands.move.invalidPosition", { count: queueLen }),
+                        t
+                    )
+                )
+            );
         }
 
         if (from === to) {
-            return interaction.reply({
-                content: "❌ From and to positions are the same.",
-                flags: MessageFlags.Ephemeral,
-            });
+            return interaction.reply(
+                ephemeralV2(buildErrorContainer(t("commands.move.samePosition"), t))
+            );
         }
 
         const [track] = player.queue.splice(from - 1, 1);
@@ -59,11 +57,11 @@ module.exports = {
         const container = new ContainerBuilder();
         container.addTextDisplayComponents(
             new TextDisplayBuilder().setContent(
-                "### ↕️ Track Moved\n\n" +
-                "**Track**\n" +
-                `-# ${track.info.title}\n\n` +
-                "**Position**\n" +
-                `-# #${from} → #${to}`
+                `${t("commands.move.successHeading")}\n\n` +
+                    `${t("common.labels.track")}\n` +
+                    `-# ${track.info.title}\n\n` +
+                    `${t("common.labels.position")}\n` +
+                    t("commands.move.positionLine", { from, to })
             )
         );
         await interaction.reply({

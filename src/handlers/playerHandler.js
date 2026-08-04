@@ -9,6 +9,7 @@ const {
     handleQueueEnd,
     handlePlayerDisconnect,
 } = require("../services/sessionManager");
+const { getT } = require("../i18n");
 const config = require("../../config");
 const { limitedResolve, PRIORITY_SUGGESTIONS } = require("../utils/resolveLimiter");
 
@@ -117,11 +118,12 @@ async function refreshPlayerMessage(client, guildId) {
 
         const guildData = getGuildData(guildId);
         const track = player.current;
+        const t = getT.forGuild(guildId, client);
 
         const musicardBuffer = await generateMusicCard(track, player, guildData);
         const container = guildData.chatPlayChannelId
-            ? createChatPlayNowPlayingContainer(track, player, guildData, musicardBuffer)
-            : createNowPlayingContainer(track, player, guildData, musicardBuffer);
+            ? createChatPlayNowPlayingContainer(t, track, player, guildData, musicardBuffer)
+            : createNowPlayingContainer(t, track, player, guildData, musicardBuffer);
 
         const files = [];
         if (musicardBuffer) {
@@ -189,6 +191,7 @@ function setupPlayerHandler(client) {
     client.riffy.on("trackStart", async (player, track) => {
         try {
             const guildData = getGuildData(player.guildId);
+            const t = getT.forGuild(player.guildId, client);
 
             // Save the previous track for the "Previous" button
             if (player.previous) {
@@ -211,8 +214,8 @@ function setupPlayerHandler(client) {
 
             // Build the container - use ChatPlay version if in ChatPlay channel
             const container = guildData.chatPlayChannelId
-                ? createChatPlayNowPlayingContainer(track, player, guildData, musicardBuffer)
-                : createNowPlayingContainer(track, player, guildData, musicardBuffer);
+                ? createChatPlayNowPlayingContainer(t, track, player, guildData, musicardBuffer)
+                : createNowPlayingContainer(t, track, player, guildData, musicardBuffer);
 
             // Prepare files
             const files = [];

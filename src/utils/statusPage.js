@@ -10,6 +10,7 @@ const {
 } = require("discord.js");
 const config = require("../../config");
 const { formatIncidents } = require("./incidents");
+const { tEn } = require("../i18n");
 
 function getNodeList(client) {
     const nodes = client.riffy?.nodeMap;
@@ -29,34 +30,40 @@ function countConnectedNodes(nodeList) {
     return connected;
 }
 
-function getSystemStatus(connectedNodes, totalNodes) {
+function getSystemStatus(connectedNodes, totalNodes, t) {
     const lavalinkUp = connectedNodes > 0;
     const lavalinkFullyConnected = connectedNodes === totalNodes && totalNodes > 0;
 
     if (!lavalinkUp) {
-        return { emoji: "🔴", text: "Lavalink unavailable — playback may not work" };
+        return { emoji: "🔴", text: t("status.lavalinkUnavailable") };
     }
 
     if (!lavalinkFullyConnected) {
-        return { emoji: "🟡", text: "Some Lavalink nodes are offline" };
+        return { emoji: "🟡", text: t("status.someNodesOffline") };
     }
 
-    return { emoji: "🟢", text: "All systems operational" };
+    return { emoji: "🟢", text: t("status.allOperational") };
 }
 
-function getComponentStatus(connected) {
+function getComponentStatus(connected, t) {
     return connected
-        ? { emoji: "🟢", label: "Connected" }
-        : { emoji: "🔴", label: "Disconnected" };
+        ? { emoji: "🟢", label: t("status.connected") }
+        : { emoji: "🔴", label: t("status.disconnected") };
 }
 
-function buildStatusContainer(client, { interactive = true, showSupportButton = interactive } = {}) {
+function getNodeDisplayName(index, t) {
+    return index === 0 ? t("status.mainNode") : t("status.nodeN", { index });
+}
+
+function buildStatusContainer(client, { interactive = true, showSupportButton = interactive, t } = {}) {
+    const translate = t || ((key, params) => tEn(key, params));
     const nodeList = getNodeList(client);
     const totalNodes = config.nodes.length;
     const connectedNodes = countConnectedNodes(nodeList);
     const { emoji: statusEmoji, text: statusText } = getSystemStatus(
         connectedNodes,
-        totalNodes
+        totalNodes,
+        translate
     );
 
     const uptimeSeconds = process.uptime();
@@ -73,7 +80,7 @@ function buildStatusContainer(client, { interactive = true, showSupportButton = 
 
     container.addTextDisplayComponents(
         new TextDisplayBuilder().setContent(
-            `**Recent Incidents**\n` + formatIncidents(4)
+            `${translate("status.recentIncidents")}\n` + formatIncidents(translate, 4)
         )
     );
 
@@ -82,28 +89,27 @@ function buildStatusContainer(client, { interactive = true, showSupportButton = 
     const linkButtons = showSupportButton
         ? [
               new ButtonBuilder()
-                  .setLabel("Support Server")
+                  .setLabel(translate("status.buttons.supportServer"))
                   .setURL("https://discord.gg/MRjEUhDCpZ")
                   .setStyle(ButtonStyle.Link),
               new ButtonBuilder()
-                  .setLabel("Vote")
-                  .setEmoji("⭐")
+                  .setLabel(translate("common.vote"))
                   .setURL("https://top.gg/bot/1502977716196999309/vote")
                   .setStyle(ButtonStyle.Link),
           ]
         : [
               new ButtonBuilder()
-                  .setLabel("Report Issue")
+                  .setLabel(translate("status.buttons.reportIssue"))
                   .setEmoji("🐛")
                   .setURL("https://github.com/codebymitch/Musicify/issues")
                   .setStyle(ButtonStyle.Link),
               new ButtonBuilder()
-                  .setLabel("Vote")
+                  .setLabel(translate("common.vote"))
                   .setEmoji("⭐")
                   .setURL("https://top.gg/bot/1502977716196999309/vote")
                   .setStyle(ButtonStyle.Link),
               new ButtonBuilder()
-                  .setLabel("Suggest")
+                  .setLabel(translate("status.buttons.suggest"))
                   .setEmoji("💡")
                   .setURL("https://discord.com/channels/1503210009251545152/1503721044291092480")
                   .setStyle(ButtonStyle.Link),
@@ -115,9 +121,9 @@ function buildStatusContainer(client, { interactive = true, showSupportButton = 
 
     container.addTextDisplayComponents(
         new TextDisplayBuilder().setContent(
-            `**Uptime**\n` +
-            `-# 🕒 <t:${startTimestamp}:f> (<t:${startTimestamp}:R>)\n` +
-            `-# *Times shown in your local timezone*`
+            `${translate("status.uptimeHeading")}\n` +
+                `-# 🕒 <t:${startTimestamp}:f> (<t:${startTimestamp}:R>)\n` +
+                translate("status.uptimeTimezoneNote")
         )
     );
 
@@ -125,15 +131,15 @@ function buildStatusContainer(client, { interactive = true, showSupportButton = 
 
     container.addTextDisplayComponents(
         new TextDisplayBuilder().setContent(
-            "### Lavalink Node Stats\n" +
-            `-# ${connectedNodes}/${totalNodes} nodes available`
+            `${translate("status.nodesHeading")}\n` +
+                translate("status.nodesAvailable", { connected: connectedNodes, total: totalNodes })
         )
     );
 
     if (interactive) {
         const selectMenu = new StringSelectMenuBuilder()
             .setCustomId("node_stats_select")
-            .setPlaceholder("📡 Select a node")
+            .setPlaceholder(translate("status.nodesPlaceholder"))
             .setMinValues(1)
             .setMaxValues(1);
 
@@ -142,11 +148,12 @@ function buildStatusContainer(client, { interactive = true, showSupportButton = 
             const connectedNode = nodeList.find((n) => n.name === configNode.name);
             const connected = connectedNode?.connected || connectedNode?.isConnected || false;
             const nodeStatusEmoji = connected ? "🟢" : "🔴";
-            const displayName = i === 0 ? "Main Node" : `Node ${i}`;
+            const displayName = getNodeDisplayName(i, translate);
+            const nodeStatus = getComponentStatus(connected, translate);
             selectMenu.addOptions(
                 new StringSelectMenuOptionBuilder()
                     .setLabel(displayName)
-                    .setDescription(`${nodeStatusEmoji} ${connected ? "Connected" : "Disconnected"}`)
+                    .setDescription(`${nodeStatusEmoji} ${nodeStatus.label}`)
                     .setValue(`node_${i}`)
             );
         }
@@ -156,20 +163,28 @@ function buildStatusContainer(client, { interactive = true, showSupportButton = 
         const nodeLines = config.nodes.map((configNode, i) => {
             const connectedNode = nodeList.find((n) => n.name === configNode.name);
             const connected = connectedNode?.connected || connectedNode?.isConnected || false;
-            const displayName = i === 0 ? "Main Node" : `Node ${i}`;
-            const nodeStatus = getComponentStatus(connected);
-            return `-# ${nodeStatus.emoji} **${displayName}** — ${nodeStatus.label}`;
+            const displayName = getNodeDisplayName(i, translate);
+            const nodeStatus = getComponentStatus(connected, translate);
+            return translate("status.nodeHealthLine", {
+                emoji: nodeStatus.emoji,
+                name: displayName,
+                status: nodeStatus.label,
+            });
         });
 
         container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
         container.addTextDisplayComponents(
-            new TextDisplayBuilder().setContent("**Node Health**\n" + nodeLines.join("\n"))
+            new TextDisplayBuilder().setContent(
+                `${translate("status.nodeHealthHeading")}\n` + nodeLines.join("\n")
+            )
         );
 
         const updatedAt = Math.floor(Date.now() / 1000);
         container.addSeparatorComponents(new SeparatorBuilder().setDivider(false));
         container.addTextDisplayComponents(
-            new TextDisplayBuilder().setContent(`-# Last updated <t:${updatedAt}:R>`)
+            new TextDisplayBuilder().setContent(
+                translate("status.lastUpdated", { timestamp: updatedAt })
+            )
         );
     }
 
@@ -181,4 +196,6 @@ module.exports = {
     countConnectedNodes,
     getSystemStatus,
     getNodeList,
+    getComponentStatus,
+    getNodeDisplayName,
 };

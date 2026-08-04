@@ -7,6 +7,7 @@ const {
     ButtonBuilder,
     ButtonStyle,
 } = require("discord.js");
+const { getT } = require("../i18n");
 
 const WELCOME_TTL_MS = 2 * 60 * 1000;
 const welcomeDeleteTimers = new Map();
@@ -16,31 +17,32 @@ const TEXT_CHANNEL_TYPES = new Set([
     ChannelType.GuildAnnouncement,
 ]);
 
-function buildWelcomeBody(cmd) {
+function buildWelcomeBody(cmd, t) {
     return (
-        `## 👋 Welcome to Musicify!\n\n` +
-        `- Use ${cmd.chatplay} to enable **ChatPlay** — type song names in a channel to play instantly\n\n` +
-        `**Quick start**\n` +
-        `1. Join a voice channel\n` +
-        `2. Use ${cmd.play} \`<song name or URL>\` — supports Spotify, SoundCloud, Deezer, Apple Music, Tidal, Qobuz & JioSaavn\n` +
-        `3. Control playback with interactive buttons or slash commands\n\n` +
-        `- If you need help or found a bug, join our [support server](https://discord.gg/MRjEUhDCpZ), run ${cmd.status} to see if the bot's systems are online, or check out the open source [GitHub repo](https://github.com/codebymitch/Musicify)!`
+        `${t("welcome.heading")}\n\n` +
+        `${t("welcome.chatplayLine", { cmdChatplay: cmd.chatplay })}\n\n` +
+        `${t("welcome.quickStartHeading")}\n` +
+        `${t("welcome.step1")}\n` +
+        `${t("welcome.step2", { cmdPlay: cmd.play, platforms: t("common.supportedPlatforms") })}\n` +
+        `${t("welcome.step3")}\n\n` +
+        `${t("welcome.languageLine", { cmdLanguage: cmd.language })}\n\n` +
+        t("welcome.footer", { cmdStatus: cmd.status })
     );
 }
 
-function buildWelcomeComponents(deleteAtUnix, cmd) {
+function buildWelcomeComponents(deleteAtUnix, cmd, t) {
     return [
-        new TextDisplayBuilder().setContent(buildWelcomeBody(cmd)),
+        new TextDisplayBuilder().setContent(buildWelcomeBody(cmd, t)),
         new SectionBuilder()
             .addTextDisplayComponents(
                 new TextDisplayBuilder().setContent(
-                    `-# This message will delete <t:${deleteAtUnix}:R>`
+                    t("welcome.deleteNotice", { timestamp: deleteAtUnix })
                 )
             )
             .setButtonAccessory(
                 new ButtonBuilder()
                     .setCustomId("welcome_dismiss")
-                    .setLabel("Delete message now")
+                    .setLabel(t("welcome.dismissButton"))
                     .setStyle(ButtonStyle.Secondary)
             ),
     ];
@@ -121,7 +123,6 @@ function cancelWelcomeDeleteTimer(messageId) {
 
 async function sendGuildWelcome(client, guild) {
     try {
-        // Guild data (especially channels) is often incomplete the instant guildCreate fires
         await new Promise((resolve) => setTimeout(resolve, 1500));
 
         const me = await resolveGuildContext(guild);
@@ -134,10 +135,11 @@ async function sendGuildWelcome(client, guild) {
             return;
         }
 
-        const cmd = await resolveCommandMentions(client, ["play", "chatplay", "status"]);
+        const t = getT.forGuild(guild.id, client, guild);
+        const cmd = await resolveCommandMentions(client, ["play", "chatplay", "status", "language"]);
         const deleteAt = Math.floor((Date.now() + WELCOME_TTL_MS) / 1000);
         const message = await channel.send({
-            components: buildWelcomeComponents(deleteAt, cmd),
+            components: buildWelcomeComponents(deleteAt, cmd, t),
             flags: MessageFlags.IsComponentsV2,
         });
 

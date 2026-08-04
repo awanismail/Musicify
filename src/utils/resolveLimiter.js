@@ -4,13 +4,9 @@ const { enrichResolveResult } = require("./resolveResult");
 const PRIORITY_PLAY = 5;
 const PRIORITY_SUGGESTIONS = 1;
 
-const RATE_LIMIT_MESSAGE =
-    "⏳ **Slow down** you're sending requests too quickly.\n" +
-    "-# Wait a few seconds between songs. Channel slowmode may also apply.";
-
 class ResolveRateLimitError extends Error {
-    constructor(message = RATE_LIMIT_MESSAGE) {
-        super(message);
+    constructor() {
+        super("RATE_LIMIT");
         this.name = "ResolveRateLimitError";
     }
 }
@@ -90,5 +86,4 @@ module.exports = {
     PRIORITY_PLAY,
     PRIORITY_SUGGESTIONS,
     ResolveRateLimitError,
-    RATE_LIMIT_MESSAGE,
 };

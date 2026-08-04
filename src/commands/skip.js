@@ -1,34 +1,30 @@
-const { SlashCommandBuilder, MessageFlags, ContainerBuilder, TextDisplayBuilder } = require("discord.js");
+const { MessageFlags, ContainerBuilder, TextDisplayBuilder } = require("discord.js");
+const { slashMeta, getT } = require("../i18n");
+const { replyError } = require("../utils/replies");
 
 module.exports = {
-    data: new SlashCommandBuilder()
-        .setName("skip")
-        .setDescription("Skip the current track"),
+    data: slashMeta("skip"),
 
     async execute(interaction, client) {
+        const t = getT(interaction, client);
         const player = client.riffy.players.get(interaction.guild.id);
+
         if (!player) {
-            return interaction.reply({
-                content: "❌ No active player.",
-                flags: MessageFlags.Ephemeral,
-            });
+            return replyError(interaction, { key: "errors.noActivePlayer" }, { t });
         }
 
         if (!interaction.member.voice?.channel) {
-            return interaction.reply({
-                content: "❌ You need to be in a voice channel!",
-                flags: MessageFlags.Ephemeral,
-            });
+            return replyError(interaction, { key: "errors.voiceChannelRequired" }, { t });
         }
 
-        const skippedTitle = player.current?.info?.title || "Unknown";
+        const skippedTitle = player.current?.info?.title || t("common.unknown");
         player.stop();
 
         const container = new ContainerBuilder();
         container.addTextDisplayComponents(
             new TextDisplayBuilder().setContent(
-                "### ⏭ Skipped\n\n" +
-                "**Track**\n" +
+                `${t("commands.skip.successHeading")}\n\n` +
+                `${t("common.labels.track")}\n` +
                 `-# ${skippedTitle}`
             )
         );

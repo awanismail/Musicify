@@ -1,4 +1,4 @@
-const SCHEMA_VERSION = 6;
+const SCHEMA_VERSION = 7;
 
 function getSchemaVersion(db) {
     db.exec(`
@@ -61,6 +61,13 @@ function migrateToV6(db) {
     }
 }
 
+function migrateToV7(db) {
+    const columns = db.prepare("PRAGMA table_info(guilds)").all();
+    if (!columns.some((col) => col.name === "locale")) {
+        db.exec("ALTER TABLE guilds ADD COLUMN locale TEXT");
+    }
+}
+
 function runMigrations(db) {
     let version = getSchemaVersion(db);
 
@@ -80,6 +87,12 @@ function runMigrations(db) {
         migrateToV6(db);
         setSchemaVersion(db, 6);
         version = 6;
+    }
+
+    if (version < 7) {
+        migrateToV7(db);
+        setSchemaVersion(db, 7);
+        version = 7;
     }
 
     if (version !== SCHEMA_VERSION) {

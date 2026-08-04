@@ -1,37 +1,31 @@
-const { SlashCommandBuilder, MessageFlags, ContainerBuilder, TextDisplayBuilder } = require("discord.js");
+const { MessageFlags, ContainerBuilder, TextDisplayBuilder } = require("discord.js");
 const { formatDuration } = require("../utils/components");
+const { slashMeta, getT, applySlashOption } = require("../i18n");
+const { buildErrorContainer, ephemeralV2 } = require("../utils/replies");
 
 module.exports = {
-    data: new SlashCommandBuilder()
-        .setName("seek")
-        .setDescription("Seek to a specific position in the track")
-        .addStringOption((opt) =>
-            opt
-                .setName("time")
-                .setDescription("Time to seek to (e.g. 1:30 or 90)")
-                .setRequired(true)
-        ),
+    data: slashMeta("seek").addStringOption((opt) =>
+        applySlashOption(opt.setName("time").setRequired(true), "seek", "time")
+    ),
 
     async execute(interaction, client) {
+        const t = getT(interaction, client);
         const player = client.riffy.players.get(interaction.guild.id);
         if (!player || !player.current) {
-            return interaction.reply({
-                content: "❌ Nothing is playing right now.",
-                flags: MessageFlags.Ephemeral,
-            });
+            return interaction.reply(
+                ephemeralV2(buildErrorContainer(t("errors.nothingPlaying"), t))
+            );
         }
 
         if (!interaction.member.voice?.channel) {
-            return interaction.reply({
-                content: "❌ You need to be in a voice channel!",
-                flags: MessageFlags.Ephemeral,
-            });
+            return interaction.reply(
+                ephemeralV2(buildErrorContainer(t("errors.voiceChannelRequired"), t))
+            );
         }
 
         const timeStr = interaction.options.getString("time");
         let ms = 0;
 
-        // Parse time — supports "1:30", "90", "1:30:00"
         if (timeStr.includes(":")) {
             const parts = timeStr.split(":").map(Number);
             if (parts.length === 2) {
@@ -44,17 +38,22 @@ module.exports = {
         }
 
         if (isNaN(ms) || ms < 0) {
-            return interaction.reply({
-                content: "❌ Invalid time format. Use `1:30` or `90`.",
-                flags: MessageFlags.Ephemeral,
-            });
+            return interaction.reply(
+                ephemeralV2(buildErrorContainer(t("commands.seek.invalidFormat"), t))
+            );
         }
 
         if (ms > player.current.info.length) {
-            return interaction.reply({
-                content: `❌ Can't seek past track duration (${formatDuration(player.current.info.length)}).`,
-                flags: MessageFlags.Ephemeral,
-            });
+            return interaction.reply(
+                ephemeralV2(
+                    buildErrorContainer(
+                        t("commands.seek.pastDuration", {
+                            duration: formatDuration(player.current.info.length),
+                        }),
+                        t
+                    )
+                )
+            );
         }
 
         player.seek(ms);
@@ -62,11 +61,14 @@ module.exports = {
         const container = new ContainerBuilder();
         container.addTextDisplayComponents(
             new TextDisplayBuilder().setContent(
-                "### ⏩ Seeked\n\n" +
-                "**Position**\n" +
-                `-# ${formatDuration(ms)} / ${formatDuration(player.current.info.length)}\n\n` +
-                "**Track**\n" +
-                `-# ${player.current.info.title}`
+                `${t("commands.seek.successHeading")}\n\n` +
+                    `${t("common.labels.position")}\n` +
+                    `${t("commands.seek.positionLine", {
+                        current: formatDuration(ms),
+                        total: formatDuration(player.current.info.length),
+                    })}\n\n` +
+                    `${t("common.labels.track")}\n` +
+                    `-# ${player.current.info.title}`
             )
         );
         await interaction.reply({

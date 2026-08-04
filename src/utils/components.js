@@ -13,9 +13,6 @@ const {
 } = require("discord.js");
 const { ButtonStyle } = require("discord.js");
 
-/**
- * Format milliseconds to mm:ss
- */
 function formatDuration(ms) {
     if (!ms || isNaN(ms)) return "0:00";
     const totalSeconds = Math.floor(ms / 1000);
@@ -24,41 +21,37 @@ function formatDuration(ms) {
     return `${minutes}:${seconds.toString().padStart(2, "0")}`;
 }
 
-function truncateText(text, max, fallback = "Unknown") {
-    const value = (text || fallback).trim();
+function truncateText(text, max, fallback) {
+    const value = (text || fallback || "").trim() || fallback || "";
     if (value.length <= max) return value;
     return `${value.slice(0, Math.max(1, max - 1))}…`;
 }
 
-/** Single-line queue entry — compact for mobile */
-function formatQueueTrackLine(index, track, { titleMax = 34, authorMax = 18 } = {}) {
-    const title = truncateText(track.info?.title, titleMax);
+function formatQueueTrackLine(t, index, track, { titleMax = 34, authorMax = 18 } = {}) {
+    const title = truncateText(track.info?.title, titleMax, t("common.unknown"));
     const author = truncateText(track.info?.author, authorMax, "?");
     const duration = formatDuration(track.info?.length);
-    return `-# **${index}.** ${title} — ${author} · \`${duration}\``;
+    return t("player.queueTrackLine", { index, title, author, duration });
 }
 
-function formatUpNextPreview(queue, maxItems = 3) {
-    if (!queue?.length) {
-        return null;
-    }
+function formatUpNextPreview(t, queue, maxItems = 3) {
+    if (!queue?.length) return null;
 
-    const lines = ["-# **Up next**"];
+    const lines = [t("player.upNext")];
     const upcoming = queue.slice(0, maxItems);
     for (let i = 0; i < upcoming.length; i++) {
-        lines.push(formatQueueTrackLine(i + 1, upcoming[i], { titleMax: 32, authorMax: 16 }));
+        lines.push(formatQueueTrackLine(t, i + 1, upcoming[i], { titleMax: 32, authorMax: 16 }));
     }
     if (queue.length > maxItems) {
-        lines.push(`-# ***+${queue.length - maxItems} in queue***`);
+        lines.push(t("player.moreInQueue", { count: queue.length - maxItems }));
     }
     return lines.join("\n");
 }
 
-/** Discord select option values are capped at 100 chars — use index, not URI */
-function buildSongSuggestionSelectMenu(suggestions) {
+function buildSongSuggestionSelectMenu(t, suggestions) {
     const selectMenu = new StringSelectMenuBuilder()
         .setCustomId("song_suggestion")
-        .setPlaceholder("🎶 Pick a similar song")
+        .setPlaceholder(t("components.suggestionsPlaceholder"))
         .setMinValues(1)
         .setMaxValues(1);
 
@@ -67,8 +60,10 @@ function buildSongSuggestionSelectMenu(suggestions) {
         const suggestion = items[i];
         selectMenu.addOptions(
             new StringSelectMenuOptionBuilder()
-                .setLabel(truncateText(suggestion.info?.title, 100))
-                .setDescription(truncateText(suggestion.info?.author, 100, "Unknown Artist"))
+                .setLabel(truncateText(suggestion.info?.title, 100, t("common.unknown")))
+                .setDescription(
+                    truncateText(suggestion.info?.author, 100, t("common.unknownArtist"))
+                )
                 .setValue(String(i))
         );
     }
@@ -76,23 +71,36 @@ function buildSongSuggestionSelectMenu(suggestions) {
     return selectMenu;
 }
 
-/**
- * Create the "Now Playing" container using Components V2
- * Design matches the example screenshot with -# subtext
- */
-function createNowPlayingContainer(track, player, guildData, musicardBuffer) {
-    const container = new ContainerBuilder();
+const LOOP_MODE_KEYS = { none: "off", track: "track", queue: "queue" };
 
-    // --- Now Playing header + track info with thumbnail ---
+function formatLoopMode(t, mode) {
+    if (!mode || mode === "none") return t("common.none");
+    const choiceKey = LOOP_MODE_KEYS[mode];
+    if (choiceKey) return t(`slash.loop.choices.mode.${choiceKey}`);
+    return t("common.unknown");
+}
+
+function formatPlayerStatus(t, guildData) {
+    return (
+        t("player.autoplay", { value: guildData.autoplay ? t("common.on") : t("common.off") }) +
+        "\n" +
+        t("player.loop", { value: formatLoopMode(t, guildData.loop) }) +
+        "\n" +
+        t("player.volume", { value: guildData.volume })
+    );
+}
+
+function createNowPlayingContainer(t, track, player, guildData, musicardBuffer) {
+    const container = new ContainerBuilder();
+    const title = track.info.title || t("common.unknown");
+    const author = track.info.author || t("common.unknownArtist");
+    const requesterId = track.info.requester?.id || track.info.requester;
+
     const section = new SectionBuilder()
         .addTextDisplayComponents(
-            new TextDisplayBuilder().setContent(
-                `**Now Playing — ${track.info.title || "Unknown"}**\n` +
-                `-# By ${track.info.author || "Unknown Artist"}`
-            ),
-            new TextDisplayBuilder().setContent(
-                `-# Requested by <@${track.info.requester?.id || track.info.requester}>`
-            )
+            new TextDisplayBuilder().setContent(t("player.nowPlayingHeader", { title })),
+            new TextDisplayBuilder().setContent(t("player.byArtist", { author })),
+            new TextDisplayBuilder().setContent(t("player.requestedBy", { userId: requesterId }))
         )
         .setThumbnailAccessory(
             new ThumbnailBuilder().setURL(
@@ -101,29 +109,17 @@ function createNowPlayingContainer(track, player, guildData, musicardBuffer) {
         );
 
     container.addSectionComponents(section);
-
-    // --- Separator ---
     container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
-
-    // --- Status: Autoplay / Loop / Volume ---
     container.addTextDisplayComponents(
-        new TextDisplayBuilder().setContent(
-            `Autoplay: ${guildData.autoplay ? "On" : "Off"}\n` +
-            `Loop: ${capitalize(guildData.loop)}\n` +
-            `Volume: ${guildData.volume}%`
-        )
+        new TextDisplayBuilder().setContent(formatPlayerStatus(t, guildData))
     );
 
-    // --- Separator + up next (only when queue has tracks) ---
-    const upNext = formatUpNextPreview(player.queue);
+    const upNext = formatUpNextPreview(t, player.queue);
     if (upNext) {
         container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
-        container.addTextDisplayComponents(
-            new TextDisplayBuilder().setContent(upNext)
-        );
+        container.addTextDisplayComponents(new TextDisplayBuilder().setContent(upNext));
     }
 
-    // --- Musicard image ---
     if (musicardBuffer) {
         container.addMediaGalleryComponents(
             new MediaGalleryBuilder().addItems(
@@ -132,16 +128,14 @@ function createNowPlayingContainer(track, player, guildData, musicardBuffer) {
         );
     }
 
-    // --- Song suggestions dropdown ---
-    if (guildData.suggestions && guildData.suggestions.length > 0) {
+    if (guildData.suggestions?.length > 0) {
         container.addActionRowComponents(
             new ActionRowBuilder().addComponents(
-                buildSongSuggestionSelectMenu(guildData.suggestions)
+                buildSongSuggestionSelectMenu(t, guildData.suggestions)
             )
         );
     }
 
-    // --- Row 1: Shuffle | Previous | Pause/Play | Next | Loop ---
     const isPaused = player.paused;
     const row1 = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
@@ -166,7 +160,6 @@ function createNowPlayingContainer(track, player, guildData, musicardBuffer) {
             .setStyle(guildData.loop !== "none" ? ButtonStyle.Primary : ButtonStyle.Secondary)
     );
 
-    // --- Row 2: Autoplay | Vol Down | Stop | Vol Up | Queue ---
     const row2 = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
             .setCustomId("autoplay")
@@ -194,46 +187,31 @@ function createNowPlayingContainer(track, player, guildData, musicardBuffer) {
     return container;
 }
 
-
-
-/**
- * Create a ChatPlay idle container (no image, disabled buttons)
- */
-function buildChatPlayHeaderContent() {
-    return (
-        "## <:Musicify_Logo:1517828581638541493> Musicify ChatPlay\n" +
-        "-# *Type a song name in this channel to play it!*\n" +
-        "-# I'll search, play it in your voice channel, and keep this message updated."
-    );
+function buildChatPlayHeaderContent(t) {
+    return t("components.chatplay.header");
 }
 
-function formatChatPlayIdleStatusLine(guildData = {}) {
+function formatChatPlayIdleStatusLine(t, guildData = {}) {
     if (guildData.chatPlayEnabled === false) {
-        if (guildData.twentyFourSeven) {
-            return "-# **Status:** Not waiting 24 hours, 7 days a week for a song request...";
-        }
-        return "-# **Status:** Not waiting for a song request...";
+        return guildData.twentyFourSeven
+            ? t("components.chatplay.statusNotWaiting247")
+            : t("components.chatplay.statusNotWaiting");
     }
-    if (guildData.twentyFourSeven) {
-        return "-# **Status:** Waiting 24 hours, 7 days a week for a song request...";
-    }
-    return "-# **Status:** Waiting for a song request...";
+    return guildData.twentyFourSeven
+        ? t("components.chatplay.statusWaiting247")
+        : t("components.chatplay.statusWaiting");
 }
 
-function createChatPlayIdleContainer(guildData = {}) {
+function createChatPlayIdleContainer(t, guildData = {}) {
     const container = new ContainerBuilder();
-
     container.addTextDisplayComponents(
-        new TextDisplayBuilder().setContent(buildChatPlayHeaderContent())
+        new TextDisplayBuilder().setContent(buildChatPlayHeaderContent(t))
     );
-
     container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
-
     container.addTextDisplayComponents(
-        new TextDisplayBuilder().setContent(formatChatPlayIdleStatusLine(guildData))
+        new TextDisplayBuilder().setContent(formatChatPlayIdleStatusLine(t, guildData))
     );
 
-    // Disabled control buttons
     const row1 = new ActionRowBuilder().addComponents(
         new ButtonBuilder().setCustomId("shuffle").setEmoji("🔀").setStyle(ButtonStyle.Secondary).setDisabled(true),
         new ButtonBuilder().setCustomId("previous").setEmoji("⏮️").setStyle(ButtonStyle.Secondary).setDisabled(true),
@@ -251,41 +229,25 @@ function createChatPlayIdleContainer(guildData = {}) {
     );
 
     container.addActionRowComponents(row1, row2);
-
     return container;
 }
 
-function formatChatPlayStatusLine(guildData) {
-    return (
-        `Autoplay: ${guildData.autoplay ? "On" : "Off"}\n` +
-        `Loop: ${capitalize(guildData.loop)}\n` +
-        `Volume: ${guildData.volume}%`
-    );
-}
-
-/**
- * Create a ChatPlay now-playing container (includes ChatPlay header + now playing info)
- */
-function createChatPlayNowPlayingContainer(track, player, guildData, musicardBuffer) {
+function createChatPlayNowPlayingContainer(t, track, player, guildData, musicardBuffer) {
     const container = new ContainerBuilder();
-
-    // --- ChatPlay Header (always visible) ---
     container.addTextDisplayComponents(
-        new TextDisplayBuilder().setContent(buildChatPlayHeaderContent())
+        new TextDisplayBuilder().setContent(buildChatPlayHeaderContent(t))
     );
-
     container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
 
-    // --- Now Playing header + track info with thumbnail ---
+    const title = track.info.title || t("common.unknown");
+    const author = track.info.author || t("common.unknownArtist");
+    const requesterId = track.info.requester?.id || track.info.requester;
+
     const section = new SectionBuilder()
         .addTextDisplayComponents(
-            new TextDisplayBuilder().setContent(
-                `**Now Playing — ${track.info.title || "Unknown"}**\n` +
-                `-# By ${track.info.author || "Unknown Artist"}`
-            ),
-            new TextDisplayBuilder().setContent(
-                `-# Requested by <@${track.info.requester?.id || track.info.requester}>`
-            )
+            new TextDisplayBuilder().setContent(t("player.nowPlayingHeader", { title })),
+            new TextDisplayBuilder().setContent(t("player.byArtist", { author })),
+            new TextDisplayBuilder().setContent(t("player.requestedBy", { userId: requesterId }))
         )
         .setThumbnailAccessory(
             new ThumbnailBuilder().setURL(
@@ -294,25 +256,17 @@ function createChatPlayNowPlayingContainer(track, player, guildData, musicardBuf
         );
 
     container.addSectionComponents(section);
-
-    // --- Separator ---
     container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
-
-    // --- Status: Autoplay / Loop / Volume ---
     container.addTextDisplayComponents(
-        new TextDisplayBuilder().setContent(formatChatPlayStatusLine(guildData))
+        new TextDisplayBuilder().setContent(formatPlayerStatus(t, guildData))
     );
 
-    // --- Separator + up next (only when queue has tracks) ---
-    const upNext = formatUpNextPreview(player.queue);
+    const upNext = formatUpNextPreview(t, player.queue);
     if (upNext) {
         container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
-        container.addTextDisplayComponents(
-            new TextDisplayBuilder().setContent(upNext)
-        );
+        container.addTextDisplayComponents(new TextDisplayBuilder().setContent(upNext));
     }
 
-    // --- Musicard image ---
     if (musicardBuffer) {
         container.addMediaGalleryComponents(
             new MediaGalleryBuilder().addItems(
@@ -321,16 +275,14 @@ function createChatPlayNowPlayingContainer(track, player, guildData, musicardBuf
         );
     }
 
-    // --- Song suggestions dropdown ---
-    if (guildData.suggestions && guildData.suggestions.length > 0) {
+    if (guildData.suggestions?.length > 0) {
         container.addActionRowComponents(
             new ActionRowBuilder().addComponents(
-                buildSongSuggestionSelectMenu(guildData.suggestions)
+                buildSongSuggestionSelectMenu(t, guildData.suggestions)
             )
         );
     }
 
-    // --- Row 1: Shuffle | Previous | Pause/Play | Next | Loop ---
     const isPaused = player.paused;
     const row1 = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
@@ -355,7 +307,6 @@ function createChatPlayNowPlayingContainer(track, player, guildData, musicardBuf
             .setStyle(guildData.loop !== "none" ? ButtonStyle.Primary : ButtonStyle.Secondary)
     );
 
-    // --- Row 2: Autoplay | Vol Down | Stop | Vol Up | Queue ---
     const row2 = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
             .setCustomId("autoplay")
@@ -380,14 +331,10 @@ function createChatPlayNowPlayingContainer(track, player, guildData, musicardBuf
     );
 
     container.addActionRowComponents(row1, row2);
-
     return container;
 }
 
-/**
- * Create queue display container with pagination
- */
-function createQueueContainer(queue, currentTrack, page = 0) {
+function createQueueContainer(t, queue, currentTrack, page = 0) {
     const container = new ContainerBuilder();
     const pageSize = 12;
     const totalTracks = queue?.length || 0;
@@ -396,25 +343,26 @@ function createQueueContainer(queue, currentTrack, page = 0) {
     if (page < 0) page = 0;
     if (page >= totalPages) page = totalPages - 1;
 
-    const lines = [];
-    lines.push(`### Queue · ${totalTracks}`);
+    const lines = [t("components.queueHeading", { count: totalTracks })];
 
     if (currentTrack) {
-        const title = truncateText(currentTrack.info?.title, 40);
+        const title = truncateText(currentTrack.info?.title, 40, t("common.unknown"));
         const author = truncateText(currentTrack.info?.author, 22, "?");
         lines.push(
-            `-# **Now Playing:** **${title}** — ${author} · \`${formatDuration(currentTrack.info?.length)}\``
+            t("player.queueNowPlayingLine", {
+                title,
+                author,
+                duration: formatDuration(currentTrack.info?.length),
+            })
         );
-        if (queue?.length) {
-            lines.push("");
-        }
+        if (queue?.length) lines.push("");
     }
 
     if (queue?.length) {
         const start = page * pageSize;
         const end = Math.min(start + pageSize, queue.length);
         for (let i = start; i < end; i++) {
-            lines.push(formatQueueTrackLine(i + 1, queue[i]));
+            lines.push(formatQueueTrackLine(t, i + 1, queue[i]));
         }
     }
 
@@ -457,34 +405,16 @@ function createQueueContainer(queue, currentTrack, page = 0) {
     return container;
 }
 
-function capitalize(str) {
-    if (!str) return "None";
-    return str.charAt(0).toUpperCase() + str.slice(1);
-}
-
-/**
- * Create a ChatPlay container with loading state
- */
-function createChatPlayLoadingContainer() {
+function createChatPlayLoadingContainer(t) {
     const container = new ContainerBuilder();
-
     container.addTextDisplayComponents(
-        new TextDisplayBuilder().setContent(
-            "## <:Musicify_Logo:1517828581638541493> Musicify ChatPlay\n" +
-            "-# *Type a song name in this channel to play it!*\n" +
-            "-# I'll search, play it in your voice channel, and keep this message updated."
-        )
+        new TextDisplayBuilder().setContent(buildChatPlayHeaderContent(t))
     );
-
     container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
-
     container.addTextDisplayComponents(
-        new TextDisplayBuilder().setContent(
-            "-# **Status:** Searching for your song..."
-        )
+        new TextDisplayBuilder().setContent(t("components.chatplay.statusLoading"))
     );
 
-    // Disabled control buttons
     const row1 = new ActionRowBuilder().addComponents(
         new ButtonBuilder().setCustomId("shuffle").setEmoji("🔀").setStyle(ButtonStyle.Secondary).setDisabled(true),
         new ButtonBuilder().setCustomId("previous").setEmoji("⏮️").setStyle(ButtonStyle.Secondary).setDisabled(true),
@@ -505,15 +435,18 @@ function createChatPlayLoadingContainer() {
     return container;
 }
 
-function createStopConfirmContainer(queueLength) {
+function createStopConfirmContainer(t, queueLength) {
     const container = new ContainerBuilder();
-    const songLabel = queueLength === 1 ? "song" : "songs";
+    const bodyKey =
+        queueLength === 1
+            ? "components.stopConfirm.bodySingular"
+            : "components.stopConfirm.bodyPlural";
 
     container.addTextDisplayComponents(
         new TextDisplayBuilder().setContent(
-            "### ⚠️ Stop playback?\n\n" +
-            `There are **${queueLength}** ${songLabel} in the queue.\n\n` +
-            "-# Press **stop** again or confirm below within 15 seconds."
+            `${t("components.stopConfirm.heading")}\n\n` +
+                `${t(bodyKey, { count: queueLength })}\n\n` +
+                t("components.stopConfirm.footer")
         )
     );
 
@@ -521,7 +454,7 @@ function createStopConfirmContainer(queueLength) {
         new ActionRowBuilder().addComponents(
             new ButtonBuilder()
                 .setCustomId("stop_confirm")
-                .setLabel("STOP")
+                .setLabel(t("components.stopConfirm.button"))
                 .setStyle(ButtonStyle.Danger)
         )
     );

@@ -6,27 +6,28 @@ const { TextDisplayBuilder, SeparatorBuilder } = require("discord.js");
  *
  * Uses the bold-label + subtext design pattern.
  */
-function addNodeDetails(container, node, index) {
+function addNodeDetails(t, container, node, index) {
     const connected = node.connected || node.isConnected || false;
     const statusEmoji = connected ? "🟢" : "🔴";
-    const statusText = connected ? "Connected" : "Disconnected";
+    const statusText = connected ? t("status.connected") : t("status.disconnected");
+    const nodeName = node.name || t("status.nodeN", { index: index + 1 });
 
     container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
 
     // Node identity + connection info
     container.addTextDisplayComponents(
         new TextDisplayBuilder().setContent(
-            `### ${statusEmoji} ${node.name || `Node ${index + 1}`}\n\n` +
-            "**Status**\n" +
+            `### ${statusEmoji} ${nodeName}\n\n` +
+            `${t("common.labels.status")}\n` +
             `-# ${statusText}\n` +
-            "**Rest Version**\n" +
-            `-# ${node.restVersion || "N/A"}`
+            `${t("status.restVersion")}\n` +
+            `-# ${node.restVersion || t("common.na")}`
         )
     );
 
     if (!connected || !node.stats) {
         container.addTextDisplayComponents(
-            new TextDisplayBuilder().setContent("-# *Node is offline — no stats available.*")
+            new TextDisplayBuilder().setContent(t("status.nodeOffline"))
         );
         return;
     }
@@ -38,10 +39,10 @@ function addNodeDetails(container, node, index) {
     // Players
     container.addTextDisplayComponents(
         new TextDisplayBuilder().setContent(
-            "**Players**\n\n" +
-            "**Active**\n" +
+            `${t("status.playersHeading")}\n\n` +
+            `${t("status.playersActive")}\n` +
             `-# 🎶 ${stats.playingPlayers || 0}\n` +
-            "**Total**\n" +
+            `${t("status.playersTotal")}\n` +
             `-# 📻 ${stats.players || 0}`
         )
     );
@@ -49,17 +50,17 @@ function addNodeDetails(container, node, index) {
     container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
 
     // CPU
-    let cpuContent = "**CPU**\n\n";
+    let cpuContent = `${t("status.cpuHeading")}\n\n`;
     if (stats.cpu) {
         cpuContent +=
-            "**Cores**\n" +
-            `-# 🖥️ ${stats.cpu.cores || "N/A"}\n` +
-            "**System Load**\n" +
+            `${t("status.cpuCores")}\n` +
+            `-# 🖥️ ${stats.cpu.cores || t("common.na")}\n` +
+            `${t("status.cpuSystemLoad")}\n` +
             `-# ⚙️ ${(stats.cpu.systemLoad * 100).toFixed(1)}%\n` +
-            "**Lavalink Load**\n" +
+            `${t("status.cpuLavalinkLoad")}\n` +
             `-# 🔧 ${(stats.cpu.lavalinkLoad * 100).toFixed(1)}%`;
     } else {
-        cpuContent += "-# *No CPU data available*";
+        cpuContent += t("status.noCpuData");
     }
 
     container.addTextDisplayComponents(new TextDisplayBuilder().setContent(cpuContent));

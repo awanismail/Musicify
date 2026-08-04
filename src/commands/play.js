@@ -1,34 +1,27 @@
-const { SlashCommandBuilder, MessageFlags, ContainerBuilder, TextDisplayBuilder } = require("discord.js");
+const { MessageFlags, ContainerBuilder, TextDisplayBuilder } = require("discord.js");
+const { slashMeta, applySlashOption, getT, translateError } = require("../i18n");
 const { buildErrorContainer, buildFeedbackContainer, ephemeralV2 } = require("../utils/replies");
-const { playQuery } = require("../services/playQuery");
+const { playQuery, isYouTubeQuery } = require("../services/playQuery");
 
 module.exports = {
-    data: new SlashCommandBuilder()
-        .setName("play")
-        .setDescription("Play a song or add it to the queue")
-        .addStringOption((opt) =>
-            opt.setName("query").setDescription("Song name or URL").setRequired(true)
-        ),
+    data: slashMeta("play").addStringOption((opt) =>
+        applySlashOption(opt.setName("query").setRequired(true), "play", "query")
+    ),
 
     async execute(interaction, client) {
+        const t = getT(interaction, client);
         const query = interaction.options.getString("query");
 
-        if (/(?:youtube\.com|youtu\.be)/i.test(query)) {
+        if (isYouTubeQuery(query)) {
             return interaction.reply(
-                ephemeralV2(
-                    buildErrorContainer(
-                        "**YouTube not supported**\n-# YouTube links are currently not supported."
-                    )
-                )
+                ephemeralV2(buildErrorContainer(t("errors.youtubeNotSupported"), t))
             );
         }
 
         const member = interaction.member;
         if (!member.voice?.channel) {
             return interaction.reply(
-                ephemeralV2(
-                    buildErrorContainer("**Voice channel required**\n-# Join a voice channel first.")
-                )
+                ephemeralV2(buildErrorContainer(t("errors.voiceChannelRequiredFormatted"), t))
             );
         }
 
@@ -40,35 +33,42 @@ module.exports = {
             query,
             textChannelId: interaction.channel.id,
             source: "slash",
+            t,
         });
 
         if (!result.ok) {
-            const isSoft =
-                result.type === "lavalink_down" ||
-                result.type === "vc_mismatch" ||
-                result.type === "duplicate";
-            let container;
             if (result.type === "duplicate") {
-                container = buildFeedbackContainer(
-                    `### ⚠️ Duplicate track\n\n-# ${result.message}`
+                return interaction.editReply(
+                    ephemeralV2(
+                        buildFeedbackContainer(
+                            `${t("duplicate.heading")}\n\n-# ${translateError(t, result.error)}`
+                        )
+                    )
                 );
-            } else {
-                container = isSoft
-                    ? buildFeedbackContainer(result.message)
-                    : buildErrorContainer(result.message);
             }
+
+            const isSoft =
+                result.type === "lavalink_down" || result.type === "vc_mismatch";
+            const message = translateError(t, result.error);
+            const container = isSoft
+                ? buildFeedbackContainer(message)
+                : buildErrorContainer(message, t);
             return interaction.editReply(ephemeralV2(container));
         }
 
         if (result.type === "playlist") {
             let content =
-                "### ✅ Playlist Added\n\n" +
-                `**${result.playlistName}**\n\n` +
-                "**Tracks**\n" +
-                `-# ${result.addedCount} of ${result.totalCount} songs added to queue`;
+                `${t("commands.play.playlistHeading")}\n\n` +
+                `**${result.playlistName || t("common.playlist")}**\n\n` +
+                `${t("commands.play.tracksLine", {
+                    addedCount: result.addedCount,
+                    totalCount: result.totalCount,
+                })}`;
 
             if (result.duplicates.length > 0) {
-                content += `\n\n**Duplicates Skipped**\n-# ${result.duplicates.length} songs already in queue`;
+                content += `\n\n${t("commands.play.duplicatesSkipped", {
+                    count: result.duplicates.length,
+                })}`;
             }
 
             const container = new ContainerBuilder();
@@ -79,20 +79,19 @@ module.exports = {
             });
         }
 
-        let positionLine = "-# Starting playback now";
-        if (result.queuePosition) {
-            positionLine = `-# #${result.queuePosition} in queue`;
-        }
+        const positionLine = result.queuePosition
+            ? t("player.inQueue", { position: result.queuePosition })
+            : t("player.startingPlayback");
 
         const container = new ContainerBuilder();
         container.addTextDisplayComponents(
             new TextDisplayBuilder().setContent(
-                "### ✅ Track Added\n\n" +
-                "**Title**\n" +
+                `${t("commands.play.trackHeading")}\n\n` +
+                `${t("common.labels.title")}\n` +
                 `-# ${result.title}\n\n` +
-                "**Artist**\n" +
+                `${t("common.labels.artist")}\n` +
                 `-# ${result.author}\n\n` +
-                "**Position**\n" +
+                `${t("common.labels.position")}\n` +
                 positionLine
             )
         );

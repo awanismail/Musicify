@@ -1,5 +1,4 @@
 const {
-    SlashCommandBuilder,
     MessageFlags,
     ContainerBuilder,
     TextDisplayBuilder,
@@ -7,20 +6,20 @@ const {
     SectionBuilder,
     ThumbnailBuilder,
 } = require("discord.js");
+const { slashMeta, getT } = require("../i18n");
 
 module.exports = {
-    data: new SlashCommandBuilder()
-        .setName("stats")
-        .setDescription("Show Musicify's statistics"),
+    data: slashMeta("stats"),
 
     async execute(interaction, client) {
+        const t = getT(interaction, client);
         await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
         const container = new ContainerBuilder();
 
         const header = new SectionBuilder()
             .addTextDisplayComponents(
-                new TextDisplayBuilder().setContent("### <:Musicify_Logo:1517828581638541493> Statistics")
+                new TextDisplayBuilder().setContent(t("commands.stats.heading"))
             )
             .setThumbnailAccessory(
                 new ThumbnailBuilder().setURL(
@@ -49,15 +48,15 @@ module.exports = {
 
         container.addTextDisplayComponents(
             new TextDisplayBuilder().setContent(
-                "**Bot ID**\n" +
-                `-# \`${client.user.id}\`\n` +
-                "**Uptime**\n" +
-                `-# <t:${startTimestamp}:f> (<t:${startTimestamp}:R>)\n` +
-                `-# *Times shown in your local timezone*\n` +
-                "**Ping**\n" +
-                `-# ${client.ws.ping}ms\n` +
-                "**Runtime**\n" +
-                `-# [Node.js ${process.version}](https://nodejs.org/) · [discord.js v${require("discord.js").version}](https://discord.js.org/)`
+                `${t("commands.stats.botId")}\n` +
+                    `-# \`${client.user.id}\`\n` +
+                    `${t("commands.stats.uptime")}\n` +
+                    `-# <t:${startTimestamp}:f> (<t:${startTimestamp}:R>)\n` +
+                    `${t("commands.stats.uptimeTimezoneNote")}\n` +
+                    `${t("commands.stats.ping")}\n` +
+                    `-# ${client.ws.ping}ms\n` +
+                    `${t("commands.stats.runtime")}\n` +
+                    `-# [Node.js ${process.version}](https://nodejs.org/) · [discord.js v${require("discord.js").version}](https://discord.js.org/)`
             )
         );
 
@@ -65,16 +64,16 @@ module.exports = {
 
         container.addTextDisplayComponents(
             new TextDisplayBuilder().setContent(
-                "**Guilds**\n" +
-                `-# ${totalGuilds.toLocaleString()}\n` +
-                "**Users**\n" +
-                `-# ${totalUsers.toLocaleString()}\n` +
-                "**Channels**\n" +
-                `-# ${totalChannels.toLocaleString()}\n` +
-                "**Active Players**\n" +
-                `-# ${activePlayers}\n` +
-                "**Lavalink Nodes**\n" +
-                `-# ${totalNodes}`
+                `${t("commands.stats.guilds")}\n` +
+                    `-# ${totalGuilds.toLocaleString()}\n` +
+                    `${t("commands.stats.users")}\n` +
+                    `-# ${totalUsers.toLocaleString()}\n` +
+                    `${t("commands.stats.channels")}\n` +
+                    `-# ${totalChannels.toLocaleString()}\n` +
+                    `${t("commands.stats.activePlayers")}\n` +
+                    `-# ${activePlayers}\n` +
+                    `${t("commands.stats.lavalinkNodes")}\n` +
+                    `-# ${totalNodes}`
             )
         );
 
@@ -82,12 +81,12 @@ module.exports = {
 
         container.addTextDisplayComponents(
             new TextDisplayBuilder().setContent(
-                "**Heap Used**\n" +
-                `-# ${memUsed} MB\n` +
-                "**Heap Total**\n" +
-                `-# ${memTotal} MB\n` +
-                "**RSS**\n" +
-                `-# ${memRSS} MB`
+                `${t("commands.stats.heapUsed")}\n` +
+                    `-# ${memUsed} MB\n` +
+                    `${t("commands.stats.heapTotal")}\n` +
+                    `-# ${memTotal} MB\n` +
+                    `${t("commands.stats.rss")}\n` +
+                    `-# ${memRSS} MB`
             )
         );
 

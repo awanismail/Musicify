@@ -1,34 +1,28 @@
-const { SlashCommandBuilder, MessageFlags, ContainerBuilder, TextDisplayBuilder } = require("discord.js");
+const { MessageFlags, ContainerBuilder, TextDisplayBuilder } = require("discord.js");
+const { slashMeta, applySlashOption, getT } = require("../i18n");
+const { replyError } = require("../utils/replies");
 const { getGuildData } = require("../utils/playerStore");
 const { persistGuildPlaybackSettings } = require("../utils/database");
 
 module.exports = {
-    data: new SlashCommandBuilder()
-        .setName("volume")
-        .setDescription("Set the playback volume")
-        .addIntegerOption((opt) =>
-            opt
-                .setName("level")
-                .setDescription("Volume level (0-100)")
-                .setRequired(true)
-                .setMinValue(0)
-                .setMaxValue(100)
-        ),
+    data: slashMeta("volume").addIntegerOption((opt) =>
+        applySlashOption(
+            opt.setName("level").setRequired(true).setMinValue(0).setMaxValue(100),
+            "volume",
+            "level"
+        )
+    ),
 
     async execute(interaction, client) {
+        const t = getT(interaction, client);
         const player = client.riffy.players.get(interaction.guild.id);
+
         if (!player) {
-            return interaction.reply({
-                content: "❌ No active player.",
-                flags: MessageFlags.Ephemeral,
-            });
+            return replyError(interaction, { key: "errors.noActivePlayer" }, { t });
         }
 
         if (!interaction.member.voice?.channel) {
-            return interaction.reply({
-                content: "❌ You need to be in a voice channel!",
-                flags: MessageFlags.Ephemeral,
-            });
+            return replyError(interaction, { key: "errors.voiceChannelRequired" }, { t });
         }
 
         const level = Math.min(100, Math.max(0, interaction.options.getInteger("level")));
@@ -38,17 +32,16 @@ module.exports = {
         player.setVolume(level);
         persistGuildPlaybackSettings(interaction.guild.id, guildData);
 
-        // Build a simple volume bar
         const filled = Math.round(level / 10);
         const bar = "█".repeat(filled) + "░".repeat(10 - filled);
 
         const container = new ContainerBuilder();
         container.addTextDisplayComponents(
             new TextDisplayBuilder().setContent(
-                "### 🔊 Volume Updated\n\n" +
-                "**Level**\n" +
-                `-# ${level}%\n\n` +
-                "**Volume**\n" +
+                `${t("commands.volume.successHeading")}\n\n` +
+                `${t("common.labels.level")}\n` +
+                `${t("commands.volume.levelLine", { level })}\n\n` +
+                `${t("common.labels.volume")}\n` +
                 `-# ${bar}`
             )
         );

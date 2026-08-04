@@ -1,0 +1,495 @@
+{
+  "slash": {
+    "about": { "description": "Learn more about Musicify" },
+    "play": {
+      "description": "Play a song or add it to the queue",
+      "options": { "query": "Song name or URL" }
+    },
+    "help": { "description": "Show all Musicify commands and features" },
+    "queue": {
+      "description": "Show the current queue",
+      "options": { "page": "Page number" }
+    },
+    "nowplaying": { "description": "Show the currently playing track" },
+    "skip": { "description": "Skip the current track" },
+    "stop": { "description": "Stop playback and clear the queue (disconnects unless 24/7 is on)" },
+    "volume": {
+      "description": "Set the playback volume",
+      "options": { "level": "Volume level (0-100)" }
+    },
+    "remove": {
+      "description": "Remove a track from the queue",
+      "options": { "position": "Position of the track to remove (1-based)" }
+    },
+    "shuffle": { "description": "Shuffle the queue" },
+    "move": {
+      "description": "Move a track to a different position in the queue",
+      "options": { "from": "Current position of the track (1-based)", "to": "New position for the track (1-based)" }
+    },
+    "seek": {
+      "description": "Seek to a specific position in the track",
+      "options": { "time": "Time to seek to (e.g. 1:30 or 90)" }
+    },
+    "loop": {
+      "description": "Set loop mode",
+      "options": { "mode": "Loop mode" },
+      "choices": { "mode": { "off": "Off", "track": "Track", "queue": "Queue" } }
+    },
+    "filter": {
+      "description": "Apply audio filters to the player",
+      "options": { "preset": "Filter preset to apply" },
+      "choices": {
+        "preset": {
+          "bassboost": "🔊 Bass Boost",
+          "nightcore": "🌙 Nightcore",
+          "vaporwave": "🌊 Vaporwave",
+          "8d": "🎧 8D Audio",
+          "tremolo": "〰️ Tremolo",
+          "vibrato": "🎸 Vibrato",
+          "karaoke": "🎤 Karaoke",
+          "lowpass": "🔈 Low Pass",
+          "slowmode": "🐌 Slow Mode",
+          "distortion": "💥 Distortion",
+          "reset": "❌ Reset All"
+        }
+      }
+    },
+    "247": { "description": "Toggle 24/7 mode — bot stays in VC even when queue is empty" },
+    "chatplay": { "description": "Set up or manage ChatPlay in this server" },
+    "clear": { "description": "Clear the queue without stopping the current track" },
+    "status": { "description": "Check the current status of Musicify's systems" },
+    "stats": { "description": "Show Musicify's statistics" },
+    "language": { "description": "Set the bot language for this server" }
+  },
+  "common": {
+    "on": "On",
+    "off": "Off",
+    "none": "None",
+    "unknown": "Unknown",
+    "unknownArtist": "Unknown Artist",
+    "playlist": "Playlist",
+    "na": "N/A",
+    "anotherVoiceChannel": "another voice channel",
+    "cancel": "Cancel",
+    "supportServer": "Support Server",
+    "vote": "⭐ Vote",
+    "supportedPlatforms": "Spotify, SoundCloud, Deezer, Apple Music, Tidal, Qobuz & JioSaavn",
+    "labels": {
+      "title": "**Title**",
+      "artist": "**Artist**",
+      "position": "**Position**",
+      "status": "**Status**",
+      "track": "**Track**",
+      "level": "**Level**",
+      "volume": "**Volume**",
+      "mode": "**Mode**",
+      "preset": "**Preset**",
+      "removed": "**Removed**",
+      "nowPlaying": "**Now Playing**",
+      "tracks": "**Tracks**"
+    }
+  },
+  "errors": {
+    "unexpected": "**Something went wrong**\n-# An unexpected error occurred. Try again.",
+    "interactionFailed": "**Something went wrong**\n-# That interaction failed. Try again.",
+    "timedOut": "**Timed out**\n-# That interaction expired — run the command again.",
+    "errorHeading": "### ❌ Error",
+    "noActivePlayer": "❌ No active player.",
+    "voiceChannelRequired": "❌ You need to be in a voice channel!",
+    "voiceChannelRequiredFormatted": "**Voice channel required**\n-# Join a voice channel first.",
+    "sameVoiceChannel": "❌ You need to be in the same voice channel as the bot to use these controls.",
+    "nothingPlaying": "❌ Nothing is playing right now.",
+    "noMusicPlaying": "❌ No music playing. Start with {{cmdPlay}} or ChatPlay!",
+    "youtubeNotSupported": "**YouTube not supported**\n-# YouTube links are currently not supported.",
+    "noResults": "**No results**\n-# Nothing matched that search.",
+    "searchFailed": "**Search failed**\n-# Something went wrong while searching. Try again.",
+    "voicePermissions": {
+      "noVc": "❌ You need to join a voice channel first!",
+      "userConnect": "❌ You don't have **Connect** permission in that voice channel.\n-# Join a channel you can connect to, or ask a moderator for access.",
+      "botMissing": "❌ Something went wrong checking bot permissions. Try again.",
+      "botView": "❌ I can't see that voice channel.\n-# Grant **View Channel** for the bot in that channel.",
+      "botConnect": "❌ I don't have **Connect** permission in your voice channel.\n-# Ask a moderator to grant Connect (and Speak) for Musicify.",
+      "botSpeak": "❌ I don't have **Speak** permission in your voice channel.\n-# Ask a moderator to grant Speak for Musicify."
+    },
+    "voiceChannel": {
+      "mismatch247": "❌ 24/7 mode is connected to **{{name}}**.\n-# Join that channel or use `/247` to disable 24/7 before playing here.",
+      "mismatchPlayer": "❌ I'm already in **{{name}}**.\n-# Join that voice channel to request songs."
+    },
+    "lavalink": {
+      "unavailable": "❌ **Lavalink is unavailable** — music search can't run right now.\n-# Try again shortly or check {{statusRef}} for node status."
+    },
+    "rateLimit": {
+      "message": "⏳ **Slow down** you're sending requests too quickly.\n-# Wait a few seconds between songs. Channel slowmode may also apply."
+    },
+    "permissions": {
+      "voiceChannelDenial": "❌ You need to be in the same voice channel as the bot to use these controls."
+    }
+  },
+  "duplicate": {
+    "heading": "### ⚠️ Duplicate track",
+    "playing": "**{{title}}** is already playing!",
+    "queued": "**{{title}}** is already in the queue at **#{{position}}**!"
+  },
+  "player": {
+    "autoplay": "Autoplay: {{value}}",
+    "loop": "Loop: {{value}}",
+    "volume": "Volume: {{value}}%",
+    "nowPlayingHeader": "**Now Playing — {{title}}**",
+    "byArtist": "-# By {{author}}",
+    "requestedBy": "-# Requested by <@{{userId}}>",
+    "upNext": "-# **Up next**",
+    "moreInQueue": "-# ***+{{count}} in queue***",
+    "startingPlayback": "-# Starting playback now",
+    "inQueue": "-# #{{position}} in queue",
+    "queueTrackLine": "-# **{{index}}.** {{title}} — {{author}} · `{{duration}}`",
+    "queueNowPlayingLine": "-# **Now Playing:** **{{title}}** — {{author}} · `{{duration}}`"
+  },
+  "components": {
+    "suggestionsPlaceholder": "🎶 Pick a similar song",
+    "queueHeading": "### Queue · {{count}}",
+    "stopConfirm": {
+      "heading": "### ⚠️ Stop playback?",
+      "bodySingular": "There are **{{count}}** song in the queue.",
+      "bodyPlural": "There are **{{count}}** songs in the queue.",
+      "footer": "-# Press **stop** again or confirm below within 15 seconds.",
+      "button": "STOP"
+    },
+    "chatplay": {
+      "header": "## <:Musicify_Logo:1517828581638541493> Musicify ChatPlay\n-# *Type a song name in this channel to play it!*\n-# I'll search, play it in your voice channel, and keep this message updated.",
+      "statusWaiting": "-# **Status:** Waiting for a song request...",
+      "statusWaiting247": "-# **Status:** Waiting 24 hours, 7 days a week for a song request...",
+      "statusNotWaiting": "-# **Status:** Not waiting for a song request...",
+      "statusNotWaiting247": "-# **Status:** Not waiting 24 hours, 7 days a week for a song request...",
+      "statusLoading": "-# **Status:** Searching for your song..."
+    }
+  },
+  "commands": {
+    "about": {
+      "heading": "# <:Musicify_Logo:1517828581638541493> About Musicify",
+      "whatIs": "**What is Musicify?**\n-# A ChatPlay-focused Discord music bot that delivers high-quality\n-# music streaming directly to your voice channels.",
+      "poweredBy": "**Powered By**\n-# [discord.js](https://discord.js.org/) · [Riffy](https://riffy.js.org/) · [Musicard](https://www.npmjs.com/package/musicard)",
+      "features": "**Features**\n-# • **Rich now-playing cards** with progress bars\n-# • **10+ audio filter** presets\n-# • **Smart queue management** with pagination\n-# • **ChatPlay** — instant song requests\n-# • **Interactive button-based** controls",
+      "legal": "**Legal**\n-# [Privacy Policy](https://github.com/codebymitch/Musicify/blob/main/PrivacyPolicy.md) · [Terms of Service](https://github.com/codebymitch/Musicify/blob/main/TermsOfService.md)",
+      "footer": "-# Musicify is [open source](https://github.com/codebymitch/Musicify). Built by a passionate team of developers."
+    },
+    "play": {
+      "playlistHeading": "### ✅ Playlist Added",
+      "tracksLine": "**Tracks**\n-# {{addedCount}} of {{totalCount}} songs added to queue",
+      "duplicatesSkipped": "**Duplicates Skipped**\n-# {{count}} songs already in queue",
+      "trackHeading": "### ✅ Track Added"
+    },
+    "nowplaying": {
+      "emptyHeading": "### 🎶 Now Playing",
+      "emptyStatus": "**Status**\n-# Nothing is playing right now."
+    },
+    "skip": { "successHeading": "### ⏭ Skipped" },
+    "stop": {
+      "noActivePlayer": "**No active player**\n-# Nothing is playing right now.",
+      "stayed247": "### ⏹ Stopped\n\n**Status**\n-# Queue cleared. Staying in voice channel (24/7 mode).",
+      "disconnected": "### ⏹ Stopped\n\n**Status**\n-# Queue cleared and disconnected from voice channel."
+    },
+    "volume": {
+      "successHeading": "### 🔊 Volume Updated",
+      "levelLine": "-# {{level}}%"
+    },
+    "remove": {
+      "invalidPosition": "❌ Invalid position. Queue has **{{count}}** track(s).",
+      "successHeading": "### 🗑️ Track Removed",
+      "wasAt": "**Was at**\n-# Position #{{position}}",
+      "queueRemaining": "**Queue**\n-# {{count}} track(s) remaining"
+    },
+    "shuffle": {
+      "emptyQueue": "❌ Queue is empty, nothing to shuffle.",
+      "successHeading": "### 🔀 Shuffled",
+      "tracksLine": "-# {{count}} songs randomized"
+    },
+    "move": {
+      "invalidPosition": "❌ Invalid position. Queue has **{{count}}** track(s).",
+      "samePosition": "❌ From and to positions are the same.",
+      "successHeading": "### ↕️ Track Moved",
+      "positionLine": "-# #{{from}} → #{{to}}"
+    },
+    "seek": {
+      "invalidFormat": "❌ Invalid time format. Use `1:30` or `90`.",
+      "pastDuration": "❌ Can't seek past track duration ({{duration}}).",
+      "successHeading": "### ⏩ Seeked",
+      "positionLine": "-# {{current}} / {{total}}"
+    },
+    "loop": { "successHeading": "### {{emoji}} Loop Updated" },
+    "filter": {
+      "presets": {
+        "bassboost": "Bass Boost",
+        "nightcore": "Nightcore",
+        "vaporwave": "Vaporwave",
+        "8d": "8D Audio",
+        "tremolo": "Tremolo",
+        "vibrato": "Vibrato",
+        "karaoke": "Karaoke",
+        "lowpass": "Low Pass",
+        "slowmode": "Slow Mode",
+        "distortion": "Distortion"
+      },
+      "unknownPreset": "❌ Unknown filter preset.",
+      "applyFailed": "❌ Failed to apply **{{name}}**. It may not be supported by the current node.",
+      "resetHeading": "### ❌ Filters Reset",
+      "resetStatus": "-# All audio filters have been cleared.",
+      "successHeading": "### {{emoji}} Filter Applied"
+    },
+    "247": {
+      "confirmHeading": "### 24/7 Mode",
+      "enabledStatus": "**Current status**\n-# Enabled — I stay in voice even when the queue is empty.",
+      "enabledPrompt": "**Disable 24/7?**\n-# I'll leave the voice channel once playback stops and the queue is empty.",
+      "disabledStatus": "**Current status**\n-# Inactive — I leave when the queue is empty.",
+      "disabledPrompt": "**Enable 24/7?**\n-# I'll stay connected to your voice channel even between songs.",
+      "joinVcNote": "\n\n-# Join a voice channel to enable or disable 24/7.",
+      "disableButton": "Disable 24/7",
+      "enableButton": "Enable 24/7",
+      "resultEnabled": "### ✅ 24/7 Enabled\n\n**Status**\n-# I'll stay in the voice channel even when nothing is playing.",
+      "resultDisabled": "### ⏹ 24/7 Disabled\n\n**Status**\n-# I'll leave the voice channel when the queue is empty.",
+      "cancelledHeading": "### Cancelled",
+      "cancelledBody": "-# 24/7 mode was not changed."
+    },
+    "chatplay": {
+      "permissionSetup": "**Permission required**\n-# You need **Manage Channels** or **Administrator** to set up ChatPlay.",
+      "permissionManage": "**Permission required**\n-# You need **Manage Channels** or **Administrator** to manage ChatPlay.",
+      "missingPermissions": "**Missing permissions**\n-# Musicify needs **View Channel**, **Send Messages**, **Embed Links**, and **Connect & Speak** in a voice channel before ChatPlay can be set up."
+    },
+    "clear": {
+      "alreadyEmpty": "❌ The queue is already empty.",
+      "successHeading": "### 🗑️ Queue Cleared",
+      "removedSingular": "-# {{count}} track removed from queue",
+      "removedPlural": "-# {{count}} tracks removed from queue"
+    },
+    "stats": {
+      "heading": "### <:Musicify_Logo:1517828581638541493> Statistics",
+      "botId": "**Bot ID**",
+      "uptime": "**Uptime**",
+      "uptimeTimezoneNote": "-# *Times shown in your local timezone*",
+      "ping": "**Ping**",
+      "runtime": "**Runtime**",
+      "guilds": "**Guilds**",
+      "users": "**Users**",
+      "channels": "**Channels**",
+      "activePlayers": "**Active Players**",
+      "lavalinkNodes": "**Lavalink Nodes**",
+      "heapUsed": "**Heap Used**",
+      "heapTotal": "**Heap Total**",
+      "rss": "**RSS**"
+    },
+    "language": {
+      "heading": "### 🌐 Server Language",
+      "description": "-# Choose the language for this server. **Auto** is the default when Musicify joins.\n-# When set, commands, player UI, ChatPlay, and help all use this language for everyone.\n-# **Auto** uses each member's Discord language for commands, and this server's Discord language for shared UI.",
+      "current": "**Current:** {{language}}",
+      "currentAuto": "**Current:** Auto ({{language}})",
+      "viewOnlyNote": "-# Only administrators can change the server language.",
+      "setSuccess": "### ✅ Language Updated\n\n-# Server language set to **{{language}}**.",
+      "resetSuccess": "### ✅ Language Updated\n\n-# Server language reset to **Auto** ({{language}}).",
+      "permissionDenied": "**Permission required**\n-# You need **Administrator** to change the server language.",
+      "buttons": { "auto": "Auto" }
+    }
+  },
+  "help": {
+    "placeholder": "📖 Navigate help sections",
+    "header": "# <:Musicify_Logo:1517828581638541493> Musicify",
+    "pages": {
+      "home": { "label": "Home", "description": "Overview & quick start" },
+      "music": { "label": "Music Commands", "description": "Play, skip, queue & more" },
+      "filters": { "label": "Filters & Extras", "description": "Audio filters, 24/7 & ChatPlay" },
+      "controls": { "label": "Player Controls", "description": "Button layout guide" },
+      "troubleshoot": { "label": "Troubleshooting", "description": "Common issues & fixes" },
+      "support": { "label": "Support", "description": "Get help & report bugs" }
+    },
+    "home": {
+      "welcome": "### 👋 Welcome to Musicify!\n-# Your simple, fast, and feature-rich music bot for Discord.",
+      "quickStart": "**Quick Start**\n\n**1.** Join a voice channel\n-# Make sure you're connected before requesting a song.\n**2.** Use {{cmdPlay}} `<song name or URL>`\n-# Supports {{platforms}}.\n**3.** Control with buttons or commands!\n-# Use the interactive player or slash commands.",
+      "features": "**Features**\n-# • **Song suggestions** dropdown — 10 similar tracks\n-# • **10+ audio filter** presets\n-# • **ChatPlay** — type song names to play instantly\n-# • **Smart queue management** with pagination\n-# • **24/7 mode** — never leave the VC",
+      "openSource": "-# Musicify is [open source](https://github.com/codebymitch/Musicify)."
+    },
+    "music": {
+      "heading": "### 🎶 Command Browser\n-# 15 commands available",
+      "list": "**1.** {{cmdPlay}} — Play a song or add it to the queue\n\n**2.** {{cmdSkip}} — Skip the current track\n\n**3.** {{cmdStop}} — Stop playback and clear the queue\n\n**4.** {{cmdNowplaying}} — Show the currently playing track\n\n**5.** {{cmdSeek}} — Seek to a position\n\n**6.** {{cmdQueue}} — View the current queue\n\n**7.** {{cmdRemove}} — Remove a track from the queue\n\n**8.** {{cmdMove}} — Move a track's position\n\n**9.** {{cmdShuffle}} — Shuffle all tracks in the queue\n\n**10.** {{cmdLoop}} — Set loop mode for track or queue\n\n**11.** {{cmdVolume}} — Set the playback volume\n\n**12.** {{cmd247}} — Toggle 24/7 mode (confirmation required)\n\n**13.** {{cmdFilter}} — Apply an audio filter preset\n\n**14.** {{cmdChatplay}} — Set up or manage ChatPlay (enable, disable, delete)\n\n**15.** {{cmdAbout}} — Learn more about Musicify"
+    },
+    "filters": {
+      "heading": "### 🎛️ Audio Filters\n-# {{cmdFilter}} `<preset>` — Apply an audio filter",
+      "presets": "**Available Presets**\n\n**🔊 Bass Boost**\n-# Heavy low-end enhancement\n\n**🌙 Nightcore**\n-# Sped up + higher pitch\n\n**🌊 Vaporwave**\n-# Slowed down + lower pitch\n\n**🎧 8D Audio**\n-# Rotating surround effect\n\n**〰️ Tremolo**\n-# Volume oscillation\n\n**🎸 Vibrato**\n-# Pitch oscillation\n\n**🎤 Karaoke**\n-# Vocal reduction\n\n**🔈 Low Pass**\n-# Muffled / underwater effect\n\n**🐌 Slow Mode**\n-# Slowed playback rate\n\n**💥 Distortion**\n-# Distorted audio effect\n\n-# Use **❌ Reset All** to clear all active filters.",
+      "chatplayHeading": "### 💬 ChatPlay",
+      "chatplaySetup": "**Setup & manage**\n-# {{cmdChatplay}} — Runs setup if ChatPlay isn't configured yet\n-# If ChatPlay exists, opens a panel to **Enable**, **Disable**, or **Delete** it",
+      "chatplayUsage": "-# Once set up, just **type a song name** in the channel and Musicify plays it automatically!",
+      "247Heading": "### 🔁 24/7 Mode",
+      "247Toggle": "**Toggle**\n-# {{cmd247}} — Stay in VC when idle; confirm before toggling\n\n-# {{cmdStop}} — Clears queue; disconnects unless 24/7 is on",
+      "247HowItWorks": "**How it works**\n-# Musicify stays in the voice channel even after the queue ends.\n-# Setting persists across bot restarts."
+    },
+    "controls": {
+      "heading": "### 🎮 Player Button Controls\n-# When a track is playing, Musicify shows interactive buttons.",
+      "row1": "**Row 1 — Playback**\n\n**🔀 Shuffle**\n-# Randomize the queue order\n\n**⏮️ Previous**\n-# Go back to the last played track\n\n**⏸️ Pause / Play**\n-# Toggle playback\n\n**⏭️ Skip**\n-# Skip to the next track\n\n**🔁 Loop**\n-# Cycle: Off → Track → Queue",
+      "row2": "**Row 2 — Extras**\n\n**📻 Autoplay**\n-# Auto-queue similar songs when queue ends\n\n**🔉 Vol↓  ·  🔊 Vol↑**\n-# Adjust volume by ±10%\n\n**⏹️ Stop**\n-# Stop playback and disconnect\n\n**📜 Queue**\n-# Open the queue viewer",
+      "suggestions": "**🎵 Song Suggestions**\n-# A dropdown with up to **10 similar tracks** appears below the buttons.\n-# Select one to instantly add it to the queue!"
+    },
+    "troubleshoot": {
+      "heading": "### 🛠️ Troubleshooting\n-# Common issues and how to fix them.",
+      "wontPlay": "**Bot won't play music / Track Error**\n-# The song may be age-restricted or region-blocked.\n-# The streaming source may be temporarily unavailable.\n-# **Fix:** Try a different song or paste a direct URL from {{platforms}}.",
+      "joinsLeaves": "**Bot joins but immediately leaves**\n-# Musicify may lack Speak/Connect permissions in that channel.\n-# The requested song may have failed to load.\n-# **Fix:** Check bot permissions and try another song.",
+      "noSound": "**No sound but bot is in VC**\n-# Check if the bot is paused — use the ▶️ button.\n-# Check volume with {{cmdVolume}}.\n-# **Fix:** Make sure you're in the same VC and not deafened.",
+      "chatplayNotResponding": "**ChatPlay not responding**\n-# Ensure ChatPlay is enabled — run {{cmdChatplay}} and tap **Enable**.\n-# Make sure you're typing in the correct channel.\n-# **Fix:** Try disabling and re-enabling it.",
+      "noActivePlayer": "**Buttons say \"No active player\"**\n-# The player was closed after the track finished.\n-# **Fix:** Play a new song with {{cmdPlay}} to start fresh!",
+      "language": "**Wrong language / bot replies in another language**\n-# Run {{cmdLanguage}} to see the current server language.\n-# **Fix:** Ask a server admin to set the language, or use **Auto** if you want personal Discord language for commands.",
+      "languageAuto": "**Commands and ChatPlay in different languages**\n-# With **Auto** (default), your command replies follow *your* Discord language; ChatPlay and the player follow the *server's* Discord language.\n-# If your language isn't supported yet, your replies fall back to **English** (supported: English, Spanish, Portuguese, French, German).\n-# **Fix:** Ask an admin to set one language for everyone in {{cmdLanguage}}, or change your or the server's Discord language to a supported one.",
+      "languageCommunity": "**Can't change Discord's server language (Auto stays English)**\n-# Discord only lets you set the server language when **Community** is enabled.\n-# Turn it on in **Server Settings → Enable Community**, then change it under **Server Settings → Community Overview → Server Primary Language**.\n-# **Fix:** Or ask an admin to set Musicify's language with {{cmdLanguage}} — no Community required."
+    },
+    "support": {
+      "heading": "### 🤝 Support & Links\n-# Get help, report bugs, or learn more.",
+      "needHelp": "**Need help or found a bug?**\n-# Our team is ready to help you with any issues.",
+      "joinSupportServer": "Join Support Server",
+      "reportBug": "**How to Report a Bug**\n\n**1.** Note what command you were using\n-# Include the exact command and any error shown.\n\n**2.** Join our Support Server\n-# Use the **Join Support Server** button above.\n\n**3.** Open a ticket\n-# Or ask in the support channel.\n\n**4.** Attach evidence\n-# Screenshots or recordings help us fix faster!",
+      "botInfo": "**Bot Info Commands**\n**1.** {{cmdStats}}\n-# See ping, uptime, and memory\n**2.** {{cmdStatus}}\n-# See Lavalink connection status\n**3.** {{cmdHelp}}\n-# You're here!",
+      "footer": "-# Musicify is [open source](https://github.com/codebymitch/Musicify)."
+    }
+  },
+  "chatplay": {
+    "setup": {
+      "stepHeader": "## <:Musicify_Logo:1517828581638541493> Musicify ChatPlay\n-# Step {{step}} of {{totalSteps}}",
+      "channelTitle": "**ChatPlay channel**",
+      "channelDescription": "-# ChatPlay will be set up in {{channel}}.",
+      "unknownChannel": "Unknown channel",
+      "behaviourHeading": "**Channel behaviour**\n-# Tap the toggle next to each option.",
+      "slowmodeTitle": "**Slowmode (5s)** *(recommended)*",
+      "slowmodeDescription": "Reduces spam in the request channel.",
+      "slowmodeOn": "5 seconds",
+      "deleteMessagesTitle": "**Auto-delete requests** *(recommended)*",
+      "deleteMessagesDescription": "Removes song messages to keep the channel clean.",
+      "pinTitle": "**Pin player message** *(recommended)*",
+      "pinDescription": "Pins the player message so it stays easy to find.",
+      "247Title": "**24/7 mode**",
+      "247Description": "Join a VC to enable — bot stays in that channel 24/7.",
+      "reviewHeading": "**Review & confirm**",
+      "reviewChannel": "-# Channel: {{channel}}",
+      "reviewSettings": "**Your settings**\n-# Review your choices before creating ChatPlay.",
+      "editButton": "Edit",
+      "continueButton": "Continue",
+      "backButton": "Back",
+      "createButton": "Create ChatPlay",
+      "cancelledHeading": "### Setup cancelled",
+      "cancelledBody": "-# ChatPlay was not changed.",
+      "modalTitle": "Edit ChatPlay channel",
+      "modalChannelLabel": "ChatPlay channel",
+      "modalChannelDescription": "Where members type song names to request music",
+      "modalPlaceholder": "Choose a text channel",
+      "manageHeading": "## <:Musicify_Logo:1517828581638541493> Musicify ChatPlay",
+      "manageEnabled": "Enabled in {{channel}}",
+      "manageDisabled": "Disabled in {{channel}}",
+      "manageSettings": "**Your settings**",
+      "manage247Description": "-# Click **{{action}}** to toggle, or use {{cmd247}}.",
+      "turnOn": "Turn on",
+      "turnOff": "Turn off",
+      "enableButton": "Enable",
+      "disableButton": "Disable",
+      "deleteButton": "Delete ChatPlay",
+      "deleteConfirmHeading": "## ⚠️ Delete ChatPlay",
+      "deleteConfirmPermanent": "**This action is permanent**",
+      "deleteConfirmRemovedFrom": "-# ChatPlay will be removed from {{channel}}.",
+      "deleteConfirmWhatDeleted": "**What will be deleted**\n-# • The player message in this channel\n-# • All ChatPlay settings for this server",
+      "deleteConfirmFooter": "-# This cannot be undone. Press **Confirm** to proceed.",
+      "confirmButton": "Confirm",
+      "deletedHeading": "### 🗑 ChatPlay Deleted",
+      "deletedRemoved": "**Removed**\n-# ChatPlay has been removed from this server.",
+      "deletedSetupAgain": "**Set up again**\n-# Run `/chatplay` in your music channel to start fresh.",
+      "successHeading": "### ✅ ChatPlay is live",
+      "successTryIt": "**Try it now**",
+      "successStep1": "1. Join a voice channel",
+      "successStep2": "2. Type a song name in {{channel}}",
+      "successPinned": "-# Player message pinned in this channel.",
+      "successRecommendedPin": "**Recommended**\n• Pin the player message so it stays visible",
+      "success247Enabled": "-# 24/7 mode is enabled — the bot will stay in voice between songs.",
+      "successManage": "**Manage**\n-# Run `/chatplay` to enable, disable, or delete ChatPlay.",
+      "warningPinFailed": "Couldn't pin the player message — grant **Pin Messages** or **Manage Messages** in this channel.",
+      "warningPinPermission": "Couldn't pin the player message — check **Pin Messages** permission.",
+      "warning247NotEnabled": "24/7 wasn't enabled — join a voice channel and run `/247` to turn it on.",
+      "warningSlowmodeFailed": "Couldn't update slowmode — check **Manage Channels** permission.",
+      "warningSlowmodeNotApplied": "Slowmode wasn't applied — grant **Manage Channels** in this channel.",
+      "errorChannelGone": "Setup channel no longer exists."
+    },
+    "handlers": {
+      "notConfigured": "**Not set up**\n-# ChatPlay isn't configured. Run `/chatplay` to set it up.",
+      "setupExpired": "**Setup expired**\n-# Run `/chatplay` again to start over.",
+      "notYourSetup": "**Not your setup**\n-# Only the person who started setup can use these buttons.",
+      "notYourSetupChannel": "**Not your setup**\n-# Only the person who started setup can change the channel.",
+      "channelMissing": "**Channel missing**\n-# The setup channel was deleted. Run `/chatplay` again.",
+      "permissionFinish": "**Permission required**\n-# You need **Manage Channels** or **Administrator** to finish setup.",
+      "setupFailed": "**Setup failed**\n-# {{message}}",
+      "noChannelSelected": "**No channel selected**\n-# Pick a text channel and try again.",
+      "invalidChannel": "**Invalid channel**\n-# ChatPlay needs a text channel where members can send messages.",
+      "missingPermissionsChannel": "**Missing permissions**\n-# Musicify needs **View Channel**, **Send Messages**, **Embed Links**, and **Connect & Speak** in a voice channel before ChatPlay can use that channel.",
+      "joinVcEnable247": "**Join a voice channel**\n-# Join a VC first — the bot will stay in that channel 24/7.",
+      "joinVcChange247": "**Join a voice channel**\n-# Join a voice channel to change 24/7 mode."
+    },
+    "feedback": {
+      "playlistAdded": "✅ Added **{{addedCount}}** of **{{totalCount}}** tracks from **{{playlistName}}**!",
+      "duplicatesSkipped": "⚠️ Skipped {{count}} duplicate(s): {{list}}",
+      "nowPlaying": "✅ Now playing **{{title}}**!",
+      "addedToQueue": "✅ Added **{{title}}** — **#{{position}}** in queue!"
+    }
+  },
+  "handlers": {
+    "button": {
+      "nothingPlaying": "**Nothing playing**\n-# Start music with `/play` or ChatPlay first.",
+      "stopExpired": "### ⚠️ Expired\n\n-# Stop confirmation expired — press **stop** again.",
+      "stopStopped": "### ⏹ Stopped\n\n-# Playback stopped and queue cleared.",
+      "stopPending": "### ⚠️ Stop pending\n\n-# Someone else is confirming a stop — wait for them to finish.",
+      "suggestionNowPlaying": "✅ Now playing **{{title}}** · *Suggested song*",
+      "suggestionAdded": "✅ Added **{{title}}** — **#{{position}}** in queue · *Suggested song*"
+    }
+  },
+  "status": {
+    "lavalinkUnavailable": "Lavalink unavailable — playback may not work",
+    "someNodesOffline": "Some Lavalink nodes are offline",
+    "allOperational": "All systems operational",
+    "connected": "Connected",
+    "disconnected": "Disconnected",
+    "majorIssues": "Major system issues detected",
+    "someIssues": "Some systems experiencing issues",
+    "knownOutages": "Known Outages",
+    "recentIncidents": "**Recent Incidents**",
+    "noIncidents": "-# No incidents reported.",
+    "incidentLine": "-# <t:{{timestamp}}:t> · {{component}}: {{description}}",
+    "buttons": {
+      "supportServer": "Support Server",
+      "reportIssue": "Report Issue",
+      "suggest": "Suggest"
+    },
+    "uptimeHeading": "**Uptime**",
+    "uptimeTimezoneNote": "-# *Times shown in your local timezone*",
+    "nodesHeading": "### Lavalink Node Stats",
+    "nodesAvailable": "-# {{connected}}/{{total}} nodes available",
+    "nodesPlaceholder": "📡 Select a node",
+    "mainNode": "Main Node",
+    "nodeN": "Node {{index}}",
+    "nodeHealthHeading": "**Node Health**",
+    "nodeHealthLine": "-# {{emoji}} **{{name}}** — {{status}}",
+    "lastUpdated": "-# Last updated <t:{{timestamp}}:R>",
+    "nodeOffline": "-# *Node is offline — no stats available.*",
+    "restVersion": "**Rest Version**",
+    "playersHeading": "**Players**",
+    "playersActive": "**Active**",
+    "playersTotal": "**Total**",
+    "playersLine": "**Players**\n-# 🎶 Active: {{active}}  •  📻 Total: {{total}}",
+    "cpuHeading": "**CPU**",
+    "cpuCores": "**Cores**",
+    "cpuSystemLoad": "**System Load**",
+    "cpuLavalinkLoad": "**Lavalink Load**",
+    "cpuLine": "**CPU**\n-# 🖥️ Cores: {{cores}}  •  ⚙️ System: {{sysLoad}}  •  🔧 Lavalink: {{llLoad}}",
+    "noCpuData": "-# *No CPU data available*",
+    "restVersionLine": "-# Rest Version: {{version}}"
+  },
+  "welcome": {
+    "heading": "## 👋 Welcome to Musicify!",
+    "chatplayLine": "- Use {{cmdChatplay}} to enable **ChatPlay** — type song names in a channel to play instantly",
+    "quickStartHeading": "**Quick start**",
+    "step1": "1. Join a voice channel",
+    "step2": "2. Use {{cmdPlay}} `<song name or URL>` — supports {{platforms}}",
+    "step3": "3. Control playback with interactive buttons or slash commands",
+    "languageLine": "-# Language is **Auto** by default — the bot follows this server's Discord language. Admins can set a fixed language with {{cmdLanguage}}.",
+    "footer": "- If you need help or found a bug, join our [support server](https://discord.gg/MRjEUhDCpZ), run {{cmdStatus}} to see if the bot's systems are online, or check out the open source [GitHub repo](https://github.com/codebymitch/Musicify)!",
+    "deleteNotice": "-# This message will delete <t:{{timestamp}}:R>",
+    "dismissButton": "Delete message now"
+  }
+}

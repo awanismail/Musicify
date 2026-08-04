@@ -1,30 +1,27 @@
-const { SlashCommandBuilder, MessageFlags } = require("discord.js");
-const { getGuildData } = require("../utils/playerStore");
+const { MessageFlags } = require("discord.js");
+const { slashMeta, applySlashOption, getT } = require("../i18n");
+const { replyError } = require("../utils/replies");
 const { createQueueContainer } = require("../utils/components");
 
 module.exports = {
-    data: new SlashCommandBuilder()
-        .setName("queue")
-        .setDescription("Show the current queue")
-        .addIntegerOption((opt) =>
-            opt
-                .setName("page")
-                .setDescription("Page number")
-                .setRequired(false)
-                .setMinValue(1)
-        ),
+    data: slashMeta("queue").addIntegerOption((opt) =>
+        applySlashOption(
+            opt.setName("page").setRequired(false).setMinValue(1),
+            "queue",
+            "page"
+        )
+    ),
 
     async execute(interaction, client) {
+        const t = getT(interaction, client);
         const player = client.riffy.players.get(interaction.guild.id);
+
         if (!player) {
-            return interaction.reply({
-                content: "❌ No active player.",
-                flags: MessageFlags.Ephemeral,
-            });
+            return replyError(interaction, { key: "errors.noActivePlayer" }, { t });
         }
 
         const page = (interaction.options.getInteger("page") || 1) - 1;
-        const container = createQueueContainer(player.queue, player.current, page);
+        const container = createQueueContainer(t, player.queue, player.current, page);
 
         await interaction.reply({
             components: [container],

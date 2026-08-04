@@ -1,4 +1,5 @@
 const { MessageFlags, ContainerBuilder, TextDisplayBuilder } = require("discord.js");
+const { translateError } = require("../i18n");
 
 const INTERACTION_EXPIRED_CODE = 10062;
 
@@ -8,9 +9,10 @@ function buildFeedbackContainer(content, { error = false } = {}) {
     return container;
 }
 
-function buildErrorContainer(body) {
+function buildErrorContainer(body, t) {
+    const heading = t("errors.errorHeading");
     return buildFeedbackContainer(
-        typeof body === "string" ? `### ❌ Error\n\n${body}` : body,
+        typeof body === "string" ? `${heading}\n\n${body}` : body,
         { error: true }
     );
 }
@@ -26,10 +28,8 @@ function ephemeralV2(components) {
     };
 }
 
-async function replyExpiredInteraction(interaction) {
-    const container = buildErrorContainer(
-        "**Timed out**\n-# That interaction expired — run the command again."
-    );
+async function replyExpiredInteraction(interaction, t) {
+    const container = buildErrorContainer(t("errors.timedOut"), t);
     try {
         if (interaction.deferred || interaction.replied) {
             await interaction.followUp(ephemeralV2(container));
@@ -47,7 +47,7 @@ function isInteractionExpired(error) {
     return error?.code === INTERACTION_EXPIRED_CODE;
 }
 
-async function safeInteractionUpdate(interaction, options) {
+async function safeInteractionUpdate(interaction, options, t) {
     try {
         if (interaction.deferred || interaction.replied) {
             await interaction.editReply(options);
@@ -56,7 +56,7 @@ async function safeInteractionUpdate(interaction, options) {
         }
     } catch (error) {
         if (isInteractionExpired(error)) {
-            await replyExpiredInteraction(interaction);
+            if (t) await replyExpiredInteraction(interaction, t);
             return false;
         }
         throw error;
@@ -64,8 +64,9 @@ async function safeInteractionUpdate(interaction, options) {
     return true;
 }
 
-async function replyError(interaction, body, { deferred = false } = {}) {
-    const payload = ephemeralV2(buildErrorContainer(body));
+async function replyError(interaction, body, { deferred = false, t } = {}) {
+    const message = t && body?.key ? translateError(t, body) : body;
+    const payload = ephemeralV2(buildErrorContainer(message, t));
     if (deferred || interaction.deferred) {
         await interaction.editReply(payload);
     } else if (interaction.replied) {

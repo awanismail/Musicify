@@ -2,6 +2,7 @@ const { MessageFlags } = require("discord.js");
 const { handleButtonInteraction } = require("../handlers/buttonHandler");
 const { handleChatPlaySetupModal } = require("../handlers/chatPlaySetupHandler");
 const { applyChatPlayEphemeral } = require("../handlers/chatPlayHandler");
+const { getT } = require("../i18n");
 const {
     isInteractionExpired,
     replyExpiredInteraction,
@@ -20,19 +21,21 @@ module.exports = {
             const command = client.commands.get(interaction.commandName);
             if (!command) return;
 
+            const t = getT(interaction, client);
+
             try {
                 await command.execute(interaction, client);
             } catch (error) {
                 console.error(`[Musicify] Command error (${interaction.commandName}):`, error);
 
                 if (isInteractionExpired(error)) {
-                    await replyExpiredInteraction(interaction);
+                    await replyExpiredInteraction(interaction, t);
                     return;
                 }
 
                 try {
                     const payload = ephemeralV2(
-                        buildErrorContainer("**Something went wrong**\n-# An unexpected error occurred. Try again.")
+                        buildErrorContainer(t("errors.unexpected"), t)
                     );
                     if (interaction.replied || interaction.deferred) {
                         await interaction.followUp(payload);
@@ -41,7 +44,7 @@ module.exports = {
                     }
                 } catch (replyError) {
                     if (isInteractionExpired(replyError)) {
-                        await replyExpiredInteraction(interaction);
+                        await replyExpiredInteraction(interaction, t);
                     } else {
                         console.error("[Musicify] Error sending error reply:", replyError);
                     }
@@ -51,26 +54,28 @@ module.exports = {
         }
 
         if (interaction.isModalSubmit()) {
+            const t = getT(interaction, client);
+
             try {
                 const handled = await handleChatPlaySetupModal(client, interaction);
                 if (handled) return;
             } catch (error) {
                 console.error("[Musicify] Modal interaction error:", error);
                 if (isInteractionExpired(error)) {
-                    await replyExpiredInteraction(interaction);
+                    await replyExpiredInteraction(interaction, t);
                     return;
                 }
                 try {
                     if (!interaction.replied && !interaction.deferred) {
                         await interaction.reply(
                             ephemeralV2(
-                                buildErrorContainer("**Something went wrong**\n-# That interaction failed. Try again.")
+                                buildErrorContainer(t("errors.interactionFailed"), t)
                             )
                         );
                     }
                 } catch (replyError) {
                     if (isInteractionExpired(replyError)) {
-                        await replyExpiredInteraction(interaction);
+                        await replyExpiredInteraction(interaction, t);
                     }
                 }
             }
@@ -78,25 +83,27 @@ module.exports = {
         }
 
         if (interaction.isButton() || interaction.isStringSelectMenu()) {
+            const t = getT(interaction, client);
+
             try {
                 await handleButtonInteraction(client, interaction);
             } catch (error) {
                 console.error("[Musicify] Interaction error:", error);
                 if (isInteractionExpired(error)) {
-                    await replyExpiredInteraction(interaction);
+                    await replyExpiredInteraction(interaction, t);
                     return;
                 }
                 try {
                     if (!interaction.replied && !interaction.deferred) {
                         await interaction.reply(
                             ephemeralV2(
-                                buildErrorContainer("**Something went wrong**\n-# That interaction failed. Try again.")
+                                buildErrorContainer(t("errors.interactionFailed"), t)
                             )
                         );
                     }
                 } catch (replyError) {
                     if (isInteractionExpired(replyError)) {
-                        await replyExpiredInteraction(interaction);
+                        await replyExpiredInteraction(interaction, t);
                     }
                 }
             }

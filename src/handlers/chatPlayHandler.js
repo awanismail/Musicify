@@ -1,5 +1,6 @@
 const { getGuildData } = require("../utils/playerStore");
 const { playQuery } = require("../services/playQuery");
+const { getT, translateError } = require("../i18n");
 
 async function sendChatPlayFeedback(channel, content, timeoutMs = 5000) {
     try {
@@ -19,6 +20,18 @@ async function notifyPlayerFeedback(client, guildId, content, timeoutMs = 5000) 
     if (!channel) return;
 
     await sendChatPlayFeedback(channel, content, timeoutMs);
+}
+
+function formatPlayErrorFeedback(t, result) {
+    const messageText = translateError(t, result.error);
+
+    if (result.type === "duplicate") {
+        return `⚠️ ${messageText}`;
+    }
+
+    const needsPrefix =
+        !messageText.startsWith("❌") && !messageText.startsWith("⏳");
+    return needsPrefix ? `❌ ${messageText}` : messageText;
 }
 
 /**
@@ -50,22 +63,19 @@ async function handleChatPlayMessage(client, message) {
         }
     }
 
+    const t = getT.forGuild(message.guild.id, client);
+
     const result = await playQuery(client, {
         guild: message.guild,
         member: message.member,
         query,
         textChannelId: message.channel.id,
         source: "chatplay",
+        t,
     });
 
     if (!result.ok) {
-        const prefix =
-            result.type === "duplicate"
-                ? "⚠️"
-                : result.message.startsWith("❌") || result.message.startsWith("⏳")
-                  ? ""
-                  : "❌";
-        const feedback = prefix ? `${prefix} ${result.message}` : result.message;
+        const feedback = formatPlayErrorFeedback(t, result);
         await sendChatPlayFeedback(
             message.channel,
             feedback,
@@ -75,20 +85,36 @@ async function handleChatPlayMessage(client, message) {
     }
 
     if (result.type === "playlist") {
-        let feedbackMsg = `✅ Added **${result.addedCount}** of **${result.totalCount}** tracks from **${result.playlistName}**!`;
+        let feedbackMsg = t("chatplay.feedback.playlistAdded", {
+            addedCount: result.addedCount,
+            totalCount: result.totalCount,
+            playlistName: result.playlistName || t("common.playlist"),
+        });
         if (result.duplicates.length > 0) {
-            feedbackMsg += `\n⚠️ Skipped ${result.duplicates.length} duplicate(s): ${result.duplicates.slice(0, 3).join(", ")}${result.duplicates.length > 3 ? "..." : ""}`;
+            const list = result.duplicates.slice(0, 3).join(", ");
+            const suffix = result.duplicates.length > 3 ? "..." : "";
+            feedbackMsg += `\n${t("chatplay.feedback.duplicatesSkipped", {
+                count: result.duplicates.length,
+                list: `${list}${suffix}`,
+            })}`;
         }
         await sendChatPlayFeedback(message.channel, feedbackMsg);
         return true;
     }
 
     if (result.startedPlayback) {
-        await sendChatPlayFeedback(message.channel, `✅ Now playing **${result.title}**!`, 3000);
+        await sendChatPlayFeedback(
+            message.channel,
+            t("chatplay.feedback.nowPlaying", { title: result.title }),
+            3000
+        );
     } else {
         await sendChatPlayFeedback(
             message.channel,
-            `✅ Added **${result.title}** — **#${result.queuePosition}** in queue!`,
+            t("chatplay.feedback.addedToQueue", {
+                title: result.title,
+                position: result.queuePosition,
+            }),
             3000
         );
     }

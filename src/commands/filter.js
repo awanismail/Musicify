@@ -1,46 +1,56 @@
-const { SlashCommandBuilder, MessageFlags, ContainerBuilder, TextDisplayBuilder } = require("discord.js");
+const { MessageFlags, ContainerBuilder, TextDisplayBuilder } = require("discord.js");
+const { slashMeta, getT, applySlashOption, buildSlashChoice } = require("../i18n");
+const { buildErrorContainer, ephemeralV2 } = require("../utils/replies");
 
 const FILTER_PRESETS = {
-    bassboost: { name: "Bass Boost", emoji: "🔊", apply: (p) => p.filters.setBassboost(true, { value: 4 }) },
-    nightcore: { name: "Nightcore", emoji: "🌙", apply: (p) => p.filters.setTimescale(true, { speed: 1.2, pitch: 1.2, rate: 1.0 }) },
-    vaporwave: { name: "Vaporwave", emoji: "🌊", apply: (p) => p.filters.setVaporwave(true, { pitch: 0.5 }) },
-    "8d": { name: "8D Audio", emoji: "🎧", apply: (p) => p.filters.set8D(true, { rotationHz: 0.2 }) },
-    tremolo: { name: "Tremolo", emoji: "〰️", apply: (p) => p.filters.setTremolo(true, { frequency: 4.0, depth: 0.75 }) },
-    vibrato: { name: "Vibrato", emoji: "🎸", apply: (p) => p.filters.setVibrato(true, { frequency: 4.0, depth: 0.75 }) },
-    karaoke: { name: "Karaoke", emoji: "🎤", apply: (p) => p.filters.setKaraoke(true, { level: 1.0, monoLevel: 1.0, filterBand: 220.0, filterWidth: 100.0 }) },
-    lowpass: { name: "Low Pass", emoji: "🔈", apply: (p) => p.filters.setLowPass(true, { smoothing: 20.0 }) },
-    slowmode: { name: "Slow Mode", emoji: "🐌", apply: (p) => p.filters.setSlowmode(true, { rate: 0.8 }) },
-    distortion: { name: "Distortion", emoji: "💥", apply: (p) => p.filters.setDistortion(true, { sinOffset: 0, sinScale: 1, cosOffset: 0, cosScale: 1, tanOffset: 0, tanScale: 1, offset: 0, scale: 1 }) },
+    bassboost: { emoji: "🔊", apply: (p) => p.filters.setBassboost(true, { value: 4 }) },
+    nightcore: { emoji: "🌙", apply: (p) => p.filters.setTimescale(true, { speed: 1.2, pitch: 1.2, rate: 1.0 }) },
+    vaporwave: { emoji: "🌊", apply: (p) => p.filters.setVaporwave(true, { pitch: 0.5 }) },
+    "8d": { emoji: "🎧", apply: (p) => p.filters.set8D(true, { rotationHz: 0.2 }) },
+    tremolo: { emoji: "〰️", apply: (p) => p.filters.setTremolo(true, { frequency: 4.0, depth: 0.75 }) },
+    vibrato: { emoji: "🎸", apply: (p) => p.filters.setVibrato(true, { frequency: 4.0, depth: 0.75 }) },
+    karaoke: { emoji: "🎤", apply: (p) => p.filters.setKaraoke(true, { level: 1.0, monoLevel: 1.0, filterBand: 220.0, filterWidth: 100.0 }) },
+    lowpass: { emoji: "🔈", apply: (p) => p.filters.setLowPass(true, { smoothing: 20.0 }) },
+    slowmode: { emoji: "🐌", apply: (p) => p.filters.setSlowmode(true, { rate: 0.8 }) },
+    distortion: { emoji: "💥", apply: (p) => p.filters.setDistortion(true, { sinOffset: 0, sinScale: 1, cosOffset: 0, cosScale: 1, tanOffset: 0, tanScale: 1, offset: 0, scale: 1 }) },
 };
 
 module.exports = {
-    data: new SlashCommandBuilder()
-        .setName("filter")
-        .setDescription("Apply audio filters to the player")
-        .addStringOption((opt) =>
-            opt.setName("preset").setDescription("Filter preset to apply").setRequired(true)
+    data: slashMeta("filter").addStringOption((opt) =>
+        applySlashOption(
+            opt
+                .setName("preset")
+                .setRequired(true)
                 .addChoices(
-                    { name: "🔊 Bass Boost", value: "bassboost" },
-                    { name: "🌙 Nightcore", value: "nightcore" },
-                    { name: "🌊 Vaporwave", value: "vaporwave" },
-                    { name: "🎧 8D Audio", value: "8d" },
-                    { name: "〰️ Tremolo", value: "tremolo" },
-                    { name: "🎸 Vibrato", value: "vibrato" },
-                    { name: "🎤 Karaoke", value: "karaoke" },
-                    { name: "🔈 Low Pass", value: "lowpass" },
-                    { name: "🐌 Slow Mode", value: "slowmode" },
-                    { name: "💥 Distortion", value: "distortion" },
-                    { name: "❌ Reset All", value: "reset" }
-                )
-        ),
+                    buildSlashChoice("filter", "preset", "bassboost", "bassboost"),
+                    buildSlashChoice("filter", "preset", "nightcore", "nightcore"),
+                    buildSlashChoice("filter", "preset", "vaporwave", "vaporwave"),
+                    buildSlashChoice("filter", "preset", "8d", "8d"),
+                    buildSlashChoice("filter", "preset", "tremolo", "tremolo"),
+                    buildSlashChoice("filter", "preset", "vibrato", "vibrato"),
+                    buildSlashChoice("filter", "preset", "karaoke", "karaoke"),
+                    buildSlashChoice("filter", "preset", "lowpass", "lowpass"),
+                    buildSlashChoice("filter", "preset", "slowmode", "slowmode"),
+                    buildSlashChoice("filter", "preset", "distortion", "distortion"),
+                    buildSlashChoice("filter", "preset", "reset", "reset")
+                ),
+            "filter",
+            "preset"
+        )
+    ),
 
     async execute(interaction, client) {
+        const t = getT(interaction, client);
         const player = client.riffy.players.get(interaction.guild.id);
         if (!player || !player.current) {
-            return interaction.reply({ content: "❌ Nothing is playing right now.", flags: MessageFlags.Ephemeral });
+            return interaction.reply(
+                ephemeralV2(buildErrorContainer(t("errors.nothingPlaying"), t))
+            );
         }
         if (!interaction.member.voice?.channel) {
-            return interaction.reply({ content: "❌ You need to be in a voice channel!", flags: MessageFlags.Ephemeral });
+            return interaction.reply(
+                ephemeralV2(buildErrorContainer(t("errors.voiceChannelRequired"), t))
+            );
         }
 
         const preset = interaction.options.getString("preset");
@@ -50,9 +60,9 @@ module.exports = {
             const container = new ContainerBuilder();
             container.addTextDisplayComponents(
                 new TextDisplayBuilder().setContent(
-                    "### ❌ Filters Reset\n\n" +
-                    "**Status**\n" +
-                    "-# All audio filters have been cleared."
+                    `${t("commands.filter.resetHeading")}\n\n` +
+                        `${t("common.labels.status")}\n` +
+                        t("commands.filter.resetStatus")
                 )
             );
             return interaction.reply({
@@ -63,27 +73,35 @@ module.exports = {
 
         const filter = FILTER_PRESETS[preset];
         if (!filter) {
-            return interaction.reply({ content: "❌ Unknown filter preset.", flags: MessageFlags.Ephemeral });
+            return interaction.reply(
+                ephemeralV2(buildErrorContainer(t("commands.filter.unknownPreset"), t))
+            );
         }
+
+        const presetName = t(`commands.filter.presets.${preset}`);
 
         try {
             filter.apply(player);
         } catch (err) {
             console.error(`[Musicify] Filter "${preset}" error:`, err.message);
-            return interaction.reply({
-                content: `❌ Failed to apply **${filter.name}**. It may not be supported by the current node.`,
-                flags: MessageFlags.Ephemeral,
-            });
+            return interaction.reply(
+                ephemeralV2(
+                    buildErrorContainer(
+                        t("commands.filter.applyFailed", { name: presetName }),
+                        t
+                    )
+                )
+            );
         }
 
         const container = new ContainerBuilder();
         container.addTextDisplayComponents(
             new TextDisplayBuilder().setContent(
-                `### ${filter.emoji} Filter Applied\n\n` +
-                "**Preset**\n" +
-                `-# ${filter.name}\n\n` +
-                "**Track**\n" +
-                `-# ${player.current.info.title}`
+                `${t("commands.filter.successHeading", { emoji: filter.emoji })}\n\n` +
+                    `${t("common.labels.preset")}\n` +
+                    `-# ${presetName}\n\n` +
+                    `${t("common.labels.track")}\n` +
+                    `-# ${player.current.info.title}`
             )
         );
         await interaction.reply({

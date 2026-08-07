@@ -12,6 +12,10 @@
     },
     "nowplaying": { "description": "Afficher le morceau en cours de lecture" },
     "skip": { "description": "Passer le morceau en cours" },
+    "skipto": {
+      "description": "Passer à un morceau dans la file d'attente",
+      "options": { "position": "Position dans la file (à partir de 1, comme /queue)" }
+    },
     "stop": { "description": "Arrêter la lecture et vider la file d'attente (se déconnecte sauf si le mode 24/7 est activé)" },
     "volume": {
       "description": "Régler le volume de lecture",
@@ -86,7 +90,18 @@
       "preset": "**Préréglage**",
       "removed": "**Retiré**",
       "nowPlaying": "**En cours de lecture**",
-      "tracks": "**Morceaux**"
+      "tracks": "**Morceaux**",
+      "note": "**Note**"
+    }
+  },
+  "bot": {
+    "activity": {
+      "dj": "Je fais semblant d'être DJ",
+      "help": "/help pour les commandes",
+      "spinning": "Des morceaux pour les serveurs",
+      "chatplay": "Mode ChatPlay activé",
+      "bassBoost": "Boost des basses pour les serveurs",
+      "nowPlaying": "En lecture : tes morceaux préférés"
     }
   },
   "errors": {
@@ -116,7 +131,10 @@
       "mismatchPlayer": "❌ Je suis déjà dans **{{name}}**.\n-# Rejoignez ce salon vocal pour demander des morceaux."
     },
     "lavalink": {
-      "unavailable": "❌ **Lavalink est indisponible** — la recherche musicale ne peut pas fonctionner pour le moment.\n-# Réessayez dans un instant ou consultez {{statusRef}} pour l'état des nœuds."
+      "unavailable": "❌ **Lavalink est indisponible** — la recherche musicale ne peut pas fonctionner pour le moment.\n-# Réessayez dans un instant ou consultez {{statusRef}} pour l'état des nœuds.",
+      "disconnectedHeading": "Musique en pause",
+      "disconnectedBody": "Le serveur audio s'est déconnecté. Votre file est sauvegardée — la lecture reprendra automatiquement à la reconnexion.",
+      "disconnectedHint": "Consultez {{cmdStatus}} pour le statut en direct · Toujours bloqué ? Rejoignez notre [serveur d'assistance](https://discord.gg/MRjEUhDCpZ)"
     },
     "rateLimit": {
       "message": "⏳ **Ralentissez**, vous envoyez des requêtes trop rapidement.\n-# Attendez quelques secondes entre chaque morceau. Un mode lent du salon peut aussi s'appliquer."
@@ -183,6 +201,11 @@
       "emptyStatus": "**Statut**\n-# Rien n'est en cours de lecture pour le moment."
     },
     "skip": { "successHeading": "### ⏭ Morceau passé" },
+    "skipto": {
+      "invalidPosition": "❌ Position invalide. La file d'attente contient **{{count}}** morceau(x).",
+      "successHeading": "### ⏭ Passé à",
+      "skippedLine": "**Ignorés**\n-# {{count}} morceau(x) retirés de la file d'attente"
+    },
     "stop": {
       "noActivePlayer": "**Aucun lecteur actif**\n-# Rien n'est en cours de lecture pour le moment.",
       "stayed247": "### ⏹ Arrêté\n\n**Statut**\n-# File d'attente vidée. Je reste dans le salon vocal (mode 24/7).",
@@ -306,8 +329,8 @@
       "openSource": "-# Musicify est [open source](https://github.com/codebymitch/Musicify)."
     },
     "music": {
-      "heading": "### 🎶 Navigateur de commandes\n-# 15 commandes disponibles",
-      "list": "**1.** {{cmdPlay}} — Lire un morceau ou l'ajouter à la file d'attente\n\n**2.** {{cmdSkip}} — Passer le morceau en cours\n\n**3.** {{cmdStop}} — Arrêter la lecture et vider la file d'attente\n\n**4.** {{cmdNowplaying}} — Afficher le morceau en cours de lecture\n\n**5.** {{cmdSeek}} — Avancer à une position\n\n**6.** {{cmdQueue}} — Afficher la file d'attente actuelle\n\n**7.** {{cmdRemove}} — Retirer un morceau de la file d'attente\n\n**8.** {{cmdMove}} — Déplacer la position d'un morceau\n\n**9.** {{cmdShuffle}} — Mélanger tous les morceaux de la file d'attente\n\n**10.** {{cmdLoop}} — Définir le mode de boucle pour le morceau ou la file d'attente\n\n**11.** {{cmdVolume}} — Régler le volume de lecture\n\n**12.** {{cmd247}} — Activer/désactiver le mode 24/7 (confirmation requise)\n\n**13.** {{cmdFilter}} — Appliquer un préréglage de filtre audio\n\n**14.** {{cmdChatplay}} — Configurer ou gérer ChatPlay (activer, désactiver, supprimer)\n\n**15.** {{cmdAbout}} — En savoir plus sur Musicify"
+      "heading": "### 🎶 Navigateur de commandes\n-# 16 commandes disponibles",
+      "list": "**1.** {{cmdPlay}} — Lire un morceau ou l'ajouter à la file d'attente\n\n**2.** {{cmdSkip}} — Passer le morceau en cours\n\n**3.** {{cmdSkipto}} — Passer à un morceau dans la file d'attente\n\n**4.** {{cmdStop}} — Arrêter la lecture et vider la file d'attente\n\n**5.** {{cmdNowplaying}} — Afficher le morceau en cours de lecture\n\n**6.** {{cmdSeek}} — Avancer à une position\n\n**7.** {{cmdQueue}} — Afficher la file d'attente actuelle\n\n**8.** {{cmdRemove}} — Retirer un morceau de la file d'attente\n\n**9.** {{cmdMove}} — Déplacer la position d'un morceau\n\n**10.** {{cmdShuffle}} — Mélanger tous les morceaux de la file d'attente\n\n**11.** {{cmdLoop}} — Définir le mode de boucle pour le morceau ou la file d'attente\n\n**12.** {{cmdVolume}} — Régler le volume de lecture\n\n**13.** {{cmd247}} — Activer/désactiver le mode 24/7 (confirmation requise)\n\n**14.** {{cmdFilter}} — Appliquer un préréglage de filtre audio\n\n**15.** {{cmdChatplay}} — Configurer ou gérer ChatPlay (activer, désactiver, supprimer)\n\n**16.** {{cmdAbout}} — En savoir plus sur Musicify"
     },
     "filters": {
       "heading": "### 🎛️ Filtres audio\n-# {{cmdFilter}} `<préréglage>` — Appliquer un filtre audio",
@@ -349,16 +372,18 @@
     "setup": {
       "stepHeader": "## <:Musicify_Logo:1517828581638541493> Musicify ChatPlay\n-# Étape {{step}} sur {{totalSteps}}",
       "channelTitle": "**Salon ChatPlay**",
-      "channelDescription": "-# ChatPlay sera configuré dans {{channel}}.",
+      "channelDescription": "ChatPlay sera configuré dans {{channel}}.",
       "unknownChannel": "Salon inconnu",
       "behaviourHeading": "**Comportement du salon**\n-# Appuyez sur le bouton à côté de chaque option.",
       "slowmodeTitle": "**Mode lent (5 s)** *(recommandé)*",
       "slowmodeDescription": "Réduit le spam dans le salon de demandes.",
       "slowmodeOn": "5 secondes",
       "deleteMessagesTitle": "**Suppression auto des demandes** *(recommandé)*",
-      "deleteMessagesDescription": "Supprime les messages de morceaux pour garder le salon propre.",
+      "deleteMessagesDescription": "Supprime les messages de demande de morceau. Les confirmations du bot disparaissent d'elles-mêmes.",
       "pinTitle": "**Épingler le message du lecteur** *(recommandé)*",
       "pinDescription": "Épingle le message du lecteur pour le retrouver facilement.",
+      "smartFilterTitle": "**Filtre intelligent**",
+      "smartFilterDescription": "Ignore le chat évident (ex. lol, brb) — pas de recherche ni d'ajout à la file.",
       "247Title": "**Mode 24/7**",
       "247Description": "Rejoignez un salon vocal pour l'activer — le bot y reste 24 h/24.",
       "reviewHeading": "**Vérifier et confirmer**",
@@ -377,8 +402,8 @@
       "manageHeading": "## <:Musicify_Logo:1517828581638541493> Musicify ChatPlay",
       "manageEnabled": "Activé dans {{channel}}",
       "manageDisabled": "Désactivé dans {{channel}}",
-      "manageSettings": "**Vos paramètres**",
-      "manage247Description": "-# Cliquez sur **{{action}}** pour basculer, ou utilisez {{cmd247}}.",
+      "manageSettings": "**Vos paramètres**\n-# Appuyez sur l'interrupteur à côté de chaque option pour la modifier.",
+      "manage247Description": "Cliquez sur **{{action}}** pour basculer, ou utilisez {{cmd247}}.",
       "turnOn": "Activer",
       "turnOff": "Désactiver",
       "enableButton": "Activer",
@@ -392,7 +417,7 @@
       "confirmButton": "Confirmer",
       "deletedHeading": "### 🗑 ChatPlay supprimé",
       "deletedRemoved": "**Retiré**\n-# ChatPlay a été retiré de ce serveur.",
-      "deletedSetupAgain": "**Reconfigurer**\n-# Lancez `/chatplay` dans votre salon musical pour repartir de zéro.",
+      "deletedSetupAgain": "**Reconfigurer**\n-# Lancez {{cmdChatplay}} dans votre salon musical pour repartir de zéro.",
       "successHeading": "### ✅ ChatPlay est actif",
       "successTryIt": "**Essayez maintenant**",
       "successStep1": "1. Rejoignez un salon vocal",
@@ -400,7 +425,7 @@
       "successPinned": "-# Message du lecteur épinglé dans ce salon.",
       "successRecommendedPin": "**Recommandé**\n• Épinglez le message du lecteur pour qu'il reste visible",
       "success247Enabled": "-# Le mode 24/7 est activé — le bot restera dans le salon vocal entre les morceaux.",
-      "successManage": "**Gérer**\n-# Lancez `/chatplay` pour activer, désactiver ou supprimer ChatPlay.",
+      "successManage": "**Gérer**\n-# Lancez {{cmdChatplay}} pour activer, désactiver ou supprimer ChatPlay.",
       "warningPinFailed": "Impossible d'épingler le message du lecteur — accordez **Épingler des messages** ou **Gérer les messages** dans ce salon.",
       "warningPinPermission": "Impossible d'épingler le message du lecteur — vérifiez la permission **Épingler des messages**.",
       "warning247NotEnabled": "Le mode 24/7 n'a pas été activé — rejoignez un salon vocal et lancez `/247` pour l'activer.",
@@ -409,18 +434,19 @@
       "errorChannelGone": "Le salon de configuration n'existe plus."
     },
     "handlers": {
-      "notConfigured": "**Non configuré**\n-# ChatPlay n'est pas configuré. Lancez `/chatplay` pour le configurer.",
-      "setupExpired": "**Configuration expirée**\n-# Relancez `/chatplay` pour recommencer.",
+      "notConfigured": "**Non configuré**\n-# ChatPlay n'est pas configuré. Lancez {{cmdChatplay}} pour le configurer.",
+      "setupExpired": "**Configuration expirée**\n-# Relancez {{cmdChatplay}} pour recommencer.",
       "notYourSetup": "**Pas votre configuration**\n-# Seule la personne ayant lancé la configuration peut utiliser ces boutons.",
       "notYourSetupChannel": "**Pas votre configuration**\n-# Seule la personne ayant lancé la configuration peut changer le salon.",
-      "channelMissing": "**Salon introuvable**\n-# Le salon de configuration a été supprimé. Relancez `/chatplay`.",
+      "channelMissing": "**Salon introuvable**\n-# Le salon de configuration a été supprimé. Relancez {{cmdChatplay}}.",
       "permissionFinish": "**Permission requise**\n-# Vous avez besoin de **Gérer les salons** ou **Administrateur** pour terminer la configuration.",
       "setupFailed": "**Échec de la configuration**\n-# {{message}}",
       "noChannelSelected": "**Aucun salon sélectionné**\n-# Choisissez un salon textuel et réessayez.",
       "invalidChannel": "**Salon invalide**\n-# ChatPlay a besoin d'un salon textuel où les membres peuvent envoyer des messages.",
       "missingPermissionsChannel": "**Permissions manquantes**\n-# Musicify a besoin de **Voir le salon**, **Envoyer des messages**, **Intégrer des liens** et **Se connecter et parler** dans un salon vocal avant que ChatPlay puisse utiliser ce salon.",
       "joinVcEnable247": "**Rejoignez un salon vocal**\n-# Rejoignez d'abord un salon vocal — le bot y restera 24 h/24.",
-      "joinVcChange247": "**Rejoignez un salon vocal**\n-# Rejoignez un salon vocal pour modifier le mode 24/7."
+      "joinVcChange247": "**Rejoignez un salon vocal**\n-# Rejoignez un salon vocal pour modifier le mode 24/7.",
+      "channelMoveFailed": "**Impossible de déplacer ChatPlay**\n-# {{message}}"
     },
     "feedback": {
       "playlistAdded": "✅ **{{addedCount}}** sur **{{totalCount}}** morceaux ajoutés depuis **{{playlistName}}** !",

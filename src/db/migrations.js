@@ -1,4 +1,4 @@
-const SCHEMA_VERSION = 7;
+const SCHEMA_VERSION = 8;
 
 function getSchemaVersion(db) {
     db.exec(`
@@ -68,6 +68,13 @@ function migrateToV7(db) {
     }
 }
 
+function migrateToV8(db) {
+    const columns = db.prepare("PRAGMA table_info(guilds)").all();
+    if (!columns.some((col) => col.name === "chat_play_smart_filter")) {
+        db.exec("ALTER TABLE guilds ADD COLUMN chat_play_smart_filter INTEGER DEFAULT 1");
+    }
+}
+
 function runMigrations(db) {
     let version = getSchemaVersion(db);
 
@@ -93,6 +100,12 @@ function runMigrations(db) {
         migrateToV7(db);
         setSchemaVersion(db, 7);
         version = 7;
+    }
+
+    if (version < 8) {
+        migrateToV8(db);
+        setSchemaVersion(db, 8);
+        version = 8;
     }
 
     if (version !== SCHEMA_VERSION) {

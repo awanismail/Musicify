@@ -6,7 +6,9 @@ let fontsInitialized = false;
 /**
  * Generate a musicard image buffer for a track
  */
-async function generateMusicCard(track, player, guildData) {
+async function generateMusicCard(track, player, guildData, translator) {
+    const unknown = translator ? translator("common.unknown") : "Unknown";
+    const unknownArtist = translator ? translator("common.unknownArtist") : "Unknown Artist";
     try {
         if (!fontsInitialized) {
             await initializeFonts();
@@ -20,8 +22,8 @@ async function generateMusicCard(track, player, guildData) {
         const musicardConfig = config.musicard || {};
 
         const card = await Bloom({
-            trackName: (track.info.title || "Unknown").substring(0, 40),
-            artistName: (track.info.author || "Unknown Artist").substring(0, 30),
+            trackName: (track.info.title || unknown).substring(0, 40),
+            artistName: (track.info.author || unknownArtist).substring(0, 30),
             albumArt: track.info.artworkUrl || track.info.thumbnail || "https://i.imgur.com/4YFmJMi.png",
             timeAdjust: {
                 timeStart: formatTime(position),

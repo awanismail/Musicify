@@ -1,4 +1,5 @@
 const { getTrackQueuePosition } = require("./queueUtils");
+const { getPreferredNode } = require("./lavalink");
 
 const COLLECTION_URL_PATTERN =
     /(?:open\.spotify\.com\/(?:playlist|album|artist|collection)|spotify:(?:playlist|album|artist):|soundcloud\.com\/[^/?]+\/sets\/|(?:www\.)?deezer\.com\/(?:\w{2}\/)?(?:playlist|album|artist)|music\.apple\.com\/[^?]*\/(?:album|playlist)|tidal\.com\/browse\/(?:playlist|album|mix|artist)|(?:open\.)?qobuz\.com\/[^?]*\/(?:playlist|album|artist|track)|(?:www\.)?jiosaavn\.com\/(?:album|playlist|featured|song|show))/i;
@@ -168,7 +169,7 @@ async function enrichResolveResult(client, query, result) {
 
     let mergedPluginInfo = result.pluginInfo || {};
 
-    const node = client.riffy?.leastUsedNodes?.[0];
+    const node = getPreferredNode(client);
     if (!name && node) {
         const identifier = /^https?:\/\//i.test(query)
             ? query
@@ -203,7 +204,8 @@ async function enrichResolveResult(client, query, result) {
     };
 }
 
-function queueResolvedTracks(player, tracks, requester) {
+function queueResolvedTracks(player, tracks, requester, translator) {
+    const unknown = translator ? translator("common.unknown") : "Unknown";
     const duplicates = [];
     const addedTracks = [];
 
@@ -213,10 +215,10 @@ function queueResolvedTracks(player, tracks, requester) {
         const position = getTrackQueuePosition(player, track.info.uri);
 
         if (position) {
-            duplicates.push(track.info.title || "Unknown");
+            duplicates.push(track.info.title || unknown);
         } else {
             player.queue.add(track);
-            addedTracks.push(track.info.title || "Unknown");
+            addedTracks.push(track.info.title || unknown);
         }
     }
 

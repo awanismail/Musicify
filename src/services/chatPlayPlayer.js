@@ -8,6 +8,34 @@ const {
 const { generateMusicCard } = require("../utils/musicard");
 const { getT } = require("../i18n");
 
+async function sendChatPlayPlayerMessage(client, guild, channel, guildData, t) {
+    const player = client.riffy?.players.get(guild.id);
+    let container;
+    let files = [];
+
+    if (guildData.chatPlayEnabled !== false && player?.current) {
+        const musicardBuffer = await generateMusicCard(player.current, player, guildData, t);
+        container = createChatPlayNowPlayingContainer(
+            t,
+            player.current,
+            player,
+            guildData,
+            musicardBuffer
+        );
+        if (musicardBuffer) {
+            files.push(new AttachmentBuilder(musicardBuffer, { name: "musicard.png" }));
+        }
+    } else {
+        container = createChatPlayIdleContainer(t, guildData);
+    }
+
+    return channel.send({
+        components: [container],
+        files,
+        flags: MessageFlags.IsComponentsV2,
+    });
+}
+
 async function editChatPlayMessage(client, guildId, container, files = []) {
     const guildData = getGuildData(guildId);
     if (!guildData.chatPlayChannelId || !guildData.chatPlayMessageId) return false;
@@ -48,7 +76,7 @@ async function refreshChatPlayPlayer(client, guildId) {
 
     const player = client.riffy?.players.get(guildId);
     if (player?.current) {
-        const musicardBuffer = await generateMusicCard(player.current, player, guildData);
+        const musicardBuffer = await generateMusicCard(player.current, player, guildData, t);
         const container = createChatPlayNowPlayingContainer(
             t,
             player.current,
@@ -70,4 +98,5 @@ module.exports = {
     editChatPlayMessage,
     showChatPlayLoading,
     refreshChatPlayPlayer,
+    sendChatPlayPlayerMessage,
 };

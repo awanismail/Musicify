@@ -26,6 +26,7 @@ const { notifyPlayerFeedback } = require("./chatPlayHandler");
 const { dismissWelcomeMessage } = require("../utils/guildWelcome");
 const { buildStatusContainer, getNodeDisplayName } = require("../utils/statusPage");
 const config = require("../../config");
+const { createPreferredConnection } = require("../utils/lavalink");
 const { getTrackQueuePosition, getDuplicateTrackError } = require("../utils/queueUtils");
 const { persistGuildPlaybackSettings } = require("../utils/database");
 
@@ -169,7 +170,7 @@ async function handleButtonInteraction(client, interaction) {
         const voiceChannel = interaction.member?.voice?.channel;
         if (voiceChannel) {
             try {
-                player = client.riffy.createConnection({
+                player = createPreferredConnection(client, {
                     guildId: guildId,
                     voiceChannel: voiceChannel.id,
                     textChannel: guildData.chatPlayChannelId,
@@ -561,7 +562,7 @@ async function editPlayerMessageDirectly(client, player, guildData) {
         if (!player || !player.current) return;
 
         const t = getT.forGuild(player.guildId, client);
-        const musicardBuffer = await generateMusicCard(player.current, player, guildData);
+        const musicardBuffer = await generateMusicCard(player.current, player, guildData, t);
         const container = guildData.chatPlayChannelId && guildData.chatPlayMessageId
             ? createChatPlayNowPlayingContainer(t, player.current, player, guildData, musicardBuffer)
             : createNowPlayingContainer(t, player.current, player, guildData, musicardBuffer);

@@ -5,6 +5,7 @@ const GUILD_COLUMN_MAP = {
     chatPlaySlowmode: "chat_play_slowmode",
     chatPlayDeleteMessages: "chat_play_delete_messages",
     chatPlayPinPlayerMessage: "chat_play_pin_player_message",
+    chatPlaySmartFilter: "chat_play_smart_filter",
     twentyFourSeven: "twenty_four_seven",
     boundVoiceChannelId: "bound_voice_channel_id",
     defaultVolume: "default_volume",
@@ -17,6 +18,7 @@ const BOOLEAN_KEYS = new Set([
     "chatPlaySlowmode",
     "chatPlayDeleteMessages",
     "chatPlayPinPlayerMessage",
+    "chatPlaySmartFilter",
     "twentyFourSeven",
     "defaultAutoplay",
 ]);

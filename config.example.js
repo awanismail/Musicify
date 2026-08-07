@@ -9,6 +9,13 @@ module.exports = {
             secure: true,
             name: "Main",
         },
+        {
+            host: "lavalinkv4.serenetia.com",
+            password: "https://seretia.link/discord",
+            port: 443,
+            secure: true,
+            name: "Backup",
+        },
     ],
 
     defaultSearchPlatform: "ytmsearch",

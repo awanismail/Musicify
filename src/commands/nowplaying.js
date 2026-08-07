@@ -33,7 +33,7 @@ module.exports = {
         await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
         const guildData = getGuildData(interaction.guild.id);
-        const musicardBuffer = await generateMusicCard(player.current, player, guildData);
+        const musicardBuffer = await generateMusicCard(player.current, player, guildData, t);
         const container = createNowPlayingContainer(
             t,
             player.current,

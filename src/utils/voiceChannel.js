@@ -1,8 +1,9 @@
-function getVoiceChannelMismatch(guildData, userVoiceChannelId, player) {
+function getVoiceChannelMismatch(guildData, userVoiceChannelId, player, botVoiceChannelId = null) {
     if (
         guildData.twentyFourSeven &&
         guildData.boundVoiceChannelId &&
-        guildData.boundVoiceChannelId !== userVoiceChannelId
+        guildData.boundVoiceChannelId !== userVoiceChannelId &&
+        botVoiceChannelId === guildData.boundVoiceChannelId
     ) {
         return { type: "247", channelId: guildData.boundVoiceChannelId };
     }

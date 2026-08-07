@@ -1,8 +1,26 @@
 const { getGuildData } = require("../utils/playerStore");
 const { playQuery } = require("../services/playQuery");
 const { getT, translateError } = require("../i18n");
+const { isLikelySongRequest } = require("../utils/chatPlayMessageFilter");
 
-async function sendChatPlayFeedback(channel, content, timeoutMs = 5000) {
+const FEEDBACK_DELETE_MS = 5000;
+const FEEDBACK_DELETE_SHORT_MS = 3000;
+const FEEDBACK_DELETE_LONG_MS = 8000;
+
+function shouldDeleteUserRequests(guildData) {
+    return guildData.chatPlayDeleteMessages !== false;
+}
+
+async function deleteUserRequestMessage(message) {
+    try {
+        await message.delete();
+    } catch {
+        // message already gone or missing permissions
+    }
+}
+
+/** Bot confirmations/errors — always self-delete; independent of auto-delete requests setting. */
+async function sendChatPlayFeedback(channel, content, timeoutMs = FEEDBACK_DELETE_MS) {
     try {
         const feedback = await channel.send({ content });
         setTimeout(() => feedback.delete().catch(() => {}), timeoutMs);
@@ -36,9 +54,9 @@ function formatPlayErrorFeedback(t, result) {
 
 /**
  * Handle ChatPlay messages
- * - Deletes user's message
+ * - Optionally deletes the member's request message (auto-delete setting)
+ * - Bot feedback (errors, now playing, queue added) always self-deletes shortly
  * - Resolves the song via shared playQuery
- * - Plays in user's VC
  * - Edits the persistent ChatPlay message (never sends a new one)
  */
 async function handleChatPlayMessage(client, message) {
@@ -55,12 +73,16 @@ async function handleChatPlayMessage(client, message) {
     const query = message.content.trim();
     if (!query) return false;
 
-    if (guildData.chatPlayDeleteMessages !== false) {
-        try {
-            await message.delete();
-        } catch (err) {
-            console.error("[Musicify ChatPlay] Failed to delete message:", err.message);
-        }
+    const deleteUserRequests = shouldDeleteUserRequests(guildData);
+
+    const smartFilterOn = guildData.chatPlaySmartFilter !== false;
+    if (smartFilterOn && !isLikelySongRequest(query)) {
+        await deleteUserRequestMessage(message);
+        return true;
+    }
+
+    if (deleteUserRequests) {
+        await deleteUserRequestMessage(message);
     }
 
     const t = getT.forGuild(message.guild.id, client);
@@ -79,7 +101,9 @@ async function handleChatPlayMessage(client, message) {
         await sendChatPlayFeedback(
             message.channel,
             feedback,
-            result.type === "lavalink_down" || result.type === "vc_mismatch" ? 8000 : 5000
+            result.type === "lavalink_down" || result.type === "vc_mismatch"
+                ? FEEDBACK_DELETE_LONG_MS
+                : FEEDBACK_DELETE_MS
         );
         return true;
     }
@@ -106,7 +130,7 @@ async function handleChatPlayMessage(client, message) {
         await sendChatPlayFeedback(
             message.channel,
             t("chatplay.feedback.nowPlaying", { title: result.title }),
-            3000
+            FEEDBACK_DELETE_SHORT_MS
         );
     } else {
         await sendChatPlayFeedback(
@@ -115,7 +139,7 @@ async function handleChatPlayMessage(client, message) {
                 title: result.title,
                 position: result.queuePosition,
             }),
-            3000
+            FEEDBACK_DELETE_SHORT_MS
         );
     }
 

@@ -8,15 +8,20 @@ const {
     buildChatPlayDeleteConfirmContainer,
     buildChatPlayDeletedContainer,
     buildChangeChannelModal,
+    buildManageChangeChannelModal,
     finalizeChatPlaySetup,
     deleteChatPlay,
+    applyChatPlaySlowmode,
+    applyChatPlayPin,
+    relocateChatPlayChannel,
+    getCommandMention,
 } = require("../utils/chatPlaySetup");
 const { getSession, deleteSession, auditChannelPermissions } = require("../utils/chatPlaySetupSession");
 const { getGuildData } = require("../utils/playerStore");
 const { setGuildSetting } = require("../utils/database");
 const { toggleTwentyFourSeven } = require("../services/sessionManager");
 const { refreshChatPlayPlayer } = require("../services/chatPlayPlayer");
-const { safeInteractionUpdate, ephemeralV2, buildErrorContainer } = require("../utils/replies");
+const { safeInteractionUpdate, ephemeralV2, buildErrorContainer, buildFeedbackContainer } = require("../utils/replies");
 const { getT } = require("../i18n");
 
 const SETUP_BUTTONS = new Set([
@@ -38,6 +43,11 @@ const MANAGE_BUTTONS = new Set([
     "cp_manage_delete_confirm",
     "cp_manage_delete_cancel",
     "cp_manage_toggle_247",
+    "cp_manage_toggle_slowmode",
+    "cp_manage_toggle_deletemsg",
+    "cp_manage_toggle_pin",
+    "cp_manage_toggle_smartfilter",
+    "cp_manage_change_channel",
 ]);
 
 function canManageChatPlay(memberPermissions) {
@@ -45,6 +55,32 @@ function canManageChatPlay(memberPermissions) {
         memberPermissions?.has(PermissionFlagsBits.ManageChannels) ||
         memberPermissions?.has(PermissionFlagsBits.Administrator)
     );
+}
+
+async function refreshManagePanel(client, interaction, t, tGuild, warnings = null) {
+    const guildData = getGuildData(interaction.guild.id);
+    await safeInteractionUpdate(
+        interaction,
+        {
+            components: [
+                await buildChatPlayManageContainer(tGuild, guildData, interaction.guild, client),
+            ],
+            flags: MessageFlags.IsComponentsV2,
+        },
+        t
+    );
+
+    const warningList = Array.isArray(warnings) ? warnings : warnings ? [warnings] : [];
+    const filtered = warningList.filter(Boolean);
+    if (filtered.length) {
+        await interaction.followUp(
+            ephemeralV2(
+                buildFeedbackContainer(
+                    `${tGuild("common.labels.note")}\n-# ${filtered.join("\n-# ")}`
+                )
+            )
+        );
+    }
 }
 
 async function handleChatPlayManageButton(client, interaction) {
@@ -64,10 +100,16 @@ async function handleChatPlayManageButton(client, interaction) {
     const customId = interaction.customId;
 
     if (!guildData.chatPlayChannelId) {
+        const cmdChatplay = await getCommandMention(client, "chatplay");
         return safeInteractionUpdate(
             interaction,
             {
-                components: [buildErrorContainer(t("chatplay.handlers.notConfigured"), t)],
+                components: [
+                    buildErrorContainer(
+                        t("chatplay.handlers.notConfigured", { cmdChatplay }),
+                        t
+                    ),
+                ],
                 flags: MessageFlags.IsComponentsV2,
             },
             t
@@ -78,72 +120,72 @@ async function handleChatPlayManageButton(client, interaction) {
         guildData.chatPlayEnabled = true;
         setGuildSetting(guildId, "chatPlayEnabled", true);
         await refreshChatPlayPlayer(client, guildId);
-        return safeInteractionUpdate(
-            interaction,
-            {
-                components: [
-                    await buildChatPlayManageContainer(tGuild, guildData, interaction.guild, client),
-                ],
-                flags: MessageFlags.IsComponentsV2,
-            },
-            t
-        );
+        return refreshManagePanel(client, interaction, t, tGuild);
     }
 
     if (customId === "cp_manage_disable") {
         guildData.chatPlayEnabled = false;
         setGuildSetting(guildId, "chatPlayEnabled", false);
         await refreshChatPlayPlayer(client, guildId);
-        return safeInteractionUpdate(
-            interaction,
-            {
-                components: [
-                    await buildChatPlayManageContainer(tGuild, guildData, interaction.guild, client),
-                ],
-                flags: MessageFlags.IsComponentsV2,
-            },
-            t
-        );
+        return refreshManagePanel(client, interaction, t, tGuild);
+    }
+
+    if (customId === "cp_manage_toggle_slowmode") {
+        guildData.chatPlaySlowmode = !(guildData.chatPlaySlowmode !== false);
+        setGuildSetting(guildId, "chatPlaySlowmode", guildData.chatPlaySlowmode);
+        const warning = await applyChatPlaySlowmode(interaction.guild, guildData, tGuild);
+        return refreshManagePanel(client, interaction, t, tGuild, warning);
+    }
+
+    if (customId === "cp_manage_toggle_deletemsg") {
+        guildData.chatPlayDeleteMessages = !(guildData.chatPlayDeleteMessages !== false);
+        setGuildSetting(guildId, "chatPlayDeleteMessages", guildData.chatPlayDeleteMessages);
+        return refreshManagePanel(client, interaction, t, tGuild);
+    }
+
+    if (customId === "cp_manage_toggle_pin") {
+        guildData.chatPlayPinPlayerMessage = !(guildData.chatPlayPinPlayerMessage !== false);
+        setGuildSetting(guildId, "chatPlayPinPlayerMessage", guildData.chatPlayPinPlayerMessage);
+        const warning = await applyChatPlayPin(interaction.guild, guildData, tGuild);
+        return refreshManagePanel(client, interaction, t, tGuild, warning);
+    }
+
+    if (customId === "cp_manage_toggle_smartfilter") {
+        guildData.chatPlaySmartFilter = !(guildData.chatPlaySmartFilter !== false);
+        setGuildSetting(guildId, "chatPlaySmartFilter", guildData.chatPlaySmartFilter);
+        return refreshManagePanel(client, interaction, t, tGuild);
     }
 
     if (customId === "cp_manage_toggle_247") {
         const enabling = !guildData.twentyFourSeven;
-        const voiceChannel = interaction.member.voice?.channel;
 
-        if (!voiceChannel) {
-            return interaction.reply(
-                ephemeralV2(
-                    buildErrorContainer(
-                        enabling
-                            ? t("chatplay.handlers.joinVcEnable247")
-                            : t("chatplay.handlers.joinVcChange247"),
-                        t
+        if (enabling) {
+            const voiceChannel = interaction.member.voice?.channel;
+            if (!voiceChannel) {
+                return interaction.reply(
+                    ephemeralV2(
+                        buildErrorContainer(t("chatplay.handlers.joinVcEnable247"), t)
                     )
-                )
-            );
+                );
+            }
+
+            await toggleTwentyFourSeven(client, guildId, {
+                voiceChannelId: voiceChannel.id,
+                textChannelId: guildData.chatPlayChannelId,
+                enabled: true,
+            });
+        } else {
+            await toggleTwentyFourSeven(client, guildId, {
+                textChannelId: guildData.chatPlayChannelId,
+                enabled: false,
+            });
         }
 
-        await toggleTwentyFourSeven(client, guildId, {
-            voiceChannelId: voiceChannel.id,
-            textChannelId: guildData.chatPlayChannelId,
-            enabled: enabling,
-        });
+        return refreshManagePanel(client, interaction, t, tGuild);
+    }
 
-        return safeInteractionUpdate(
-            interaction,
-            {
-                components: [
-                    await buildChatPlayManageContainer(
-                        tGuild,
-                        getGuildData(guildId),
-                        interaction.guild,
-                        client
-                    ),
-                ],
-                flags: MessageFlags.IsComponentsV2,
-            },
-            t
-        );
+    if (customId === "cp_manage_change_channel") {
+        return interaction.showModal(buildManageChangeChannelModal(tGuild));
     }
 
     if (customId === "cp_manage_delete") {
@@ -158,16 +200,7 @@ async function handleChatPlayManageButton(client, interaction) {
     }
 
     if (customId === "cp_manage_delete_cancel") {
-        return safeInteractionUpdate(
-            interaction,
-            {
-                components: [
-                    await buildChatPlayManageContainer(tGuild, guildData, interaction.guild, client),
-                ],
-                flags: MessageFlags.IsComponentsV2,
-            },
-            t
-        );
+        return refreshManagePanel(client, interaction, t, tGuild);
     }
 
     if (customId === "cp_manage_delete_confirm") {
@@ -175,7 +208,7 @@ async function handleChatPlayManageButton(client, interaction) {
         return safeInteractionUpdate(
             interaction,
             {
-                components: [buildChatPlayDeletedContainer(tGuild)],
+                components: [await buildChatPlayDeletedContainer(tGuild, client)],
                 flags: MessageFlags.IsComponentsV2,
             },
             t
@@ -189,8 +222,11 @@ async function handleChatPlaySetupButton(client, interaction) {
     const session = getSession(interaction.guild.id, interaction.user.id);
 
     if (!session) {
+        const cmdChatplay = await getCommandMention(client, "chatplay");
         return interaction.reply(
-            ephemeralV2(buildErrorContainer(t("chatplay.handlers.setupExpired"), t))
+            ephemeralV2(
+                buildErrorContainer(t("chatplay.handlers.setupExpired", { cmdChatplay }), t)
+            )
         );
     }
 
@@ -204,8 +240,11 @@ async function handleChatPlaySetupButton(client, interaction) {
     const channel = interaction.guild.channels.cache.get(session.channelId);
     if (!channel && customId !== "cp_setup_cancel") {
         deleteSession(interaction.guild.id, interaction.user.id);
+        const cmdChatplay = await getCommandMention(client, "chatplay");
         return interaction.update({
-            components: [buildErrorContainer(t("chatplay.handlers.channelMissing"), t)],
+            components: [
+                buildErrorContainer(t("chatplay.handlers.channelMissing", { cmdChatplay }), t),
+            ],
             flags: MessageFlags.IsComponentsV2,
         });
     }
@@ -341,11 +380,17 @@ async function handleChatPlaySetupButton(client, interaction) {
                 interaction,
                 {
                     components: [
-                        buildSetupSuccessContainer(tGuild, session, interaction.guild, {
-                            slowmodeWarning,
-                            twentyFourSevenWarning,
-                            pinWarning,
-                        }),
+                        await buildSetupSuccessContainer(
+                            tGuild,
+                            session,
+                            interaction.guild,
+                            client,
+                            {
+                                slowmodeWarning,
+                                twentyFourSevenWarning,
+                                pinWarning,
+                            }
+                        ),
                     ],
                     flags: MessageFlags.IsComponentsV2,
                 },
@@ -370,30 +415,44 @@ async function handleChatPlaySetupButton(client, interaction) {
     }
 }
 
-async function handleChatPlaySetupModal(client, interaction) {
-    if (interaction.customId !== "cp_setup_change_channel_modal") {
+async function handleChatPlayModal(client, interaction) {
+    const isSetup = interaction.customId === "cp_setup_change_channel_modal";
+    const isManage = interaction.customId === "cp_manage_change_channel_modal";
+    if (!isSetup && !isManage) {
         return false;
     }
 
     const t = getT(interaction, client);
     const tGuild = getT.forGuild(interaction.guild.id, client);
-    const session = getSession(interaction.guild.id, interaction.user.id);
+    const selectField = isSetup ? "cp_setup_channel_select" : "cp_manage_channel_select";
 
-    if (!session) {
+    if (isSetup) {
+        const session = getSession(interaction.guild.id, interaction.user.id);
+
+        if (!session) {
+            const cmdChatplay = await getCommandMention(client, "chatplay");
+            await interaction.reply(
+                ephemeralV2(
+                    buildErrorContainer(t("chatplay.handlers.setupExpired", { cmdChatplay }), t)
+                )
+            );
+            return true;
+        }
+
+        if (interaction.user.id !== session.userId) {
+            await interaction.reply(
+                ephemeralV2(buildErrorContainer(t("chatplay.handlers.notYourSetupChannel"), t))
+            );
+            return true;
+        }
+    } else if (!canManageChatPlay(interaction.memberPermissions)) {
         await interaction.reply(
-            ephemeralV2(buildErrorContainer(t("chatplay.handlers.setupExpired"), t))
+            ephemeralV2(buildErrorContainer(t("commands.chatplay.permissionManage"), t))
         );
         return true;
     }
 
-    if (interaction.user.id !== session.userId) {
-        await interaction.reply(
-            ephemeralV2(buildErrorContainer(t("chatplay.handlers.notYourSetupChannel"), t))
-        );
-        return true;
-    }
-
-    const selectedChannels = interaction.fields.getSelectedChannels("cp_setup_channel_select");
+    const selectedChannels = interaction.fields.getSelectedChannels(selectField);
     const selectedChannel = selectedChannels.first();
     if (!selectedChannel) {
         await interaction.reply(
@@ -423,16 +482,51 @@ async function handleChatPlaySetupModal(client, interaction) {
         return true;
     }
 
-    session.channelId = channel.id;
-    await safeInteractionUpdate(
-        interaction,
-        {
-            components: [buildSetupStep2Container(tGuild, session, interaction.guild)],
-            flags: MessageFlags.IsComponentsV2,
-        },
-        t
-    );
+    if (isSetup) {
+        const session = getSession(interaction.guild.id, interaction.user.id);
+        session.channelId = channel.id;
+        await safeInteractionUpdate(
+            interaction,
+            {
+                components: [buildSetupStep2Container(tGuild, session, interaction.guild)],
+                flags: MessageFlags.IsComponentsV2,
+            },
+            t
+        );
+        return true;
+    }
+
+    const guildData = getGuildData(interaction.guild.id);
+
+    try {
+        const warnings = await relocateChatPlayChannel(
+            client,
+            interaction.guild,
+            guildData,
+            channel.id,
+            tGuild
+        );
+        await refreshManagePanel(client, interaction, t, tGuild, warnings);
+    } catch (err) {
+        console.error("[Musicify] ChatPlay channel move failed:", err.message);
+        await interaction.reply(
+            ephemeralV2(
+                buildErrorContainer(
+                    t("chatplay.handlers.channelMoveFailed", {
+                        message: err.message || t("errors.unexpected"),
+                    }),
+                    t
+                )
+            )
+        );
+    }
+
     return true;
+}
+
+/** @deprecated Use handleChatPlayModal */
+async function handleChatPlaySetupModal(client, interaction) {
+    return handleChatPlayModal(client, interaction);
 }
 
 function isChatPlaySetupButton(customId) {
@@ -446,6 +540,7 @@ function isChatPlayManageButton(customId) {
 module.exports = {
     handleChatPlaySetupButton,
     handleChatPlaySetupModal,
+    handleChatPlayModal,
     handleChatPlayManageButton,
     isChatPlaySetupButton,
     isChatPlayManageButton,

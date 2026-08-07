@@ -102,9 +102,9 @@ function buildChannelSection(t, session, guild) {
         );
 }
 
-function buildChangeChannelModal(t) {
+function buildChangeChannelModal(t, { modalCustomId, selectCustomId } = {}) {
     const channelSelect = new ChannelSelectMenuBuilder()
-        .setCustomId("cp_setup_channel_select")
+        .setCustomId(selectCustomId ?? "cp_setup_channel_select")
         .setPlaceholder(t("chatplay.setup.modalPlaceholder"))
         .setRequired(true)
         .addChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement);
@@ -115,9 +115,39 @@ function buildChangeChannelModal(t) {
         .setChannelSelectMenuComponent(channelSelect);
 
     return new ModalBuilder()
-        .setCustomId("cp_setup_change_channel_modal")
+        .setCustomId(modalCustomId ?? "cp_setup_change_channel_modal")
         .setTitle(t("chatplay.setup.modalTitle"))
         .addLabelComponents(channelLabel);
+}
+
+function buildManageChangeChannelModal(t) {
+    return buildChangeChannelModal(t, {
+        modalCustomId: "cp_manage_change_channel_modal",
+        selectCustomId: "cp_manage_channel_select",
+    });
+}
+
+function buildManageStatusSection(t, guildData, guild) {
+    const channel = guild.channels.cache.get(guildData.chatPlayChannelId);
+    const channelLine = channel
+        ? `<#${guildData.chatPlayChannelId}>`
+        : t("chatplay.setup.unknownChannel");
+    const statusLine = guildData.chatPlayEnabled
+        ? t("chatplay.setup.manageEnabled", { channel: channelLine })
+        : t("chatplay.setup.manageDisabled", { channel: channelLine });
+
+    return new SectionBuilder()
+        .addTextDisplayComponents(
+            new TextDisplayBuilder().setContent(
+                `${t("common.labels.status")}\n-# ${statusLine}`
+            )
+        )
+        .setButtonAccessory(
+            new ButtonBuilder()
+                .setCustomId("cp_manage_change_channel")
+                .setLabel(t("chatplay.setup.editButton"))
+                .setStyle(ButtonStyle.Secondary)
+        );
 }
 
 function buildReviewSection(title, description, customId, valueLabel) {
@@ -134,22 +164,13 @@ function buildReviewSection(title, description, customId, valueLabel) {
         );
 }
 
-function buildManage247Section(t, guildData, command247) {
-    const enable247 = Boolean(guildData.twentyFourSeven);
-    const action = enable247 ? t("chatplay.setup.turnOff") : t("chatplay.setup.turnOn");
-
-    return new SectionBuilder()
-        .addTextDisplayComponents(
-            new TextDisplayBuilder().setContent(
-                `${t("chatplay.setup.247Title")}\n-# ${t("chatplay.setup.manage247Description", { action, cmd247: command247 })}`
-            )
-        )
-        .setButtonAccessory(
-            new ButtonBuilder()
-                .setCustomId("cp_manage_toggle_247")
-                .setLabel(action)
-                .setStyle(enable247 ? ButtonStyle.Secondary : ButtonStyle.Success)
-        );
+function buildManage247Section(t, guildData) {
+    return buildBehaviourSection(
+        t("chatplay.setup.247Title"),
+        t("chatplay.setup.247Description"),
+        "cp_manage_toggle_247",
+        Boolean(guildData.twentyFourSeven)
+    );
 }
 
 async function getCommandMention(client, name) {
@@ -319,50 +340,179 @@ function hasChatPlayConfigured(guildData) {
     return Boolean(guildData.chatPlayChannelId);
 }
 
-function buildManageSettingsSections(t, guildData, command247) {
+function buildManageSettingsSections(t, guildData) {
     const slowmode = guildData.chatPlaySlowmode !== false;
     const deleteMessages = guildData.chatPlayDeleteMessages !== false;
     const pinPlayer = guildData.chatPlayPinPlayerMessage !== false;
+    const smartFilter = guildData.chatPlaySmartFilter !== false;
 
     return [
-        buildReviewSection(
+        buildBehaviourSection(
             stripRecommended(t("chatplay.setup.slowmodeTitle")),
             t("chatplay.setup.slowmodeDescription"),
-            "cp_manage_review_slowmode",
-            slowmode ? t("chatplay.setup.slowmodeOn") : t("common.off")
+            "cp_manage_toggle_slowmode",
+            slowmode
         ),
-        buildReviewSection(
+        buildBehaviourSection(
             stripRecommended(t("chatplay.setup.deleteMessagesTitle")),
             t("chatplay.setup.deleteMessagesDescription"),
-            "cp_manage_review_deletemsg",
-            deleteMessages ? t("common.on") : t("common.off")
+            "cp_manage_toggle_deletemsg",
+            deleteMessages
         ),
-        buildReviewSection(
+        buildBehaviourSection(
             stripRecommended(t("chatplay.setup.pinTitle")),
             t("chatplay.setup.pinDescription"),
-            "cp_manage_review_pin",
-            pinPlayer ? t("common.on") : t("common.off")
+            "cp_manage_toggle_pin",
+            pinPlayer
         ),
-        buildManage247Section(t, guildData, command247),
+        buildBehaviourSection(
+            t("chatplay.setup.smartFilterTitle"),
+            t("chatplay.setup.smartFilterDescription"),
+            "cp_manage_toggle_smartfilter",
+            smartFilter
+        ),
+        buildManage247Section(t, guildData),
     ];
 }
 
-async function buildChatPlayManageContainer(t, guildData, guild, client) {
-    const command247 = await getCommandMention(client, "247");
+async function applyChatPlaySlowmode(guild, guildData, t) {
     const channel = guild.channels.cache.get(guildData.chatPlayChannelId);
-    const channelLine = channel
-        ? `<#${guildData.chatPlayChannelId}>`
-        : t("chatplay.setup.unknownChannel");
-    const statusLine = guildData.chatPlayEnabled
-        ? t("chatplay.setup.manageEnabled", { channel: channelLine })
-        : t("chatplay.setup.manageDisabled", { channel: channelLine });
+    if (!channel) return null;
 
+    const botMember = guild.members.me;
+    const canManageChannel = botMember
+        ?.permissionsIn(channel)
+        ?.has(PermissionFlagsBits.ManageChannels);
+    const enabled = guildData.chatPlaySlowmode !== false;
+
+    if (canManageChannel) {
+        try {
+            await channel.setRateLimitPerUser(
+                enabled ? 5 : 0,
+                enabled ? "ChatPlay — slowmode enabled" : "ChatPlay — slowmode disabled"
+            );
+            return null;
+        } catch {
+            return t("chatplay.setup.warningSlowmodeFailed");
+        }
+    }
+
+    if (enabled) {
+        return t("chatplay.setup.warningSlowmodeNotApplied");
+    }
+
+    return null;
+}
+
+async function applyChatPlayPin(guild, guildData, t) {
+    const channel = guild.channels.cache.get(guildData.chatPlayChannelId);
+    if (!channel || !guildData.chatPlayMessageId) return null;
+
+    let message;
+    try {
+        message = await channel.messages.fetch(guildData.chatPlayMessageId);
+    } catch {
+        return t("chatplay.setup.warningPinPermission");
+    }
+
+    const botMember = guild.members.me;
+    const shouldPin = guildData.chatPlayPinPlayerMessage !== false;
+
+    if (shouldPin) {
+        const result = await pinChatPlayPlayerMessage(channel, message, botMember, t);
+        return result.ok ? null : result.warning;
+    }
+
+    if (message.pinned) {
+        try {
+            await message.unpin();
+        } catch {
+            return t("chatplay.setup.warningPinPermission");
+        }
+    }
+
+    return null;
+}
+
+async function relocateChatPlayChannel(client, guild, guildData, newChannelId, t) {
+    const guildId = guild.id;
+    const oldChannelId = guildData.chatPlayChannelId;
+
+    if (!oldChannelId || oldChannelId === newChannelId) {
+        return [];
+    }
+
+    const newChannel =
+        guild.channels.cache.get(newChannelId) ??
+        (await guild.channels.fetch(newChannelId).catch(() => null));
+
+    if (!newChannel?.isTextBased?.()) {
+        throw new Error(t("chatplay.handlers.invalidChannel"));
+    }
+
+    const warnings = [];
+    const oldMessageId = guildData.chatPlayMessageId;
+    const botMember = guild.members.me;
+
+    if (guildData.chatPlaySlowmode !== false && oldChannelId) {
+        const oldChannel = guild.channels.cache.get(oldChannelId);
+        if (oldChannel?.permissionsFor(botMember)?.has(PermissionFlagsBits.ManageChannels)) {
+            await oldChannel.setRateLimitPerUser(0, "ChatPlay moved").catch(() => {});
+        }
+    }
+
+    if (oldChannelId && oldMessageId) {
+        try {
+            const oldChannel =
+                client.channels.cache.get(oldChannelId) ??
+                (await client.channels.fetch(oldChannelId));
+            const oldMsg = await oldChannel.messages.fetch(oldMessageId);
+            if (oldMsg.pinned) await oldMsg.unpin().catch(() => {});
+        } catch {}
+    }
+
+    guildData.chatPlayChannelId = newChannelId;
+    guildData.playerChannelId = newChannelId;
+
+    const { sendChatPlayPlayerMessage } = require("../services/chatPlayPlayer");
+    const chatMsg = await sendChatPlayPlayerMessage(client, guild, newChannel, guildData, t);
+
+    guildData.chatPlayMessageId = chatMsg.id;
+
+    setGuildSettings(guildId, {
+        chatPlayChannelId: newChannelId,
+        chatPlayMessageId: chatMsg.id,
+        playerChannelId: newChannelId,
+    });
+
+    if (oldChannelId && oldMessageId) {
+        try {
+            const oldChannel =
+                client.channels.cache.get(oldChannelId) ??
+                (await client.channels.fetch(oldChannelId));
+            const oldMsg = await oldChannel.messages.fetch(oldMessageId);
+            await oldMsg.delete();
+        } catch {}
+    }
+
+    const slowmodeWarning = await applyChatPlaySlowmode(guild, guildData, t);
+    if (slowmodeWarning) warnings.push(slowmodeWarning);
+
+    const pinWarning = await applyChatPlayPin(guild, guildData, t);
+    if (pinWarning) warnings.push(pinWarning);
+
+    return warnings;
+}
+
+async function buildChatPlayManageContainer(t, guildData, guild, client) {
     const container = new ContainerBuilder();
     container.addTextDisplayComponents(
-        new TextDisplayBuilder().setContent(
-            `${t("chatplay.setup.manageHeading")}\n\n` + "**Status**\n" + `-# ${statusLine}`
-        )
+        new TextDisplayBuilder().setContent(t("chatplay.setup.manageHeading"))
     );
+
+    container.addSeparatorComponents(new SeparatorBuilder().setDivider(false));
+
+    container.addSectionComponents(buildManageStatusSection(t, guildData, guild));
 
     container.addSeparatorComponents(new SeparatorBuilder().setDivider(false));
 
@@ -372,7 +522,7 @@ async function buildChatPlayManageContainer(t, guildData, guild, client) {
 
     container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
 
-    container.addSectionComponents(...buildManageSettingsSections(t, guildData, command247));
+    container.addSectionComponents(...buildManageSettingsSections(t, guildData));
 
     container.addSeparatorComponents(new SeparatorBuilder().setDivider(false));
 
@@ -433,13 +583,14 @@ function buildChatPlayDeleteConfirmContainer(t, guildData, guild) {
     return container;
 }
 
-function buildChatPlayDeletedContainer(t) {
+async function buildChatPlayDeletedContainer(t, client) {
+    const cmdChatplay = await getCommandMention(client, "chatplay");
     const container = new ContainerBuilder();
     container.addTextDisplayComponents(
         new TextDisplayBuilder().setContent(
             `${t("chatplay.setup.deletedHeading")}\n\n` +
                 `${t("chatplay.setup.deletedRemoved")}\n\n` +
-                t("chatplay.setup.deletedSetupAgain")
+                t("chatplay.setup.deletedSetupAgain", { cmdChatplay })
         )
     );
     return container;
@@ -490,7 +641,8 @@ async function deleteChatPlay(client, guild, guildData) {
     });
 }
 
-function buildSetupSuccessContainer(t, session, guild, extras = {}) {
+async function buildSetupSuccessContainer(t, session, guild, client, extras = {}) {
+    const cmdChatplay = await getCommandMention(client, "chatplay");
     const lines = [
         t("chatplay.setup.successHeading"),
         t("chatplay.setup.successTryIt"),
@@ -509,18 +661,18 @@ function buildSetupSuccessContainer(t, session, guild, extras = {}) {
     }
 
     if (extras.twentyFourSevenWarning) {
-        lines.push("", "**Note**", `-# ${extras.twentyFourSevenWarning}`);
+        lines.push("", t("common.labels.note"), `-# ${extras.twentyFourSevenWarning}`);
     }
 
     if (extras.slowmodeWarning) {
-        lines.push("", "**Note**", `-# ${extras.slowmodeWarning}`);
+        lines.push("", t("common.labels.note"), `-# ${extras.slowmodeWarning}`);
     }
 
     if (extras.pinWarning) {
-        lines.push("", "**Note**", `-# ${extras.pinWarning}`);
+        lines.push("", t("common.labels.note"), `-# ${extras.pinWarning}`);
     }
 
-    lines.push("", t("chatplay.setup.successManage"));
+    lines.push("", t("chatplay.setup.successManage", { cmdChatplay }));
 
     const container = new ContainerBuilder();
     container.addTextDisplayComponents(
@@ -570,43 +722,24 @@ async function finalizeChatPlaySetup(client, session, guild, { voiceChannelId = 
         }
     }
 
+    guildData.chatPlayChannelId = session.channelId;
+    guildData.chatPlayEnabled = true;
+    guildData.playerChannelId = session.channelId;
+
     const container = createChatPlayIdleContainer(t, guildData);
     const chatMsg = await channel.send({
         components: [container],
         flags: MessageFlags.IsComponentsV2,
     });
 
-    let slowmodeWarning = "";
+    const slowmodeWarning = (await applyChatPlaySlowmode(guild, guildData, t)) || "";
     let pinWarning = "";
-    const botMember = guild.members.me;
-    const canManageChannel = botMember
-        ?.permissionsIn(channel)
-        ?.has(PermissionFlagsBits.ManageChannels);
 
-    if (canManageChannel) {
-        try {
-            await channel.setRateLimitPerUser(
-                session.slowmode ? 5 : 0,
-                session.slowmode ? "ChatPlay setup — prevents spam" : "ChatPlay setup — slowmode disabled"
-            );
-        } catch (err) {
-            slowmodeWarning = t("chatplay.setup.warningSlowmodeFailed");
-        }
-    } else if (session.slowmode) {
-        slowmodeWarning = t("chatplay.setup.warningSlowmodeNotApplied");
-    }
+    guildData.chatPlayMessageId = chatMsg.id;
 
     if (session.pinPlayerMessage) {
-        const pinResult = await pinChatPlayPlayerMessage(channel, chatMsg, botMember, t);
-        if (!pinResult.ok) {
-            pinWarning = pinResult.warning;
-        }
+        pinWarning = (await applyChatPlayPin(guild, guildData, t)) || "";
     }
-
-    guildData.chatPlayChannelId = session.channelId;
-    guildData.chatPlayMessageId = chatMsg.id;
-    guildData.chatPlayEnabled = true;
-    guildData.playerChannelId = session.channelId;
 
     setGuildSettings(guildId, {
         chatPlayChannelId: session.channelId,
@@ -615,6 +748,7 @@ async function finalizeChatPlaySetup(client, session, guild, { voiceChannelId = 
         chatPlaySlowmode: session.slowmode,
         chatPlayDeleteMessages: session.deleteMessages,
         chatPlayPinPlayerMessage: session.pinPlayerMessage,
+        chatPlaySmartFilter: guildData.chatPlaySmartFilter !== false,
     });
 
     deleteSession(guildId, session.userId);
@@ -623,9 +757,11 @@ async function finalizeChatPlaySetup(client, session, guild, { voiceChannelId = 
 }
 
 module.exports = {
+    getCommandMention,
     buildSetupStep2Container,
     buildSetupStep3Container,
     buildChangeChannelModal,
+    buildManageChangeChannelModal,
     buildSetupCancelledContainer,
     buildSetupSuccessContainer,
     buildChatPlayManageContainer,
@@ -635,4 +771,7 @@ module.exports = {
     finalizeChatPlaySetup,
     deleteChatPlay,
     pinChatPlayPlayerMessage,
+    applyChatPlaySlowmode,
+    applyChatPlayPin,
+    relocateChatPlayChannel,
 };

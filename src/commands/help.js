@@ -28,6 +28,7 @@ function buildCmdParams(getCmd) {
     return {
         cmdPlay: getCmd("play"),
         cmdSkip: getCmd("skip"),
+        cmdSkipto: getCmd("skipto"),
         cmdStop: getCmd("stop"),
         cmdNowplaying: getCmd("nowplaying"),
         cmdSeek: getCmd("seek"),

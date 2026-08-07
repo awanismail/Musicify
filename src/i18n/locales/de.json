@@ -12,6 +12,10 @@
     },
     "nowplaying": { "description": "Zeige den aktuell abgespielten Track" },
     "skip": { "description": "Überspringe den aktuellen Track" },
+    "skipto": {
+      "description": "Springe zu einem Track in der Warteschlange",
+      "options": { "position": "Warteschlangenposition (1-basiert, wie bei /queue)" }
+    },
     "stop": { "description": "Stoppe die Wiedergabe und leere die Warteschlange (trennt, außer 24/7 ist aktiv)" },
     "volume": {
       "description": "Stelle die Wiedergabelautstärke ein",
@@ -86,7 +90,18 @@
       "preset": "**Preset**",
       "removed": "**Entfernt**",
       "nowPlaying": "**Wird abgespielt**",
-      "tracks": "**Tracks**"
+      "tracks": "**Tracks**",
+      "note": "**Hinweis**"
+    }
+  },
+  "bot": {
+    "activity": {
+      "dj": "Tu so, als wäre ich DJ",
+      "help": "/help für Befehle",
+      "spinning": "Tracks für Server auflegen",
+      "chatplay": "ChatPlay-Modus aktiviert",
+      "bassBoost": "Bass-Boost für Server",
+      "nowPlaying": "Läuft gerade: deine Lieblingssongs"
     }
   },
   "errors": {
@@ -116,7 +131,10 @@
       "mismatchPlayer": "❌ Ich bin bereits in **{{name}}**.\n-# Tritt diesem Sprachkanal bei, um Songs anzufragen."
     },
     "lavalink": {
-      "unavailable": "❌ **Lavalink ist nicht verfügbar** — die Musiksuche funktioniert gerade nicht.\n-# Versuche es in Kürze erneut oder prüfe {{statusRef}} für den Node-Status."
+      "unavailable": "❌ **Lavalink ist nicht verfügbar** — die Musiksuche funktioniert gerade nicht.\n-# Versuche es in Kürze erneut oder prüfe {{statusRef}} für den Node-Status.",
+      "disconnectedHeading": "Musik pausiert",
+      "disconnectedBody": "Der Audioserver ist offline. Deine Warteschlange ist gespeichert — die Wiedergabe geht automatisch weiter, sobald er wieder da ist.",
+      "disconnectedHint": "Prüfe {{cmdStatus}} für den Live-Status · Immer noch hängen? Tritt unserem [Support-Server](https://discord.gg/MRjEUhDCpZ) bei"
     },
     "rateLimit": {
       "message": "⏳ **Langsamer** — du sendest Anfragen zu schnell.\n-# Warte ein paar Sekunden zwischen Songs. Kanal-Slowmode kann ebenfalls gelten."
@@ -183,6 +201,11 @@
       "emptyStatus": "**Status**\n-# Es wird gerade nichts abgespielt."
     },
     "skip": { "successHeading": "### ⏭ Übersprungen" },
+    "skipto": {
+      "invalidPosition": "❌ Ungültige Position. Die Warteschlange hat **{{count}}** Track(s).",
+      "successHeading": "### ⏭ Gesprungen zu",
+      "skippedLine": "**Übersprungen**\n-# {{count}} Track(s) aus der Warteschlange entfernt"
+    },
     "stop": {
       "noActivePlayer": "**Kein aktiver Player**\n-# Es wird gerade nichts abgespielt.",
       "stayed247": "### ⏹ Gestoppt\n\n**Status**\n-# Warteschlange geleert. Bleibe im Sprachkanal (24/7-Modus).",
@@ -306,8 +329,8 @@
       "openSource": "-# Musicify ist [Open Source](https://github.com/codebymitch/Musicify)."
     },
     "music": {
-      "heading": "### 🎶 Befehlsübersicht\n-# 15 Befehle verfügbar",
-      "list": "**1.** {{cmdPlay}} — Song abspielen oder zur Warteschlange hinzufügen\n\n**2.** {{cmdSkip}} — Aktuellen Track überspringen\n\n**3.** {{cmdStop}} — Wiedergabe stoppen und Warteschlange leeren\n\n**4.** {{cmdNowplaying}} — Aktuell abgespielten Track anzeigen\n\n**5.** {{cmdSeek}} — Zu einer Position springen\n\n**6.** {{cmdQueue}} — Aktuelle Warteschlange anzeigen\n\n**7.** {{cmdRemove}} — Track aus der Warteschlange entfernen\n\n**8.** {{cmdMove}} — Track-Position verschieben\n\n**9.** {{cmdShuffle}} — Alle Tracks in der Warteschlange mischen\n\n**10.** {{cmdLoop}} — Wiederholungsmodus für Track oder Warteschlange\n\n**11.** {{cmdVolume}} — Wiedergabelautstärke einstellen\n\n**12.** {{cmd247}} — 24/7-Modus umschalten (Bestätigung erforderlich)\n\n**13.** {{cmdFilter}} — Audiofilter-Preset anwenden\n\n**14.** {{cmdChatplay}} — ChatPlay einrichten oder verwalten (aktivieren, deaktivieren, löschen)\n\n**15.** {{cmdAbout}} — Mehr über Musicify erfahren"
+      "heading": "### 🎶 Befehlsübersicht\n-# 16 Befehle verfügbar",
+      "list": "**1.** {{cmdPlay}} — Song abspielen oder zur Warteschlange hinzufügen\n\n**2.** {{cmdSkip}} — Aktuellen Track überspringen\n\n**3.** {{cmdSkipto}} — Zu einem Track in der Warteschlange springen\n\n**4.** {{cmdStop}} — Wiedergabe stoppen und Warteschlange leeren\n\n**5.** {{cmdNowplaying}} — Aktuell abgespielten Track anzeigen\n\n**6.** {{cmdSeek}} — Zu einer Position springen\n\n**7.** {{cmdQueue}} — Aktuelle Warteschlange anzeigen\n\n**8.** {{cmdRemove}} — Track aus der Warteschlange entfernen\n\n**9.** {{cmdMove}} — Track-Position verschieben\n\n**10.** {{cmdShuffle}} — Alle Tracks in der Warteschlange mischen\n\n**11.** {{cmdLoop}} — Wiederholungsmodus für Track oder Warteschlange\n\n**12.** {{cmdVolume}} — Wiedergabelautstärke einstellen\n\n**13.** {{cmd247}} — 24/7-Modus umschalten (Bestätigung erforderlich)\n\n**14.** {{cmdFilter}} — Audiofilter-Preset anwenden\n\n**15.** {{cmdChatplay}} — ChatPlay einrichten oder verwalten (aktivieren, deaktivieren, löschen)\n\n**16.** {{cmdAbout}} — Mehr über Musicify erfahren"
     },
     "filters": {
       "heading": "### 🎛️ Audiofilter\n-# {{cmdFilter}} `<preset>` — Audiofilter anwenden",
@@ -349,16 +372,18 @@
     "setup": {
       "stepHeader": "## <:Musicify_Logo:1517828581638541493> Musicify ChatPlay\n-# Schritt {{step}} von {{totalSteps}}",
       "channelTitle": "**ChatPlay-Kanal**",
-      "channelDescription": "-# ChatPlay wird in {{channel}} eingerichtet.",
+      "channelDescription": "ChatPlay wird in {{channel}} eingerichtet.",
       "unknownChannel": "Unbekannter Kanal",
       "behaviourHeading": "**Kanalverhalten**\n-# Tippe auf den Schalter neben jeder Option.",
       "slowmodeTitle": "**Slowmode (5 s)** *(empfohlen)*",
       "slowmodeDescription": "Reduziert Spam im Anfragekanal.",
       "slowmodeOn": "5 Sekunden",
       "deleteMessagesTitle": "**Anfragen automatisch löschen** *(empfohlen)*",
-      "deleteMessagesDescription": "Entfernt Song-Nachrichten, damit der Kanal sauber bleibt.",
+      "deleteMessagesDescription": "Entfernt Song-Anfragen von Mitgliedern. Bot-Bestätigungen verschwinden von selbst.",
       "pinTitle": "**Player-Nachricht anheften** *(empfohlen)*",
       "pinDescription": "Heftet die Player-Nachricht an, damit sie leicht zu finden ist.",
+      "smartFilterTitle": "**Smart-Filter**",
+      "smartFilterDescription": "Ignoriert offensichtlichen Chat (z. B. lol, brb) — keine Suche oder Warteschlange.",
       "247Title": "**24/7-Modus**",
       "247Description": "Tritt einem Sprachkanal bei, um zu aktivieren — Bot bleibt 24/7 in diesem Kanal.",
       "reviewHeading": "**Prüfen & bestätigen**",
@@ -377,8 +402,8 @@
       "manageHeading": "## <:Musicify_Logo:1517828581638541493> Musicify ChatPlay",
       "manageEnabled": "Aktiv in {{channel}}",
       "manageDisabled": "Deaktiviert in {{channel}}",
-      "manageSettings": "**Deine Einstellungen**",
-      "manage247Description": "-# Klicke auf **{{action}}**, um umzuschalten, oder nutze {{cmd247}}.",
+      "manageSettings": "**Deine Einstellungen**\n-# Tippe auf den Schalter neben jeder Option, um sie zu ändern.",
+      "manage247Description": "Klicke auf **{{action}}**, um umzuschalten, oder nutze {{cmd247}}.",
       "turnOn": "Einschalten",
       "turnOff": "Ausschalten",
       "enableButton": "Aktivieren",
@@ -392,7 +417,7 @@
       "confirmButton": "Bestätigen",
       "deletedHeading": "### 🗑 ChatPlay gelöscht",
       "deletedRemoved": "**Entfernt**\n-# ChatPlay wurde von diesem Server entfernt.",
-      "deletedSetupAgain": "**Erneut einrichten**\n-# Führe `/chatplay` in deinem Musikkanal aus, um neu zu starten.",
+      "deletedSetupAgain": "**Erneut einrichten**\n-# Führe {{cmdChatplay}} in deinem Musikkanal aus, um neu zu starten.",
       "successHeading": "### ✅ ChatPlay ist aktiv",
       "successTryIt": "**Jetzt ausprobieren**",
       "successStep1": "1. Tritt einem Sprachkanal bei",
@@ -400,7 +425,7 @@
       "successPinned": "-# Player-Nachricht in diesem Kanal angeheftet.",
       "successRecommendedPin": "**Empfohlen**\n• Hefte die Player-Nachricht an, damit sie sichtbar bleibt",
       "success247Enabled": "-# 24/7-Modus ist aktiv — der Bot bleibt zwischen Songs im Sprachkanal.",
-      "successManage": "**Verwalten**\n-# Führe `/chatplay` aus, um ChatPlay zu aktivieren, deaktivieren oder zu löschen.",
+      "successManage": "**Verwalten**\n-# Führe {{cmdChatplay}} aus, um ChatPlay zu aktivieren, deaktivieren oder zu löschen.",
       "warningPinFailed": "Player-Nachricht konnte nicht angeheftet werden — erteile **Nachrichten anheften** oder **Nachrichten verwalten** in diesem Kanal.",
       "warningPinPermission": "Player-Nachricht konnte nicht angeheftet werden — prüfe die **Nachrichten anheften**-Berechtigung.",
       "warning247NotEnabled": "24/7 wurde nicht aktiviert — tritt einem Sprachkanal bei und führe `/247` aus, um es einzuschalten.",
@@ -409,18 +434,19 @@
       "errorChannelGone": "Einrichtungskanal existiert nicht mehr."
     },
     "handlers": {
-      "notConfigured": "**Nicht eingerichtet**\n-# ChatPlay ist nicht konfiguriert. Führe `/chatplay` aus, um es einzurichten.",
-      "setupExpired": "**Einrichtung abgelaufen**\n-# Führe `/chatplay` erneut aus, um von vorn zu beginnen.",
+      "notConfigured": "**Nicht eingerichtet**\n-# ChatPlay ist nicht konfiguriert. Führe {{cmdChatplay}} aus, um es einzurichten.",
+      "setupExpired": "**Einrichtung abgelaufen**\n-# Führe {{cmdChatplay}} erneut aus, um von vorn zu beginnen.",
       "notYourSetup": "**Nicht deine Einrichtung**\n-# Nur die Person, die die Einrichtung gestartet hat, kann diese Buttons nutzen.",
       "notYourSetupChannel": "**Nicht deine Einrichtung**\n-# Nur die Person, die die Einrichtung gestartet hat, kann den Kanal ändern.",
-      "channelMissing": "**Kanal fehlt**\n-# Der Einrichtungskanal wurde gelöscht. Führe `/chatplay` erneut aus.",
+      "channelMissing": "**Kanal fehlt**\n-# Der Einrichtungskanal wurde gelöscht. Führe {{cmdChatplay}} erneut aus.",
       "permissionFinish": "**Berechtigung erforderlich**\n-# Du brauchst **Kanäle verwalten** oder **Administrator**, um die Einrichtung abzuschließen.",
       "setupFailed": "**Einrichtung fehlgeschlagen**\n-# {{message}}",
       "noChannelSelected": "**Kein Kanal ausgewählt**\n-# Wähle einen Textkanal und versuche es erneut.",
       "invalidChannel": "**Ungültiger Kanal**\n-# ChatPlay braucht einen Textkanal, in dem Mitglieder Nachrichten senden können.",
       "missingPermissionsChannel": "**Fehlende Berechtigungen**\n-# Musicify braucht **Kanal anzeigen**, **Nachrichten senden**, **Links einbetten** und **Verbinden & Sprechen** in einem Sprachkanal, bevor ChatPlay diesen Kanal nutzen kann.",
       "joinVcEnable247": "**Sprachkanal beitreten**\n-# Tritt zuerst einem Sprachkanal bei — der Bot bleibt 24/7 in diesem Kanal.",
-      "joinVcChange247": "**Sprachkanal beitreten**\n-# Tritt einem Sprachkanal bei, um den 24/7-Modus zu ändern."
+      "joinVcChange247": "**Sprachkanal beitreten**\n-# Tritt einem Sprachkanal bei, um den 24/7-Modus zu ändern.",
+      "channelMoveFailed": "**ChatPlay konnte nicht verschoben werden**\n-# {{message}}"
     },
     "feedback": {
       "playlistAdded": "✅ **{{addedCount}}** von **{{totalCount}}** Tracks aus **{{playlistName}}** hinzugefügt!",

@@ -5,6 +5,8 @@ const {
     scheduleAloneLeave,
     cancelAloneLeaveIfUsersPresent,
     cancelAloneLeaveTimer,
+    scheduleTwentyFourSevenReconnect,
+    savePending247Snapshot,
 } = require("../services/sessionManager");
 
 module.exports = {
@@ -14,10 +16,24 @@ module.exports = {
 
         // Bot was disconnected from voice — reset UI and destroy player
         if (oldState.id === client.user.id && !newState.channelId) {
+            const guildData = getGuildData(guildId);
             const player = client.riffy?.players.get(guildId);
-            if (player) {
+            let savedPlayback = false;
+
+            if (player && guildData.twentyFourSeven && guildData.boundVoiceChannelId) {
+                savedPlayback = savePending247Snapshot(client, player);
+            }
+
+            if (!savedPlayback) {
                 await resetChatPlayIfActive(client, guildId);
+            }
+
+            if (player) {
                 player.destroy();
+            }
+
+            if (guildData.twentyFourSeven && guildData.boundVoiceChannelId) {
+                scheduleTwentyFourSevenReconnect(client, guildId);
             }
             return;
         }

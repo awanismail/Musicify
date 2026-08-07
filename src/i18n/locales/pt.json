@@ -12,6 +12,10 @@
     },
     "nowplaying": { "description": "Mostrar a faixa que está tocando" },
     "skip": { "description": "Pular a faixa atual" },
+    "skipto": {
+      "description": "Pular para uma faixa na fila",
+      "options": { "position": "Posição na fila (a partir de 1, igual ao /queue)" }
+    },
     "stop": { "description": "Parar a reprodução e limpar a fila (desconecta, a menos que o modo 24/7 esteja ativo)" },
     "volume": {
       "description": "Definir o volume da reprodução",
@@ -86,7 +90,18 @@
       "preset": "**Preset**",
       "removed": "**Removido**",
       "nowPlaying": "**Tocando Agora**",
-      "tracks": "**Faixas**"
+      "tracks": "**Faixas**",
+      "note": "**Nota**"
+    }
+  },
+  "bot": {
+    "activity": {
+      "dj": "Fingindo ser DJ",
+      "help": "/help para comandos",
+      "spinning": "Tocando faixas nos servidores",
+      "chatplay": "Modo ChatPlay ativado",
+      "bassBoost": "Reforçando graves nos servidores",
+      "nowPlaying": "Tocando agora: suas músicas favoritas"
     }
   },
   "errors": {
@@ -116,7 +131,10 @@
       "mismatchPlayer": "❌ Já estou em **{{name}}**.\n-# Entre nesse canal de voz para solicitar músicas."
     },
     "lavalink": {
-      "unavailable": "❌ **Lavalink indisponível** — a busca de músicas não pode ser executada no momento.\n-# Tente novamente em breve ou verifique {{statusRef}} para o status dos nós."
+      "unavailable": "❌ **Lavalink indisponível** — a busca de músicas não pode ser executada no momento.\n-# Tente novamente em breve ou verifique {{statusRef}} para o status dos nós.",
+      "disconnectedHeading": "Música pausada",
+      "disconnectedBody": "O servidor de áudio desconectou. Sua fila está salva — a reprodução continuará automaticamente quando ele voltar.",
+      "disconnectedHint": "Veja {{cmdStatus}} para o status em tempo real · Ainda com problemas? Entre no nosso [servidor de suporte](https://discord.gg/MRjEUhDCpZ)"
     },
     "rateLimit": {
       "message": "⏳ **Calma aí** você está enviando solicitações rápido demais.\n-# Aguarde alguns segundos entre as músicas. O slowmode do canal também pode se aplicar."
@@ -183,6 +201,11 @@
       "emptyStatus": "**Status**\n-# Nada está tocando no momento."
     },
     "skip": { "successHeading": "### ⏭ Pulado" },
+    "skipto": {
+      "invalidPosition": "❌ Posição inválida. A fila tem **{{count}}** faixa(s).",
+      "successHeading": "### ⏭ Pulado para",
+      "skippedLine": "**Ignoradas**\n-# {{count}} faixa(s) removidas da fila"
+    },
     "stop": {
       "noActivePlayer": "**Nenhum player ativo**\n-# Nada está tocando no momento.",
       "stayed247": "### ⏹ Parado\n\n**Status**\n-# Fila limpa. Permanecendo no canal de voz (modo 24/7).",
@@ -306,8 +329,8 @@
       "openSource": "-# O Musicify é [open source](https://github.com/codebymitch/Musicify)."
     },
     "music": {
-      "heading": "### 🎶 Navegador de Comandos\n-# 15 comandos disponíveis",
-      "list": "**1.** {{cmdPlay}} — Tocar uma música ou adicioná-la à fila\n\n**2.** {{cmdSkip}} — Pular a faixa atual\n\n**3.** {{cmdStop}} — Parar a reprodução e limpar a fila\n\n**4.** {{cmdNowplaying}} — Mostrar a faixa que está tocando\n\n**5.** {{cmdSeek}} — Avançar para uma posição\n\n**6.** {{cmdQueue}} — Ver a fila atual\n\n**7.** {{cmdRemove}} — Remover uma faixa da fila\n\n**8.** {{cmdMove}} — Mover a posição de uma faixa\n\n**9.** {{cmdShuffle}} — Embaralhar todas as faixas da fila\n\n**10.** {{cmdLoop}} — Definir repetição para faixa ou fila\n\n**11.** {{cmdVolume}} — Definir o volume da reprodução\n\n**12.** {{cmd247}} — Alternar o modo 24/7 (confirmação necessária)\n\n**13.** {{cmdFilter}} — Aplicar um preset de filtro de áudio\n\n**14.** {{cmdChatplay}} — Configurar ou gerenciar o ChatPlay (ativar, desativar, excluir)\n\n**15.** {{cmdAbout}} — Saiba mais sobre o Musicify"
+      "heading": "### 🎶 Navegador de Comandos\n-# 16 comandos disponíveis",
+      "list": "**1.** {{cmdPlay}} — Tocar uma música ou adicioná-la à fila\n\n**2.** {{cmdSkip}} — Pular a faixa atual\n\n**3.** {{cmdSkipto}} — Pular para uma faixa na fila\n\n**4.** {{cmdStop}} — Parar a reprodução e limpar a fila\n\n**5.** {{cmdNowplaying}} — Mostrar a faixa que está tocando\n\n**6.** {{cmdSeek}} — Avançar para uma posição\n\n**7.** {{cmdQueue}} — Ver a fila atual\n\n**8.** {{cmdRemove}} — Remover uma faixa da fila\n\n**9.** {{cmdMove}} — Mover a posição de uma faixa\n\n**10.** {{cmdShuffle}} — Embaralhar todas as faixas da fila\n\n**11.** {{cmdLoop}} — Definir repetição para faixa ou fila\n\n**12.** {{cmdVolume}} — Definir o volume da reprodução\n\n**13.** {{cmd247}} — Alternar o modo 24/7 (confirmação necessária)\n\n**14.** {{cmdFilter}} — Aplicar um preset de filtro de áudio\n\n**15.** {{cmdChatplay}} — Configurar ou gerenciar o ChatPlay (ativar, desativar, excluir)\n\n**16.** {{cmdAbout}} — Saiba mais sobre o Musicify"
     },
     "filters": {
       "heading": "### 🎛️ Filtros de Áudio\n-# {{cmdFilter}} `<preset>` — Aplicar um filtro de áudio",
@@ -349,16 +372,18 @@
     "setup": {
       "stepHeader": "## <:Musicify_Logo:1517828581638541493> Musicify ChatPlay\n-# Etapa {{step}} de {{totalSteps}}",
       "channelTitle": "**Canal do ChatPlay**",
-      "channelDescription": "-# O ChatPlay será configurado em {{channel}}.",
+      "channelDescription": "O ChatPlay será configurado em {{channel}}.",
       "unknownChannel": "Canal desconhecido",
       "behaviourHeading": "**Comportamento do canal**\n-# Toque no alternador ao lado de cada opção.",
       "slowmodeTitle": "**Slowmode (5s)** *(recomendado)*",
       "slowmodeDescription": "Reduz spam no canal de solicitações.",
       "slowmodeOn": "5 segundos",
       "deleteMessagesTitle": "**Excluir solicitações automaticamente** *(recomendado)*",
-      "deleteMessagesDescription": "Remove mensagens de músicas para manter o canal limpo.",
+      "deleteMessagesDescription": "Remove mensagens de pedido de música. As confirmações do bot somem sozinhas.",
       "pinTitle": "**Fixar mensagem do player** *(recomendado)*",
       "pinDescription": "Fixa a mensagem do player para facilitar a localização.",
+      "smartFilterTitle": "**Filtro inteligente**",
+      "smartFilterDescription": "Ignora chat óbvio (ex.: lol, brb) — não busca nem adiciona à fila.",
       "247Title": "**Modo 24/7**",
       "247Description": "Entre em um canal de voz para ativar — o bot permanece nesse canal 24/7.",
       "reviewHeading": "**Revisar e confirmar**",
@@ -377,8 +402,8 @@
       "manageHeading": "## <:Musicify_Logo:1517828581638541493> Musicify ChatPlay",
       "manageEnabled": "Ativado em {{channel}}",
       "manageDisabled": "Desativado em {{channel}}",
-      "manageSettings": "**Suas configurações**",
-      "manage247Description": "-# Clique em **{{action}}** para alternar ou use {{cmd247}}.",
+      "manageSettings": "**Suas configurações**\n-# Toque no botão ao lado de cada opção para alterá-la.",
+      "manage247Description": "Clique em **{{action}}** para alternar ou use {{cmd247}}.",
       "turnOn": "Ativar",
       "turnOff": "Desativar",
       "enableButton": "Ativar",
@@ -392,7 +417,7 @@
       "confirmButton": "Confirmar",
       "deletedHeading": "### 🗑 ChatPlay Excluído",
       "deletedRemoved": "**Removido**\n-# O ChatPlay foi removido deste servidor.",
-      "deletedSetupAgain": "**Configurar novamente**\n-# Execute `/chatplay` no seu canal de música para recomeçar.",
+      "deletedSetupAgain": "**Configurar novamente**\n-# Execute {{cmdChatplay}} no seu canal de música para recomeçar.",
       "successHeading": "### ✅ ChatPlay está ativo",
       "successTryIt": "**Experimente agora**",
       "successStep1": "1. Entre em um canal de voz",
@@ -400,7 +425,7 @@
       "successPinned": "-# Mensagem do player fixada neste canal.",
       "successRecommendedPin": "**Recomendado**\n• Fixe a mensagem do player para mantê-la visível",
       "success247Enabled": "-# O modo 24/7 está ativado — o bot permanecerá no canal de voz entre as músicas.",
-      "successManage": "**Gerenciar**\n-# Execute `/chatplay` para ativar, desativar ou excluir o ChatPlay.",
+      "successManage": "**Gerenciar**\n-# Execute {{cmdChatplay}} para ativar, desativar ou excluir o ChatPlay.",
       "warningPinFailed": "Não foi possível fixar a mensagem do player — conceda **Fixar Mensagens** ou **Gerenciar Mensagens** neste canal.",
       "warningPinPermission": "Não foi possível fixar a mensagem do player — verifique a permissão **Fixar Mensagens**.",
       "warning247NotEnabled": "O 24/7 não foi ativado — entre em um canal de voz e execute `/247` para ligá-lo.",
@@ -409,18 +434,19 @@
       "errorChannelGone": "O canal de configuração não existe mais."
     },
     "handlers": {
-      "notConfigured": "**Não configurado**\n-# O ChatPlay não está configurado. Execute `/chatplay` para configurá-lo.",
-      "setupExpired": "**Configuração expirada**\n-# Execute `/chatplay` novamente para recomeçar.",
+      "notConfigured": "**Não configurado**\n-# O ChatPlay não está configurado. Execute {{cmdChatplay}} para configurá-lo.",
+      "setupExpired": "**Configuração expirada**\n-# Execute {{cmdChatplay}} novamente para recomeçar.",
       "notYourSetup": "**Não é sua configuração**\n-# Apenas quem iniciou a configuração pode usar estes botões.",
       "notYourSetupChannel": "**Não é sua configuração**\n-# Apenas quem iniciou a configuração pode alterar o canal.",
-      "channelMissing": "**Canal ausente**\n-# O canal de configuração foi excluído. Execute `/chatplay` novamente.",
+      "channelMissing": "**Canal ausente**\n-# O canal de configuração foi excluído. Execute {{cmdChatplay}} novamente.",
       "permissionFinish": "**Permissão necessária**\n-# Você precisa de **Gerenciar Canais** ou **Administrador** para concluir a configuração.",
       "setupFailed": "**Configuração falhou**\n-# {{message}}",
       "noChannelSelected": "**Nenhum canal selecionado**\n-# Escolha um canal de texto e tente novamente.",
       "invalidChannel": "**Canal inválido**\n-# O ChatPlay precisa de um canal de texto onde os membros possam enviar mensagens.",
       "missingPermissionsChannel": "**Permissões ausentes**\n-# O Musicify precisa de **Ver Canal**, **Enviar Mensagens**, **Inserir Links** e **Conectar e Falar** em um canal de voz antes que o ChatPlay possa usar esse canal.",
       "joinVcEnable247": "**Entre em um canal de voz**\n-# Entre em um canal de voz primeiro — o bot permanecerá nesse canal 24/7.",
-      "joinVcChange247": "**Entre em um canal de voz**\n-# Entre em um canal de voz para alterar o modo 24/7."
+      "joinVcChange247": "**Entre em um canal de voz**\n-# Entre em um canal de voz para alterar o modo 24/7.",
+      "channelMoveFailed": "**Não foi possível mover o ChatPlay**\n-# {{message}}"
     },
     "feedback": {
       "playlistAdded": "✅ Adicionadas **{{addedCount}}** de **{{totalCount}}** faixas de **{{playlistName}}**!",

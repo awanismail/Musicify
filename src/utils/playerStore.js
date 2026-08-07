@@ -12,6 +12,7 @@ class GuildData {
         this.chatPlaySlowmode = true;
         this.chatPlayDeleteMessages = true;
         this.chatPlayPinPlayerMessage = true;
+        this.chatPlaySmartFilter = true;
         this.autoplay = false;
         this.loop = "none"; // "none" | "track" | "queue"
         this.volume = 75;
@@ -26,6 +27,12 @@ class GuildData {
         this.updateInterval = null; // 15s musicard auto-update timer
         this.idleTimeout = null; // 30s disconnect timeout
         this.stopConfirmPending = null; // user id awaiting stop confirmation
+        this.lavalinkSuspended = false;
+        this.pendingLavalinkSeek = null;
+        this.pendingLavalinkPause = false;
+        this.lavalinkRecovering = false;
+        this.lavalinkNotifyMessageId = null;
+        this.lavalinkNotifyChannelId = null;
     }
 }
 

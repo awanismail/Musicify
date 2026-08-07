@@ -1,5 +1,5 @@
 const { getGuildData } = require("../utils/playerStore");
-const { isLavalinkAvailable, getLavalinkUnavailableError } = require("../utils/lavalink");
+const { isLavalinkAvailable, getLavalinkUnavailableError, createPreferredConnection } = require("../utils/lavalink");
 const { getVoiceChannelMismatch, getVoiceChannelMismatchError } = require("../utils/voiceChannel");
 const { getVoicePermissionError } = require("../utils/voicePermissions");
 const { VOICE_ERROR_KEYS } = require("../i18n");
@@ -14,6 +14,7 @@ const {
 } = require("../utils/resolveResult");
 const { getTrackQueuePosition, getDuplicateTrackError } = require("../utils/queueUtils");
 const { showChatPlayLoading, refreshChatPlayPlayer } = require("./chatPlayPlayer");
+const { abandonFailedPlayConnection } = require("./sessionManager");
 
 const YOUTUBE_PATTERN = /(?:youtube\.com|youtu\.be)/i;
 
@@ -53,7 +54,13 @@ async function playQuery(client, { guild, member, query, textChannelId, source, 
 
     const voiceChannelId = member.voice.channel.id;
     const existingPlayer = client.riffy.players.get(guildId);
-    const mismatch = getVoiceChannelMismatch(guildData, voiceChannelId, existingPlayer);
+    const botVoiceChannelId = guild.members.me?.voice?.channelId ?? null;
+    const mismatch = getVoiceChannelMismatch(
+        guildData,
+        voiceChannelId,
+        existingPlayer,
+        botVoiceChannelId
+    );
     if (mismatch) {
         return {
             ok: false,
@@ -63,8 +70,9 @@ async function playQuery(client, { guild, member, query, textChannelId, source, 
     }
 
     let player = existingPlayer;
+    const joinedForThisRequest = !existingPlayer;
     if (!player) {
-        player = client.riffy.createConnection({
+        player = createPreferredConnection(client, {
             guildId,
             voiceChannel: voiceChannelId,
             textChannel: textChannelId,
@@ -108,7 +116,8 @@ async function playQuery(client, { guild, member, query, textChannelId, source, 
             const { duplicates, addedTracks } = queueResolvedTracks(
                 player,
                 classified.tracks,
-                member.user
+                member.user,
+                t
             );
 
             if (!player.playing && !player.paused && !player.current) {
@@ -192,6 +201,10 @@ async function playQuery(client, { guild, member, query, textChannelId, source, 
         };
         return result;
     } finally {
+        if (joinedForThisRequest && result && !result.ok) {
+            abandonFailedPlayConnection(client, guildId, joinedForThisRequest);
+        }
+
         if (isChatPlay) {
             const player = client.riffy?.players.get(guildId);
             const shouldRefresh =

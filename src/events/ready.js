@@ -11,6 +11,7 @@ const {
     reconnectTwentyFourSeven,
     recreateChatPlayMessage,
 } = require("../services/sessionManager");
+const { getT } = require("../i18n");
 
 module.exports = {
     name: "clientReady",
@@ -35,7 +36,6 @@ module.exports = {
             "Now playing: your favorite songs",
         ];
 
-        // Set initial activity
         client.user.setPresence({
             activities: [{ name: statuses[0], type: ActivityType.Playing }],
             status: "online",
@@ -71,6 +71,9 @@ module.exports = {
                 }
                 if (typeof settings.chatPlayPinPlayerMessage === "boolean") {
                     guildData.chatPlayPinPlayerMessage = settings.chatPlayPinPlayerMessage;
+                }
+                if (typeof settings.chatPlaySmartFilter === "boolean") {
+                    guildData.chatPlaySmartFilter = settings.chatPlaySmartFilter;
                 }
 
                 // Restore ChatPlay state with message validation
@@ -144,8 +147,20 @@ module.exports = {
                                     const { generateMusicCard } = require("../utils/musicard");
                                     const { AttachmentBuilder } = require("discord.js");
                                     
-                                    const musicardBuffer = await generateMusicCard(player.current, player, guildData);
-                                    const container = createChatPlayNowPlayingContainer(player.current, player, guildData, musicardBuffer);
+                                    const tGuild = getT.forGuild(guildId, client);
+                                    const musicardBuffer = await generateMusicCard(
+                                        player.current,
+                                        player,
+                                        guildData,
+                                        tGuild
+                                    );
+                                    const container = createChatPlayNowPlayingContainer(
+                                        tGuild,
+                                        player.current,
+                                        player,
+                                        guildData,
+                                        musicardBuffer
+                                    );
                                     
                                     const files = [];
                                     if (musicardBuffer) {

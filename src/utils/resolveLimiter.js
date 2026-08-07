@@ -1,5 +1,6 @@
 const Bottleneck = require("bottleneck");
 const { enrichResolveResult } = require("./resolveResult");
+const { getPreferredNode } = require("./lavalink");
 
 const PRIORITY_PLAY = 5;
 const PRIORITY_SUGGESTIONS = 1;
@@ -69,7 +70,12 @@ function limitedResolve(client, { query, requester, guildId, userId, priority = 
     checkRateLimit(guildId, userId);
 
     const resolve = async () => {
-        const result = await client.riffy.resolve({ query, requester });
+        const node = getPreferredNode(client);
+        const result = await client.riffy.resolve({
+            query,
+            requester,
+            node: node ?? undefined,
+        });
         return enrichResolveResult(client, query, result);
     };
 

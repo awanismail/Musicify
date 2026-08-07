@@ -5,9 +5,18 @@ const { generateMusicCard } = require("../utils/musicard");
 const { recordIncident } = require("../utils/incidents");
 const { scheduleStatusUpdate } = require("../services/statusMonitor");
 const {
+    suspendPlayersForLavalinkDisconnect,
+    scheduleLavalinkRecovery,
+    isLavalinkSuspended,
+    handleRecoveryTrackStart,
+} = require("../services/lavalinkRecovery");
+const {
     cancelScheduledLeave,
     handleQueueEnd,
     handlePlayerDisconnect,
+    savePending247Snapshot,
+    hasPending247Snapshot,
+    scheduleTwentyFourSevenReconnect,
 } = require("../services/sessionManager");
 const { getT } = require("../i18n");
 const config = require("../../config");
@@ -120,7 +129,7 @@ async function refreshPlayerMessage(client, guildId) {
         const track = player.current;
         const t = getT.forGuild(guildId, client);
 
-        const musicardBuffer = await generateMusicCard(track, player, guildData);
+        const musicardBuffer = await generateMusicCard(track, player, guildData, t);
         const container = guildData.chatPlayChannelId
             ? createChatPlayNowPlayingContainer(t, track, player, guildData, musicardBuffer)
             : createNowPlayingContainer(t, track, player, guildData, musicardBuffer);
@@ -163,6 +172,7 @@ function setupPlayerHandler(client) {
     client.riffy.on("nodeConnect", (node) => {
         console.log(`[Musicify] Lavalink node "${node.name}" connected.`);
         scheduleStatusUpdate(client, true);
+        scheduleLavalinkRecovery(client);
     });
 
     // --- Node Error ---
@@ -177,12 +187,14 @@ function setupPlayerHandler(client) {
         console.warn(`[Musicify] Node "${node.name}" disconnected.`);
         recordIncident("Lavalink", "Node disconnected");
         scheduleStatusUpdate(client, true);
+        void suspendPlayersForLavalinkDisconnect(client, node);
     });
 
     // --- Node Reconnected (Riffy built-in auto-reconnect) ---
     client.riffy.on("nodeReconnect", (node) => {
         console.log(`[Musicify] Node "${node.name}" reconnected successfully.`);
         scheduleStatusUpdate(client, true);
+        scheduleLavalinkRecovery(client);
     });
 
     startLavalinkReconnectMonitor(client);
@@ -190,6 +202,8 @@ function setupPlayerHandler(client) {
     // --- Track Start ---
     client.riffy.on("trackStart", async (player, track) => {
         try {
+            handleRecoveryTrackStart(client, player);
+
             const guildData = getGuildData(player.guildId);
             const t = getT.forGuild(player.guildId, client);
 
@@ -210,7 +224,7 @@ function setupPlayerHandler(client) {
             }
 
             // Generate musicard image
-            const musicardBuffer = await generateMusicCard(track, player, guildData);
+            const musicardBuffer = await generateMusicCard(track, player, guildData, t);
 
             // Build the container - use ChatPlay version if in ChatPlay channel
             const container = guildData.chatPlayChannelId
@@ -255,6 +269,7 @@ function setupPlayerHandler(client) {
     // --- Queue End ---
     client.riffy.on("queueEnd", async (player) => {
         try {
+            if (isLavalinkSuspended(player.guildId)) return;
             await handleQueueEnd(client, player);
         } catch (error) {
             console.error("[Musicify] queueEnd error:", error);
@@ -264,6 +279,8 @@ function setupPlayerHandler(client) {
     // --- Track End (safety net for idle UI) ---
     client.riffy.on("trackEnd", async (player) => {
         try {
+            if (isLavalinkSuspended(player.guildId)) return;
+
             const guildData = getGuildData(player.guildId);
             if (guildData.loop !== "none") return;
             if (guildData.autoplay) return;
@@ -280,14 +297,33 @@ function setupPlayerHandler(client) {
     // --- Player Disconnect ---
     client.riffy.on("playerDisconnect", async (player) => {
         try {
+            if (isLavalinkSuspended(player.guildId)) return;
             await handlePlayerDisconnect(client, player);
         } catch (error) {
             console.error("[Musicify] playerDisconnect error:", error);
         }
     });
 
+    client.riffy.on("socketClosed", async (player) => {
+        try {
+            if (isLavalinkSuspended(player.guildId)) return;
+
+            const guildData = getGuildData(player.guildId);
+            if (!guildData.twentyFourSeven || !guildData.boundVoiceChannelId) return;
+            if (hasPending247Snapshot(player.guildId)) return;
+
+            if (savePending247Snapshot(client, player)) {
+                scheduleTwentyFourSevenReconnect(client, player.guildId);
+            }
+        } catch (error) {
+            console.error("[Musicify] socketClosed error:", error);
+        }
+    });
+
     // --- Track Error / Stuck ---
     client.riffy.on("trackError", async (player, track, payload) => {
+        if (isLavalinkSuspended(player.guildId)) return;
+
         console.error(`[Musicify] Track error in ${player.guildId} for "${track.info.title}":`, payload.error || payload);
         const { notifyPlayerFeedback } = require("./chatPlayHandler");
         const { refreshChatPlayPlayer } = require("../services/chatPlayPlayer");
@@ -301,6 +337,8 @@ function setupPlayerHandler(client) {
     });
 
     client.riffy.on("trackStuck", async (player, track, payload) => {
+        if (isLavalinkSuspended(player.guildId)) return;
+
         console.warn(`[Musicify] Track stuck in ${player.guildId} for "${track.info.title}" (${payload.thresholdMs}ms)`);
         const { notifyPlayerFeedback } = require("./chatPlayHandler");
         await notifyPlayerFeedback(

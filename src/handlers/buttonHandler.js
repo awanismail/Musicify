@@ -5,7 +5,7 @@ const { generateMusicCard } = require("../utils/musicard");
 const { addNodeDetails } = require("../utils/nodeDetails");
 const { canControlMusic, VOICE_CHANNEL_DENIAL_KEY } = require("../utils/permissions");
 const { handleStop, toggleTwentyFourSeven } = require("../services/sessionManager");
-const { build247ResultContainer, build247CancelledContainer } = require("../commands/247");
+const { build247ConfirmContainer, build247CancelledContainer } = require("../commands/247");
 const { handleLanguageButton, isLanguageButton } = require("../commands/language");
 const { getT, translateError } = require("../i18n");
 const {
@@ -27,6 +27,7 @@ const { dismissWelcomeMessage } = require("../utils/guildWelcome");
 const { buildStatusContainer, getNodeDisplayName } = require("../utils/statusPage");
 const config = require("../../config");
 const { createPreferredConnection } = require("../utils/lavalink");
+const { isPlayerConnectionHealthy } = require("../utils/playerConnection");
 const { getTrackQueuePosition, getDuplicateTrackError } = require("../utils/queueUtils");
 const { persistGuildPlaybackSettings } = require("../utils/database");
 
@@ -103,6 +104,8 @@ async function handleButtonInteraction(client, interaction) {
 
                 const enabling = customId === "247_enable";
 
+                await interaction.deferUpdate();
+
                 await toggleTwentyFourSeven(client, interaction.guild.id, {
                     voiceChannelId: interaction.member.voice.channel.id,
                     textChannelId: guildData.chatPlayChannelId || interaction.channel.id,
@@ -110,7 +113,9 @@ async function handleButtonInteraction(client, interaction) {
                 });
 
                 await safeInteractionUpdate(interaction, {
-                    components: [build247ResultContainer(tUser, enabling)],
+                    components: [
+                        build247ConfirmContainer(tUser, enabling, true),
+                    ],
                     flags: MessageFlags.IsComponentsV2,
                 }, tUser);
             } catch (error) {
@@ -165,8 +170,12 @@ async function handleButtonInteraction(client, interaction) {
         }
     }
 
-    // If no player exists but ChatPlay was active, try to recreate it
-    if (!player && guildData.chatPlayChannelId && guildData.chatPlayEnabled) {
+    // If no healthy player exists but ChatPlay is active, recreate the connection
+    if (
+        !isPlayerConnectionHealthy(client, guildId, player, interaction.member?.voice?.channel?.id) &&
+        guildData.chatPlayChannelId &&
+        guildData.chatPlayEnabled
+    ) {
         const voiceChannel = interaction.member?.voice?.channel;
         if (voiceChannel) {
             try {
@@ -177,7 +186,7 @@ async function handleButtonInteraction(client, interaction) {
                     deaf: true,
                 });
                 player.setVolume(guildData.volume);
-                console.log(`[Musicify] Recreated player for guild ${guildId} after restart`);
+                console.log(`[Musicify] Recreated player for guild ${guildId}`);
             } catch (err) {
                 console.error(`[Musicify] Failed to recreate player for guild ${guildId}:`, err.message);
             }

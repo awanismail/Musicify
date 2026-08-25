@@ -17,6 +17,7 @@ const {
     savePending247Snapshot,
     hasPending247Snapshot,
     scheduleTwentyFourSevenReconnect,
+    cleanupIdle247PlayersOnNodeDisconnect,
 } = require("../services/sessionManager");
 const { getT } = require("../i18n");
 const config = require("../../config");
@@ -188,6 +189,7 @@ function setupPlayerHandler(client) {
         recordIncident("Lavalink", "Node disconnected");
         scheduleStatusUpdate(client, true);
         void suspendPlayersForLavalinkDisconnect(client, node);
+        cleanupIdle247PlayersOnNodeDisconnect(client, node);
     });
 
     // --- Node Reconnected (Riffy built-in auto-reconnect) ---
@@ -314,7 +316,15 @@ function setupPlayerHandler(client) {
 
             if (savePending247Snapshot(client, player)) {
                 scheduleTwentyFourSevenReconnect(client, player.guildId);
+                return;
             }
+
+            try {
+                player.destroy();
+            } catch {
+                // player already gone
+            }
+            scheduleTwentyFourSevenReconnect(client, player.guildId);
         } catch (error) {
             console.error("[Musicify] socketClosed error:", error);
         }

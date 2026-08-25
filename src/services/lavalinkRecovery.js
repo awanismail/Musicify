@@ -317,4 +317,5 @@ module.exports = {
     handleRecoveryTrackStart,
     capturePlayerSnapshot,
     restorePlayerSnapshot: resumeSnapshot,
+    shouldSnapshotPlayer,
 };

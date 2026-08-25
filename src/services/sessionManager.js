@@ -9,7 +9,13 @@ const { generateMusicCard } = require("../utils/musicard");
 const { getT } = require("../i18n");
 const { createPreferredConnection } = require("../utils/lavalink");
 const {
+    isPlayerConnectionHealthy,
+    destroyPlayerSafe,
+    getAllPlayers,
+} = require("../utils/playerConnection");
+const {
     capturePlayerSnapshot,
+    shouldSnapshotPlayer,
 } = require("./lavalinkRecovery");
 
 const IDLE_LEAVE_MS = 30 * 1000;
@@ -302,16 +308,12 @@ async function handlePlayerDisconnect(client, player) {
 }
 
 async function ensureVoiceConnection(client, guildId, voiceChannelId, textChannelId) {
-    let player = client.riffy?.players.get(guildId);
-    if (!player) {
-        player = createPreferredConnection(client, {
-            guildId,
-            voiceChannel: voiceChannelId,
-            textChannel: textChannelId,
-            deaf: true,
-        });
-    }
-    return player;
+    return createPreferredConnection(client, {
+        guildId,
+        voiceChannel: voiceChannelId,
+        textChannel: textChannelId,
+        deaf: true,
+    });
 }
 
 async function toggleTwentyFourSeven(client, guildId, { voiceChannelId, textChannelId, enabled = null }) {
@@ -385,7 +387,17 @@ async function reconnectTwentyFourSeven(client, guildId) {
     if (!voiceChannel) return;
 
     const botMember = guild.members.cache.get(client.user.id);
-    if (botMember?.voice?.channelId === guildData.boundVoiceChannelId) return;
+    const player = client.riffy?.players.get(guildId);
+    if (
+        botMember?.voice?.channelId === guildData.boundVoiceChannelId &&
+        isPlayerConnectionHealthy(client, guildId, player, guildData.boundVoiceChannelId)
+    ) {
+        return;
+    }
+
+    if (player) {
+        destroyPlayerSafe(client, guildId);
+    }
 
     const textChannelId = guildData.chatPlayChannelId || guildData.playerChannelId;
     if (!textChannelId) return;
@@ -434,6 +446,11 @@ async function resumeTwentyFourSevenPlayback(client, guildId) {
     }
 
     let player = client.riffy.players.get(guildId);
+    if (!isPlayerConnectionHealthy(client, guildId, player, voiceChannelId)) {
+        destroyPlayerSafe(client, guildId);
+        player = null;
+    }
+
     if (!player) {
         try {
             player = createPreferredConnection(client, {
@@ -516,15 +533,20 @@ async function attemptTwentyFourSevenReconnect(client, guildId, attempt = 1) {
     if (!guild) return;
 
     const botMember = guild.members.cache.get(client.user.id);
+    const player = client.riffy?.players.get(guildId);
     if (botMember?.voice?.channelId === guildData.boundVoiceChannelId) {
-        clearTwentyFourSevenReconnectTimer(guildId);
-        if (pending247Snapshots.has(guildId)) {
-            const resumed = await resumeTwentyFourSevenPlayback(client, guildId);
-            if (!resumed && guildData.chatPlayChannelId && guildData.chatPlayMessageId) {
-                await resetChatPlayToIdle(client, guildId);
+        if (isPlayerConnectionHealthy(client, guildId, player, guildData.boundVoiceChannelId)) {
+            clearTwentyFourSevenReconnectTimer(guildId);
+            if (pending247Snapshots.has(guildId)) {
+                const resumed = await resumeTwentyFourSevenPlayback(client, guildId);
+                if (!resumed && guildData.chatPlayChannelId && guildData.chatPlayMessageId) {
+                    await resetChatPlayToIdle(client, guildId);
+                }
             }
+            return;
         }
-        return;
+
+        destroyPlayerSafe(client, guildId);
     }
 
     const voiceChannel =
@@ -604,6 +626,22 @@ function scheduleTwentyFourSevenReconnect(client, guildId) {
     );
 }
 
+function cleanupIdle247PlayersOnNodeDisconnect(client, disconnectedNode) {
+    const disconnectedName = disconnectedNode?.name;
+
+    for (const player of getAllPlayers(client)) {
+        if (disconnectedName && player.node?.name !== disconnectedName) continue;
+        if (shouldSnapshotPlayer(player)) continue;
+
+        const guildData = getGuildData(player.guildId);
+        destroyPlayerSafe(client, player.guildId);
+
+        if (guildData.twentyFourSeven && guildData.boundVoiceChannelId) {
+            scheduleTwentyFourSevenReconnect(client, player.guildId);
+        }
+    }
+}
+
 async function handleStop(client, guildId, { destroyPlayer = null } = {}) {
     const guildData = getGuildData(guildId);
     const player = client.riffy?.players.get(guildId);
@@ -653,6 +691,7 @@ module.exports = {
     scheduleTwentyFourSevenReconnect,
     savePending247Snapshot,
     hasPending247Snapshot,
+    cleanupIdle247PlayersOnNodeDisconnect,
     handleStop,
     isPlayerIdle,
     abandonFailedPlayConnection,

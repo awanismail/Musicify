@@ -1,5 +1,6 @@
 const { MessageFlags, AttachmentBuilder } = require("discord.js");
 const { getGuildData } = require("../utils/playerStore");
+const { setGuildSetting } = require("../utils/database");
 const {
     createChatPlayIdleContainer,
     createChatPlayLoadingContainer,
@@ -53,7 +54,37 @@ async function editChatPlayMessage(client, guildId, container, files = []) {
         });
         return true;
     } catch (err) {
-        console.error("[Musicify] Failed to edit ChatPlay message:", err.message);
+        console.error("[Musicify] Failed to edit ChatPlay message, recreating:", err.message);
+        return recreateChatPlayMessageContent(client, guildId, container, files);
+    }
+}
+
+async function recreateChatPlayMessageContent(client, guildId, container, files = []) {
+    const guildData = getGuildData(guildId);
+    if (!guildData.chatPlayChannelId) return false;
+
+    try {
+        const channel = client.channels.cache.get(guildData.chatPlayChannelId);
+        if (!channel) return false;
+
+        const msg = await channel.send({
+            components: [container],
+            files,
+            flags: MessageFlags.IsComponentsV2,
+        });
+
+        guildData.chatPlayMessageId = msg.id;
+        setGuildSetting(guildId, "chatPlayMessageId", msg.id);
+
+        if (guildData.chatPlayPinPlayerMessage) {
+            const { pinChatPlayPlayerMessage } = require("../utils/chatPlaySetup");
+            const t = getT.forGuild(guildId, client);
+            await pinChatPlayPlayerMessage(channel, msg, channel.guild.members.me, t);
+        }
+
+        return true;
+    } catch (sendErr) {
+        console.error("[Musicify] Failed to recreate ChatPlay message:", sendErr.message);
         return false;
     }
 }

@@ -34,9 +34,16 @@
       "description": "Springe zu einer bestimmten Position im Track",
       "options": { "time": "Zeitpunkt zum Springen (z. B. 1:30 oder 90)" }
     },
+    "pause": { "description": "Wiedergabe pausieren oder fortsetzen" },
+    "autoplay": {
+      "description": "Autoplay-Modus umschalten oder festlegen",
+      "options": { "mode": "Autoplay-Einstellung (leer lassen zum Umschalten)" },
+      "choices": { "mode": { "on": "An", "off": "Aus" } }
+    },
+    "replay": { "description": "Aktuellen Track von vorne neu starten" },
     "loop": {
-      "description": "Wiederholungsmodus einstellen",
-      "options": { "mode": "Wiederholungsmodus" },
+      "description": "Wiederholungsmodus festlegen oder durchschalten",
+      "options": { "mode": "Wiederholungsmodus (leer lassen zum Durchschalten)" },
       "choices": { "mode": { "off": "Aus", "track": "Track", "queue": "Warteschlange" } }
     },
     "filter": {
@@ -238,6 +245,19 @@
       "successHeading": "### ⏩ Gesprungen",
       "positionLine": "-# {{current}} / {{total}}"
     },
+    "pause": {
+      "pausedHeading": "### ⏸ Pausiert",
+      "resumedHeading": "### ▶️ Fortgesetzt",
+      "trackLine": "-# {{title}}"
+    },
+    "autoplay": {
+      "successHeading": "### 📻 Autoplay aktualisiert",
+      "statusLine": "-# {{status}}"
+    },
+    "replay": {
+      "successHeading": "### 🔁 Wird wiederholt",
+      "trackLine": "-# {{title}}"
+    },
     "loop": { "successHeading": "### {{emoji}} Wiederholung aktualisiert" },
     "filter": {
       "presets": {
@@ -318,7 +338,7 @@
       "home": { "label": "Start", "description": "Überblick & Schnellstart" },
       "music": { "label": "Musikbefehle", "description": "Abspielen, Überspringen, Warteschlange & mehr" },
       "filters": { "label": "Filter & Extras", "description": "Audiofilter, 24/7 & ChatPlay" },
-      "controls": { "label": "Player-Steuerung", "description": "Button-Layout-Anleitung" },
+      "controls": { "label": "Player-Steuerung", "description": "Buttons und Slash-Befehle" },
       "troubleshoot": { "label": "Fehlerbehebung", "description": "Häufige Probleme & Lösungen" },
       "support": { "label": "Support", "description": "Hilfe erhalten & Fehler melden" }
     },
@@ -329,8 +349,8 @@
       "openSource": "-# Musicify ist [Open Source](https://github.com/codebymitch/Musicify)."
     },
     "music": {
-      "heading": "### 🎶 Befehlsübersicht\n-# 16 Befehle verfügbar",
-      "list": "**1.** {{cmdPlay}} — Song abspielen oder zur Warteschlange hinzufügen\n\n**2.** {{cmdSkip}} — Aktuellen Track überspringen\n\n**3.** {{cmdSkipto}} — Zu einem Track in der Warteschlange springen\n\n**4.** {{cmdStop}} — Wiedergabe stoppen und Warteschlange leeren\n\n**5.** {{cmdNowplaying}} — Aktuell abgespielten Track anzeigen\n\n**6.** {{cmdSeek}} — Zu einer Position springen\n\n**7.** {{cmdQueue}} — Aktuelle Warteschlange anzeigen\n\n**8.** {{cmdRemove}} — Track aus der Warteschlange entfernen\n\n**9.** {{cmdMove}} — Track-Position verschieben\n\n**10.** {{cmdShuffle}} — Alle Tracks in der Warteschlange mischen\n\n**11.** {{cmdLoop}} — Wiederholungsmodus für Track oder Warteschlange\n\n**12.** {{cmdVolume}} — Wiedergabelautstärke einstellen\n\n**13.** {{cmd247}} — 24/7-Modus umschalten (Bestätigung erforderlich)\n\n**14.** {{cmdFilter}} — Audiofilter-Preset anwenden\n\n**15.** {{cmdChatplay}} — ChatPlay einrichten oder verwalten (aktivieren, deaktivieren, löschen)\n\n**16.** {{cmdAbout}} — Mehr über Musicify erfahren"
+      "heading": "### 🎶 Befehlsübersicht\n-# 19 Befehle verfügbar",
+      "list": "**1.** {{cmdPlay}} — Song abspielen oder zur Warteschlange hinzufügen\n\n**2.** {{cmdSkip}} — Aktuellen Track überspringen\n\n**3.** {{cmdSkipto}} — Zu einem Track in der Warteschlange springen\n\n**4.** {{cmdPause}} — Wiedergabe pausieren oder fortsetzen\n\n**5.** {{cmdReplay}} — Aktuellen Track neu starten\n\n**6.** {{cmdStop}} — Wiedergabe stoppen und Warteschlange leeren\n\n**7.** {{cmdNowplaying}} — Aktuell abgespielten Track anzeigen\n\n**8.** {{cmdSeek}} — Zu einer Position springen\n\n**9.** {{cmdQueue}} — Aktuelle Warteschlange anzeigen\n\n**10.** {{cmdRemove}} — Track aus der Warteschlange entfernen\n\n**11.** {{cmdMove}} — Track-Position verschieben\n\n**12.** {{cmdShuffle}} — Alle Tracks in der Warteschlange mischen\n\n**13.** {{cmdLoop}} — Wiederholungsmodus festlegen oder durchschalten\n\n**14.** {{cmdAutoplay}} — Autoplay umschalten oder festlegen\n\n**15.** {{cmdVolume}} — Wiedergabelautstärke einstellen\n\n**16.** {{cmd247}} — 24/7-Modus umschalten (Bestätigung erforderlich)\n\n**17.** {{cmdFilter}} — Audiofilter-Preset anwenden\n\n**18.** {{cmdChatplay}} — ChatPlay einrichten oder verwalten (aktivieren, deaktivieren, löschen)\n\n**19.** {{cmdAbout}} — Mehr über Musicify erfahren"
     },
     "filters": {
       "heading": "### 🎛️ Audiofilter\n-# {{cmdFilter}} `<preset>` — Audiofilter anwenden",
@@ -343,18 +363,19 @@
       "247HowItWorks": "**So funktioniert es**\n-# Musicify bleibt im Sprachkanal, auch nachdem die Warteschlange endet.\n-# Die Einstellung bleibt über Bot-Neustarts hinweg erhalten."
     },
     "controls": {
-      "heading": "### 🎮 Player-Button-Steuerung\n-# Während ein Track läuft, zeigt Musicify interaktive Buttons.",
-      "row1": "**Zeile 1 — Wiedergabe**\n\n**🔀 Shuffle**\n-# Warteschlange zufällig anordnen\n\n**⏮️ Zurück**\n-# Zum zuletzt gespielten Track zurück\n\n**⏸️ Pause / Play**\n-# Wiedergabe umschalten\n\n**⏭️ Überspringen**\n-# Zum nächsten Track springen\n\n**🔁 Wiederholen**\n-# Durchlauf: Aus → Track → Warteschlange",
-      "row2": "**Zeile 2 — Extras**\n\n**📻 Autoplay**\n-# Ähnliche Songs automatisch einreihen, wenn die Warteschlange endet\n\n**🔉 Vol↓  ·  🔊 Vol↑**\n-# Lautstärke um ±10 % anpassen\n\n**⏹️ Stop**\n-# Wiedergabe stoppen und trennen\n\n**📜 Warteschlange**\n-# Warteschlangen-Ansicht öffnen",
+      "heading": "### 🎮 Player-Steuerung\n-# Nutze die interaktiven Buttons auf der Player-Nachricht oder die Slash-Befehle unten.",
+      "row1": "**Zeile 1 — Wiedergabe**\n\n**🔀 Shuffle**\n-# Warteschlange zufällig anordnen · oder {{cmdShuffle}}\n\n**⏮️ Zurück**\n-# Zum zuletzt gespielten Track zurück\n\n**⏸️ Pause / Play**\n-# Wiedergabe umschalten · oder {{cmdPause}}\n\n**⏭️ Überspringen**\n-# Zum nächsten Track springen · oder {{cmdSkip}}\n\n**🔁 Wiederholen**\n-# Durchlauf: Aus → Track → Warteschlange · oder {{cmdLoop}}",
+      "row2": "**Zeile 2 — Extras**\n\n**📻 Autoplay**\n-# Ähnliche Songs automatisch einreihen · oder {{cmdAutoplay}}\n\n**🔉 Vol↓  ·  🔊 Vol↑**\n-# Lautstärke um ±10 % anpassen · oder {{cmdVolume}}\n\n**⏹️ Stop**\n-# Wiedergabe stoppen und trennen · oder {{cmdStop}}\n\n**📜 Warteschlange**\n-# Warteschlangen-Ansicht öffnen · oder {{cmdQueue}}",
+      "slashExtras": "**Nur als Slash-Befehl**\n\n{{cmdReplay}} — Aktuellen Track von vorne neu starten\n\n{{cmdSkipto}} — Zu einer bestimmten Position in der Warteschlange springen\n\n{{cmdSeek}} — Zu einem Zeitpunkt im aktuellen Track springen",
       "suggestions": "**🎵 Song-Vorschläge**\n-# Ein Dropdown mit bis zu **10 ähnlichen Tracks** erscheint unter den Buttons.\n-# Wähle einen aus, um ihn sofort zur Warteschlange hinzuzufügen!"
     },
     "troubleshoot": {
       "heading": "### 🛠️ Fehlerbehebung\n-# Häufige Probleme und wie du sie behebst.",
       "wontPlay": "**Bot spielt keine Musik / Track-Fehler**\n-# Der Song ist möglicherweise altersbeschränkt oder regional blockiert.\n-# Die Streaming-Quelle ist möglicherweise vorübergehend nicht verfügbar.\n-# **Lösung:** Probiere einen anderen Song oder füge eine direkte URL von {{platforms}} ein.",
       "joinsLeaves": "**Bot tritt bei, verlässt aber sofort wieder**\n-# Musicify fehlen möglicherweise Sprechen-/Verbinden-Berechtigungen in diesem Kanal.\n-# Der angefragte Song konnte möglicherweise nicht geladen werden.\n-# **Lösung:** Prüfe Bot-Berechtigungen und probiere einen anderen Song.",
-      "noSound": "**Kein Ton, aber Bot ist im Sprachkanal**\n-# Prüfe, ob der Bot pausiert ist — nutze den ▶️-Button.\n-# Prüfe die Lautstärke mit {{cmdVolume}}.\n-# **Lösung:** Stelle sicher, dass du im selben Sprachkanal bist und nicht taubgeschaltet bist.",
+      "noSound": "**Kein Ton, aber Bot ist im Sprachkanal**\n-# Prüfe, ob der Bot pausiert ist — nutze den ▶️-Button oder {{cmdPause}}.\n-# Prüfe die Lautstärke mit {{cmdVolume}}.\n-# **Lösung:** Stelle sicher, dass du im selben Sprachkanal bist und nicht taubgeschaltet bist.",
       "chatplayNotResponding": "**ChatPlay reagiert nicht**\n-# Stelle sicher, dass ChatPlay aktiv ist — führe {{cmdChatplay}} aus und tippe auf **Aktivieren**.\n-# Schreibe im richtigen Kanal.\n-# **Lösung:** Deaktiviere und aktiviere ChatPlay erneut.",
-      "noActivePlayer": "**Buttons zeigen „Kein aktiver Player“**\n-# Der Player wurde geschlossen, nachdem der Track endete.\n-# **Lösung:** Spiele einen neuen Song mit {{cmdPlay}} ab, um neu zu starten!",
+      "noActivePlayer": "**„Kein aktiver Player“ oder „Es wird nichts abgespielt“**\n-# Der Player wurde geschlossen, nachdem der Track endete.\n-# Wiedergabe-Slash-Befehle funktionieren nur, wenn etwas läuft.\n-# **Lösung:** Spiele einen neuen Song mit {{cmdPlay}} ab, um neu zu starten!",
       "language": "**Falsche Sprache / Bot antwortet in einer anderen Sprache**\n-# Nutze {{cmdLanguage}}, um die aktuelle Server-Sprache zu sehen.\n-# **Lösung:** Bitte einen Admin, die Sprache festzulegen, oder nutze **Auto**, wenn du deine Discord-Sprache für Befehle möchtest.",
       "languageAuto": "**Befehle und ChatPlay in unterschiedlichen Sprachen**\n-# Mit **Auto** (Standard) folgen deine Befehle *deiner* Discord-Sprache; ChatPlay und der Player folgen der *Server*-Sprache.\n-# Nicht unterstützte Sprachen fallen für deine Antworten auf **Englisch** zurück (unterstützt: Englisch, Spanisch, Portugiesisch, Französisch, Deutsch).\n-# **Lösung:** Admin legt eine Sprache für alle in {{cmdLanguage}} fest, oder ändere deine/ die Server-Discord-Sprache auf eine unterstützte.",
       "languageCommunity": "**Discord-Server-Sprache lässt sich nicht ändern (Auto bleibt Englisch)**\n-# Discord erlaubt die Server-Sprache nur, wenn **Community** aktiviert ist.\n-# Aktiviere sie unter **Servereinstellungen → Community aktivieren**, dann ändere sie unter **Servereinstellungen → Community-Übersicht → Primäre Server-Sprache**.\n-# **Lösung:** Oder Admin setzt Musicifys Sprache mit {{cmdLanguage}} — Community nicht nötig."

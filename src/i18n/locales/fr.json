@@ -34,9 +34,16 @@
       "description": "Avancer à une position précise dans le morceau",
       "options": { "time": "Temps cible (ex. 1:30 ou 90)" }
     },
+    "pause": { "description": "Mettre en pause ou reprendre la lecture" },
+    "autoplay": {
+      "description": "Activer, désactiver ou basculer l'autoplay",
+      "options": { "mode": "Réglage autoplay (vide pour basculer)" },
+      "choices": { "mode": { "on": "Activé", "off": "Désactivé" } }
+    },
+    "replay": { "description": "Recommencer le morceau en cours depuis le début" },
     "loop": {
-      "description": "Définir le mode de boucle",
-      "options": { "mode": "Mode de boucle" },
+      "description": "Définir ou alterner le mode de boucle",
+      "options": { "mode": "Mode de boucle (vide pour alterner)" },
       "choices": { "mode": { "off": "Désactivé", "track": "Morceau", "queue": "File d'attente" } }
     },
     "filter": {
@@ -238,6 +245,19 @@
       "successHeading": "### ⏩ Position modifiée",
       "positionLine": "-# {{current}} / {{total}}"
     },
+    "pause": {
+      "pausedHeading": "### ⏸ En pause",
+      "resumedHeading": "### ▶️ Reprise",
+      "trackLine": "-# {{title}}"
+    },
+    "autoplay": {
+      "successHeading": "### 📻 Autoplay mis à jour",
+      "statusLine": "-# {{status}}"
+    },
+    "replay": {
+      "successHeading": "### 🔁 Relecture",
+      "trackLine": "-# {{title}}"
+    },
     "loop": { "successHeading": "### {{emoji}} Boucle mise à jour" },
     "filter": {
       "presets": {
@@ -318,7 +338,7 @@
       "home": { "label": "Accueil", "description": "Vue d'ensemble et démarrage rapide" },
       "music": { "label": "Commandes musicales", "description": "Lecture, passage, file d'attente et plus" },
       "filters": { "label": "Filtres et extras", "description": "Filtres audio, 24/7 et ChatPlay" },
-      "controls": { "label": "Contrôles du lecteur", "description": "Guide des boutons" },
+      "controls": { "label": "Contrôles du lecteur", "description": "Boutons et commandes slash" },
       "troubleshoot": { "label": "Dépannage", "description": "Problèmes courants et solutions" },
       "support": { "label": "Assistance", "description": "Obtenir de l'aide et signaler des bugs" }
     },
@@ -329,8 +349,8 @@
       "openSource": "-# Musicify est [open source](https://github.com/codebymitch/Musicify)."
     },
     "music": {
-      "heading": "### 🎶 Navigateur de commandes\n-# 16 commandes disponibles",
-      "list": "**1.** {{cmdPlay}} — Lire un morceau ou l'ajouter à la file d'attente\n\n**2.** {{cmdSkip}} — Passer le morceau en cours\n\n**3.** {{cmdSkipto}} — Passer à un morceau dans la file d'attente\n\n**4.** {{cmdStop}} — Arrêter la lecture et vider la file d'attente\n\n**5.** {{cmdNowplaying}} — Afficher le morceau en cours de lecture\n\n**6.** {{cmdSeek}} — Avancer à une position\n\n**7.** {{cmdQueue}} — Afficher la file d'attente actuelle\n\n**8.** {{cmdRemove}} — Retirer un morceau de la file d'attente\n\n**9.** {{cmdMove}} — Déplacer la position d'un morceau\n\n**10.** {{cmdShuffle}} — Mélanger tous les morceaux de la file d'attente\n\n**11.** {{cmdLoop}} — Définir le mode de boucle pour le morceau ou la file d'attente\n\n**12.** {{cmdVolume}} — Régler le volume de lecture\n\n**13.** {{cmd247}} — Activer/désactiver le mode 24/7 (confirmation requise)\n\n**14.** {{cmdFilter}} — Appliquer un préréglage de filtre audio\n\n**15.** {{cmdChatplay}} — Configurer ou gérer ChatPlay (activer, désactiver, supprimer)\n\n**16.** {{cmdAbout}} — En savoir plus sur Musicify"
+      "heading": "### 🎶 Navigateur de commandes\n-# 19 commandes disponibles",
+      "list": "**1.** {{cmdPlay}} — Lire un morceau ou l'ajouter à la file d'attente\n\n**2.** {{cmdSkip}} — Passer le morceau en cours\n\n**3.** {{cmdSkipto}} — Passer à un morceau dans la file d'attente\n\n**4.** {{cmdPause}} — Mettre en pause ou reprendre la lecture\n\n**5.** {{cmdReplay}} — Recommencer le morceau en cours\n\n**6.** {{cmdStop}} — Arrêter la lecture et vider la file d'attente\n\n**7.** {{cmdNowplaying}} — Afficher le morceau en cours de lecture\n\n**8.** {{cmdSeek}} — Avancer à une position\n\n**9.** {{cmdQueue}} — Afficher la file d'attente actuelle\n\n**10.** {{cmdRemove}} — Retirer un morceau de la file d'attente\n\n**11.** {{cmdMove}} — Déplacer la position d'un morceau\n\n**12.** {{cmdShuffle}} — Mélanger tous les morceaux de la file d'attente\n\n**13.** {{cmdLoop}} — Définir ou alterner le mode de boucle\n\n**14.** {{cmdAutoplay}} — Activer, désactiver ou basculer l'autoplay\n\n**15.** {{cmdVolume}} — Régler le volume de lecture\n\n**16.** {{cmd247}} — Activer/désactiver le mode 24/7 (confirmation requise)\n\n**17.** {{cmdFilter}} — Appliquer un préréglage de filtre audio\n\n**18.** {{cmdChatplay}} — Configurer ou gérer ChatPlay (activer, désactiver, supprimer)\n\n**19.** {{cmdAbout}} — En savoir plus sur Musicify"
     },
     "filters": {
       "heading": "### 🎛️ Filtres audio\n-# {{cmdFilter}} `<préréglage>` — Appliquer un filtre audio",
@@ -343,18 +363,19 @@
       "247HowItWorks": "**Comment ça marche**\n-# Musicify reste dans le salon vocal même après la fin de la file d'attente.\n-# Ce paramètre persiste après les redémarrages du bot."
     },
     "controls": {
-      "heading": "### 🎮 Boutons du lecteur\n-# Lorsqu'un morceau est en cours de lecture, Musicify affiche des boutons interactifs.",
-      "row1": "**Ligne 1 — Lecture**\n\n**🔀 Mélanger**\n-# Mélanger aléatoirement la file d'attente\n\n**⏮️ Précédent**\n-# Revenir au dernier morceau joué\n\n**⏸️ Pause / Lecture**\n-# Mettre en pause ou reprendre\n\n**⏭️ Passer**\n-# Passer au morceau suivant\n\n**🔁 Boucle**\n-# Cycle : Désactivé → Morceau → File d'attente",
-      "row2": "**Ligne 2 — Extras**\n\n**📻 Lecture auto**\n-# Ajouter automatiquement des morceaux similaires à la fin de la file d'attente\n\n**🔉 Vol↓  ·  🔊 Vol↑**\n-# Ajuster le volume de ±10 %\n\n**⏹️ Stop**\n-# Arrêter la lecture et se déconnecter\n\n**📜 File d'attente**\n-# Ouvrir la vue de la file d'attente",
+      "heading": "### 🎮 Contrôles du lecteur\n-# Utilisez les boutons interactifs du message du lecteur ou les commandes slash ci-dessous.",
+      "row1": "**Ligne 1 — Lecture**\n\n**🔀 Mélanger**\n-# Mélanger aléatoirement la file d'attente · ou {{cmdShuffle}}\n\n**⏮️ Précédent**\n-# Revenir au dernier morceau joué\n\n**⏸️ Pause / Lecture**\n-# Mettre en pause ou reprendre · ou {{cmdPause}}\n\n**⏭️ Passer**\n-# Passer au morceau suivant · ou {{cmdSkip}}\n\n**🔁 Boucle**\n-# Cycle : Désactivé → Morceau → File d'attente · ou {{cmdLoop}}",
+      "row2": "**Ligne 2 — Extras**\n\n**📻 Lecture auto**\n-# Ajouter automatiquement des morceaux similaires · ou {{cmdAutoplay}}\n\n**🔉 Vol↓  ·  🔊 Vol↑**\n-# Ajuster le volume de ±10 % · ou {{cmdVolume}}\n\n**⏹️ Stop**\n-# Arrêter la lecture et se déconnecter · ou {{cmdStop}}\n\n**📜 File d'attente**\n-# Ouvrir la vue de la file d'attente · ou {{cmdQueue}}",
+      "slashExtras": "**Uniquement en commande slash**\n\n{{cmdReplay}} — Recommencer le morceau en cours depuis le début\n\n{{cmdSkipto}} — Passer à une position précise dans la file d'attente\n\n{{cmdSeek}} — Avancer à un moment précis du morceau en cours",
       "suggestions": "**🎵 Suggestions de morceaux**\n-# Un menu déroulant avec jusqu'à **10 morceaux similaires** apparaît sous les boutons.\n-# Sélectionnez-en un pour l'ajouter instantanément à la file d'attente !"
     },
     "troubleshoot": {
       "heading": "### 🛠️ Dépannage\n-# Problèmes courants et comment les résoudre.",
       "wontPlay": "**Le bot ne joue pas / Erreur de morceau**\n-# Le morceau peut être soumis à une limite d'âge ou bloqué par région.\n-# La source de streaming peut être temporairement indisponible.\n-# **Solution :** Essayez un autre morceau ou collez une URL directe depuis {{platforms}}.",
       "joinsLeaves": "**Le bot rejoint puis quitte immédiatement**\n-# Musicify peut manquer des permissions Parler/Se connecter dans ce salon.\n-# Le morceau demandé a peut-être échoué au chargement.\n-# **Solution :** Vérifiez les permissions du bot et essayez un autre morceau.",
-      "noSound": "**Pas de son mais le bot est dans le salon vocal**\n-# Vérifiez si le bot est en pause — utilisez le bouton ▶️.\n-# Vérifiez le volume avec {{cmdVolume}}.\n-# **Solution :** Assurez-vous d'être dans le même salon vocal et de ne pas être en sourdine.",
+      "noSound": "**Pas de son mais le bot est dans le salon vocal**\n-# Vérifiez si le bot est en pause — utilisez le bouton ▶️ ou {{cmdPause}}.\n-# Vérifiez le volume avec {{cmdVolume}}.\n-# **Solution :** Assurez-vous d'être dans le même salon vocal et de ne pas être en sourdine.",
       "chatplayNotResponding": "**ChatPlay ne répond pas**\n-# Vérifiez que ChatPlay est activé — lancez {{cmdChatplay}} et appuyez sur **Activer**.\n-# Assurez-vous d'écrire dans le bon salon.\n-# **Solution :** Essayez de le désactiver puis de le réactiver.",
-      "noActivePlayer": "**Les boutons affichent « Aucun lecteur actif »**\n-# Le lecteur a été fermé après la fin du morceau.\n-# **Solution :** Lancez un nouveau morceau avec {{cmdPlay}} pour repartir de zéro !",
+      "noActivePlayer": "**« Aucun lecteur actif » ou « Rien n'est en cours de lecture »**\n-# Le lecteur a été fermé après la fin du morceau.\n-# Les commandes slash de lecture nécessitent qu'un morceau soit en cours.\n-# **Solution :** Lancez un nouveau morceau avec {{cmdPlay}} pour repartir de zéro !",
       "language": "**Mauvaise langue / le bot répond dans une autre langue**\n-# Utilisez {{cmdLanguage}} pour voir la langue actuelle du serveur.\n-# **Solution :** Demandez à un admin de définir la langue, ou utilisez **Auto** pour votre langue Discord dans les commandes.",
       "languageAuto": "**Commandes et ChatPlay dans des langues différentes**\n-# Avec **Auto** (par défaut), vos réponses suivent *votre* langue Discord ; ChatPlay et le lecteur suivent la langue du *serveur*.\n-# Si votre langue n'est pas prise en charge, vos réponses passent en **anglais** (pris en charge : anglais, espagnol, portugais, français, allemand).\n-# **Solution :** Demandez à un admin de définir une langue pour tous dans {{cmdLanguage}}, ou changez votre langue ou celle du serveur Discord.",
       "languageCommunity": "**Impossible de changer la langue du serveur Discord (Auto reste en anglais)**\n-# Discord ne permet de définir la langue du serveur que si **Communauté** est activée.\n-# Activez-la dans **Paramètres du serveur → Activer la communauté**, puis changez-la dans **Paramètres du serveur → Aperçu de la communauté → Langue principale du serveur**.\n-# **Solution :** Ou demandez à un admin de définir la langue de Musicify avec {{cmdLanguage}} — pas besoin de Communauté."

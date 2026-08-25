@@ -1,23 +1,20 @@
 const { MessageFlags, ContainerBuilder, TextDisplayBuilder } = require("discord.js");
 const { slashMeta, getT, applySlashOption, buildSlashChoice } = require("../i18n");
-const { requirePlayerControl, cycleLoopMode } = require("../utils/playerControls");
+const { requirePlayerControl } = require("../utils/playerControls");
+const { persistGuildPlaybackSettings } = require("../utils/database");
 const { refreshPlayerMessage } = require("../handlers/playerHandler");
 
-const LOOP_CHOICE_KEYS = { none: "off", track: "track", queue: "queue" };
-const LOOP_EMOJIS = { none: "➡️", track: "🔂", queue: "🔁" };
-
 module.exports = {
-    data: slashMeta("loop").addStringOption((opt) =>
+    data: slashMeta("autoplay").addStringOption((opt) =>
         applySlashOption(
             opt
                 .setName("mode")
                 .setRequired(false)
                 .addChoices(
-                    buildSlashChoice("loop", "mode", "off", "none"),
-                    buildSlashChoice("loop", "mode", "track", "track"),
-                    buildSlashChoice("loop", "mode", "queue", "queue")
+                    buildSlashChoice("autoplay", "mode", "on", "on"),
+                    buildSlashChoice("autoplay", "mode", "off", "off")
                 ),
-            "loop",
+            "autoplay",
             "mode"
         )
     ),
@@ -27,23 +24,30 @@ module.exports = {
         const ctx = await requirePlayerControl(interaction, client, t);
         if (!ctx) return;
 
-        const { player, guildData } = ctx;
-        const selectedMode = interaction.options.getString("mode");
-        const mode = selectedMode ?? cycleLoopMode(guildData.loop || "none");
+        const { guildData } = ctx;
+        const mode = interaction.options.getString("mode");
 
-        guildData.loop = mode;
-        player.setLoop(mode);
+        if (mode === "on") {
+            guildData.autoplay = true;
+        } else if (mode === "off") {
+            guildData.autoplay = false;
+        } else {
+            guildData.autoplay = !guildData.autoplay;
+        }
 
+        persistGuildPlaybackSettings(interaction.guild.id, guildData);
         refreshPlayerMessage(client, interaction.guild.id).catch(() => {});
 
+        const status = guildData.autoplay ? t("common.on") : t("common.off");
         const container = new ContainerBuilder();
         container.addTextDisplayComponents(
             new TextDisplayBuilder().setContent(
-                `${t("commands.loop.successHeading", { emoji: LOOP_EMOJIS[mode] })}\n\n` +
-                    `${t("common.labels.mode")}\n` +
-                    `-# ${t(`slash.loop.choices.mode.${LOOP_CHOICE_KEYS[mode]}`)}`
+                `${t("commands.autoplay.successHeading")}\n\n` +
+                    `${t("common.labels.status")}\n` +
+                    t("commands.autoplay.statusLine", { status })
             )
         );
+
         await interaction.reply({
             components: [container],
             flags: MessageFlags.Ephemeral | MessageFlags.IsComponentsV2,

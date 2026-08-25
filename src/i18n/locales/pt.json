@@ -34,9 +34,16 @@
       "description": "Avançar para uma posição específica na faixa",
       "options": { "time": "Tempo para avançar (ex.: 1:30 ou 90)" }
     },
+    "pause": { "description": "Pausar ou retomar a reprodução" },
+    "autoplay": {
+      "description": "Ativar, desativar ou alternar o autoplay",
+      "options": { "mode": "Configuração do autoplay (vazio para alternar)" },
+      "choices": { "mode": { "on": "Ligado", "off": "Desligado" } }
+    },
+    "replay": { "description": "Reiniciar a faixa atual do início" },
     "loop": {
-      "description": "Definir o modo de repetição",
-      "options": { "mode": "Modo de repetição" },
+      "description": "Definir ou alternar o modo de repetição",
+      "options": { "mode": "Modo de repetição (vazio para alternar)" },
       "choices": { "mode": { "off": "Desligado", "track": "Faixa", "queue": "Fila" } }
     },
     "filter": {
@@ -238,6 +245,19 @@
       "successHeading": "### ⏩ Avançado",
       "positionLine": "-# {{current}} / {{total}}"
     },
+    "pause": {
+      "pausedHeading": "### ⏸ Pausado",
+      "resumedHeading": "### ▶️ Retomado",
+      "trackLine": "-# {{title}}"
+    },
+    "autoplay": {
+      "successHeading": "### 📻 Autoplay atualizado",
+      "statusLine": "-# {{status}}"
+    },
+    "replay": {
+      "successHeading": "### 🔁 Reproduzindo novamente",
+      "trackLine": "-# {{title}}"
+    },
     "loop": { "successHeading": "### {{emoji}} Repetição Atualizada" },
     "filter": {
       "presets": {
@@ -318,7 +338,7 @@
       "home": { "label": "Início", "description": "Visão geral e início rápido" },
       "music": { "label": "Comandos de Música", "description": "Tocar, pular, fila e mais" },
       "filters": { "label": "Filtros e Extras", "description": "Filtros de áudio, 24/7 e ChatPlay" },
-      "controls": { "label": "Controles do Player", "description": "Guia dos botões" },
+      "controls": { "label": "Controles do Player", "description": "Botões e comandos slash" },
       "troubleshoot": { "label": "Solução de Problemas", "description": "Problemas comuns e correções" },
       "support": { "label": "Suporte", "description": "Obter ajuda e reportar bugs" }
     },
@@ -329,8 +349,8 @@
       "openSource": "-# O Musicify é [open source](https://github.com/codebymitch/Musicify)."
     },
     "music": {
-      "heading": "### 🎶 Navegador de Comandos\n-# 16 comandos disponíveis",
-      "list": "**1.** {{cmdPlay}} — Tocar uma música ou adicioná-la à fila\n\n**2.** {{cmdSkip}} — Pular a faixa atual\n\n**3.** {{cmdSkipto}} — Pular para uma faixa na fila\n\n**4.** {{cmdStop}} — Parar a reprodução e limpar a fila\n\n**5.** {{cmdNowplaying}} — Mostrar a faixa que está tocando\n\n**6.** {{cmdSeek}} — Avançar para uma posição\n\n**7.** {{cmdQueue}} — Ver a fila atual\n\n**8.** {{cmdRemove}} — Remover uma faixa da fila\n\n**9.** {{cmdMove}} — Mover a posição de uma faixa\n\n**10.** {{cmdShuffle}} — Embaralhar todas as faixas da fila\n\n**11.** {{cmdLoop}} — Definir repetição para faixa ou fila\n\n**12.** {{cmdVolume}} — Definir o volume da reprodução\n\n**13.** {{cmd247}} — Alternar o modo 24/7 (confirmação necessária)\n\n**14.** {{cmdFilter}} — Aplicar um preset de filtro de áudio\n\n**15.** {{cmdChatplay}} — Configurar ou gerenciar o ChatPlay (ativar, desativar, excluir)\n\n**16.** {{cmdAbout}} — Saiba mais sobre o Musicify"
+      "heading": "### 🎶 Navegador de Comandos\n-# 19 comandos disponíveis",
+      "list": "**1.** {{cmdPlay}} — Tocar uma música ou adicioná-la à fila\n\n**2.** {{cmdSkip}} — Pular a faixa atual\n\n**3.** {{cmdSkipto}} — Pular para uma faixa na fila\n\n**4.** {{cmdPause}} — Pausar ou retomar a reprodução\n\n**5.** {{cmdReplay}} — Reiniciar a faixa atual\n\n**6.** {{cmdStop}} — Parar a reprodução e limpar a fila\n\n**7.** {{cmdNowplaying}} — Mostrar a faixa que está tocando\n\n**8.** {{cmdSeek}} — Avançar para uma posição\n\n**9.** {{cmdQueue}} — Ver a fila atual\n\n**10.** {{cmdRemove}} — Remover uma faixa da fila\n\n**11.** {{cmdMove}} — Mover a posição de uma faixa\n\n**12.** {{cmdShuffle}} — Embaralhar todas as faixas da fila\n\n**13.** {{cmdLoop}} — Definir ou alternar o modo de repetição\n\n**14.** {{cmdAutoplay}} — Ativar, desativar ou alternar o autoplay\n\n**15.** {{cmdVolume}} — Definir o volume da reprodução\n\n**16.** {{cmd247}} — Alternar o modo 24/7 (confirmação necessária)\n\n**17.** {{cmdFilter}} — Aplicar um preset de filtro de áudio\n\n**18.** {{cmdChatplay}} — Configurar ou gerenciar o ChatPlay (ativar, desativar, excluir)\n\n**19.** {{cmdAbout}} — Saiba mais sobre o Musicify"
     },
     "filters": {
       "heading": "### 🎛️ Filtros de Áudio\n-# {{cmdFilter}} `<preset>` — Aplicar um filtro de áudio",
@@ -343,18 +363,19 @@
       "247HowItWorks": "**Como funciona**\n-# O Musicify permanece no canal de voz mesmo depois que a fila termina.\n-# A configuração persiste após reinícios do bot."
     },
     "controls": {
-      "heading": "### 🎮 Controles por Botões do Player\n-# Quando uma faixa está tocando, o Musicify exibe botões interativos.",
-      "row1": "**Linha 1 — Reprodução**\n\n**🔀 Embaralhar**\n-# Embaralha a ordem da fila\n\n**⏮️ Anterior**\n-# Volta para a última faixa tocada\n\n**⏸️ Pausar / Tocar**\n-# Alterna a reprodução\n\n**⏭️ Pular**\n-# Pula para a próxima faixa\n\n**🔁 Repetição**\n-# Ciclo: Desligado → Faixa → Fila",
-      "row2": "**Linha 2 — Extras**\n\n**📻 Autoplay**\n-# Adiciona músicas parecidas automaticamente quando a fila acaba\n\n**🔉 Vol↓  ·  🔊 Vol↑**\n-# Ajusta o volume em ±10%\n\n**⏹️ Parar**\n-# Para a reprodução e desconecta\n\n**📜 Fila**\n-# Abre o visualizador da fila",
+      "heading": "### 🎮 Controles do player\n-# Use os botões interativos da mensagem do player ou os comandos slash abaixo.",
+      "row1": "**Linha 1 — Reprodução**\n\n**🔀 Embaralhar**\n-# Embaralha a ordem da fila · ou {{cmdShuffle}}\n\n**⏮️ Anterior**\n-# Volta para a última faixa tocada\n\n**⏸️ Pausar / Tocar**\n-# Alterna a reprodução · ou {{cmdPause}}\n\n**⏭️ Pular**\n-# Pula para a próxima faixa · ou {{cmdSkip}}\n\n**🔁 Repetição**\n-# Ciclo: Desligado → Faixa → Fila · ou {{cmdLoop}}",
+      "row2": "**Linha 2 — Extras**\n\n**📻 Autoplay**\n-# Adiciona músicas parecidas automaticamente · ou {{cmdAutoplay}}\n\n**🔉 Vol↓  ·  🔊 Vol↑**\n-# Ajusta o volume em ±10% · ou {{cmdVolume}}\n\n**⏹️ Parar**\n-# Para a reprodução e desconecta · ou {{cmdStop}}\n\n**📜 Fila**\n-# Abre o visualizador da fila · ou {{cmdQueue}}",
+      "slashExtras": "**Somente como comando slash**\n\n{{cmdReplay}} — Reinicia a faixa atual do início\n\n{{cmdSkipto}} — Pula para uma posição específica na fila\n\n{{cmdSeek}} — Avança para um momento específico da faixa atual",
       "suggestions": "**🎵 Sugestões de Músicas**\n-# Um menu com até **10 faixas parecidas** aparece abaixo dos botões.\n-# Selecione uma para adicioná-la à fila na hora!"
     },
     "troubleshoot": {
       "heading": "### 🛠️ Solução de Problemas\n-# Problemas comuns e como corrigi-los.",
       "wontPlay": "**O bot não toca música / Erro na faixa**\n-# A música pode ter restrição de idade ou bloqueio regional.\n-# A fonte de streaming pode estar temporariamente indisponível.\n-# **Correção:** Tente outra música ou cole uma URL direta de {{platforms}}.",
       "joinsLeaves": "**O bot entra e sai imediatamente**\n-# O Musicify pode não ter permissões de Falar/Conectar nesse canal.\n-# A música solicitada pode ter falhado ao carregar.\n-# **Correção:** Verifique as permissões do bot e tente outra música.",
-      "noSound": "**Sem som, mas o bot está no canal de voz**\n-# Verifique se o bot está pausado — use o botão ▶️.\n-# Verifique o volume com {{cmdVolume}}.\n-# **Correção:** Certifique-se de estar no mesmo canal de voz e não estar ensurdecido.",
+      "noSound": "**Sem som, mas o bot está no canal de voz**\n-# Verifique se o bot está pausado — use o botão ▶️ ou {{cmdPause}}.\n-# Verifique o volume com {{cmdVolume}}.\n-# **Correção:** Certifique-se de estar no mesmo canal de voz e não estar ensurdecido.",
       "chatplayNotResponding": "**ChatPlay não responde**\n-# Verifique se o ChatPlay está ativado — execute {{cmdChatplay}} e toque em **Ativar**.\n-# Certifique-se de estar digitando no canal correto.\n-# **Correção:** Tente desativar e reativar.",
-      "noActivePlayer": "**Os botões dizem \"Nenhum player ativo\"**\n-# O player foi fechado após a faixa terminar.\n-# **Correção:** Toque uma nova música com {{cmdPlay}} para recomeçar!",
+      "noActivePlayer": "**\"Nenhum player ativo\" ou \"Nada está tocando\"**\n-# O player foi fechado após a faixa terminar.\n-# Comandos slash de reprodução precisam de algo tocando.\n-# **Correção:** Toque uma nova música com {{cmdPlay}} para recomeçar!",
       "language": "**Idioma errado / o bot responde em outro idioma**\n-# Use {{cmdLanguage}} para ver o idioma atual do servidor.\n-# **Correção:** Peça a um admin para definir o idioma, ou use **Automático** se quiser seu idioma do Discord nos comandos.",
       "languageAuto": "**Comandos e ChatPlay em idiomas diferentes**\n-# Com **Automático** (padrão), suas respostas seguem *seu* idioma do Discord; ChatPlay e o player seguem o idioma do *servidor*.\n-# Se seu idioma não for suportado, suas respostas usam **inglês** (suportados: inglês, espanhol, português, francês, alemão).\n-# **Correção:** Peça a um admin para definir um idioma para todos em {{cmdLanguage}}, ou mude seu idioma ou o do servidor para um suportado.",
       "languageCommunity": "**Não consigo mudar o idioma do servidor no Discord (Automático fica em inglês)**\n-# O Discord só permite definir o idioma do servidor com **Comunidade** ativada.\n-# Ative em **Configurações do servidor → Ativar Comunidade**, depois altere em **Configurações do servidor → Visão geral da Comunidade → Idioma principal do servidor**.\n-# **Correção:** Ou peça a um admin para definir o idioma do Musicify com {{cmdLanguage}} — Comunidade não é necessária."

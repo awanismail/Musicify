@@ -64,16 +64,6 @@ function build247ConfirmContainer(t, isEnabled, inVoiceChannel = true) {
     return container;
 }
 
-function build247ResultContainer(t, isEnabled) {
-    const container = new ContainerBuilder();
-    container.addTextDisplayComponents(
-        new TextDisplayBuilder().setContent(
-            isEnabled ? t("commands.247.resultEnabled") : t("commands.247.resultDisabled")
-        )
-    );
-    return container;
-}
-
 function build247CancelledContainer(t) {
     const container = new ContainerBuilder();
     container.addTextDisplayComponents(
@@ -99,6 +89,5 @@ module.exports = {
     },
 
     build247ConfirmContainer,
-    build247ResultContainer,
     build247CancelledContainer,
 };

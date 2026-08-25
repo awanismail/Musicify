@@ -169,12 +169,16 @@ async function handleChatPlayManageButton(client, interaction) {
                 );
             }
 
+            await interaction.deferUpdate();
+
             await toggleTwentyFourSeven(client, guildId, {
                 voiceChannelId: voiceChannel.id,
                 textChannelId: guildData.chatPlayChannelId,
                 enabled: true,
             });
         } else {
+            await interaction.deferUpdate();
+
             await toggleTwentyFourSeven(client, guildId, {
                 textChannelId: guildData.chatPlayChannelId,
                 enabled: false,

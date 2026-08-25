@@ -6,17 +6,17 @@ const { isLikelySongRequest } = require("../utils/chatPlayMessageFilter");
 const FEEDBACK_DELETE_MS = 5000;
 const FEEDBACK_DELETE_SHORT_MS = 3000;
 const FEEDBACK_DELETE_LONG_MS = 8000;
+/** Delay before removing a member's song request (avoids Discord ghost messages). */
+const USER_REQUEST_DELETE_MS = 3500;
 
 function shouldDeleteUserRequests(guildData) {
     return guildData.chatPlayDeleteMessages !== false;
 }
 
-async function deleteUserRequestMessage(message) {
-    try {
-        await message.delete();
-    } catch {
-        // message already gone or missing permissions
-    }
+function deleteUserRequestMessage(message) {
+    setTimeout(() => {
+        message.delete().catch(() => {});
+    }, USER_REQUEST_DELETE_MS);
 }
 
 /** Bot confirmations/errors — always self-delete; independent of auto-delete requests setting. */
@@ -77,12 +77,12 @@ async function handleChatPlayMessage(client, message) {
 
     const smartFilterOn = guildData.chatPlaySmartFilter !== false;
     if (smartFilterOn && !isLikelySongRequest(query)) {
-        await deleteUserRequestMessage(message);
+        deleteUserRequestMessage(message);
         return true;
     }
 
     if (deleteUserRequests) {
-        await deleteUserRequestMessage(message);
+        deleteUserRequestMessage(message);
     }
 
     const t = getT.forGuild(message.guild.id, client);

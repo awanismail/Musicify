@@ -29,6 +29,8 @@ function buildCmdParams(getCmd) {
         cmdPlay: getCmd("play"),
         cmdSkip: getCmd("skip"),
         cmdSkipto: getCmd("skipto"),
+        cmdPause: getCmd("pause"),
+        cmdReplay: getCmd("replay"),
         cmdStop: getCmd("stop"),
         cmdNowplaying: getCmd("nowplaying"),
         cmdSeek: getCmd("seek"),
@@ -37,6 +39,7 @@ function buildCmdParams(getCmd) {
         cmdMove: getCmd("move"),
         cmdShuffle: getCmd("shuffle"),
         cmdLoop: getCmd("loop"),
+        cmdAutoplay: getCmd("autoplay"),
         cmdVolume: getCmd("volume"),
         cmd247: getCmd("247"),
         cmdFilter: getCmd("filter"),
@@ -119,7 +122,7 @@ async function buildHelpPage(client, page = "home", t) {
             addFiltersPage(container, t, cmd);
             break;
         case "controls":
-            addControlsPage(container, t);
+            addControlsPage(container, t, cmd);
             break;
         case "troubleshoot":
             addTroubleshootPage(container, t, cmd);
@@ -216,7 +219,7 @@ function addFiltersPage(container, t, cmd) {
     );
 }
 
-function addControlsPage(container, t) {
+function addControlsPage(container, t, cmd) {
     container.addTextDisplayComponents(
         new TextDisplayBuilder().setContent(t("help.controls.heading"))
     );
@@ -224,13 +227,19 @@ function addControlsPage(container, t) {
     container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
 
     container.addTextDisplayComponents(
-        new TextDisplayBuilder().setContent(t("help.controls.row1"))
+        new TextDisplayBuilder().setContent(t("help.controls.row1", cmd))
     );
 
     container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
 
     container.addTextDisplayComponents(
-        new TextDisplayBuilder().setContent(t("help.controls.row2"))
+        new TextDisplayBuilder().setContent(t("help.controls.row2", cmd))
+    );
+
+    container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
+
+    container.addTextDisplayComponents(
+        new TextDisplayBuilder().setContent(t("help.controls.slashExtras", cmd))
     );
 
     container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
@@ -259,7 +268,7 @@ function addTroubleshootPage(container, t, cmd) {
 
     container.addTextDisplayComponents(
         new TextDisplayBuilder().setContent(
-            `${t("help.troubleshoot.noSound", { cmdVolume: cmd.cmdVolume })}\n\n` +
+            `${t("help.troubleshoot.noSound", { cmdVolume: cmd.cmdVolume, cmdPause: cmd.cmdPause })}\n\n` +
                 `${t("help.troubleshoot.chatplayNotResponding", { cmdChatplay: cmd.cmdChatplay })}\n\n` +
                 `${t("help.troubleshoot.noActivePlayer", { cmdPlay: cmd.cmdPlay })}\n\n` +
                 `${t("help.troubleshoot.language", { cmdLanguage: cmd.cmdLanguage })}\n\n` +

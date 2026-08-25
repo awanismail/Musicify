@@ -34,9 +34,16 @@
       "description": "Seek to a specific position in the track",
       "options": { "time": "Time to seek to (e.g. 1:30 or 90)" }
     },
+    "pause": { "description": "Pause or resume playback" },
+    "autoplay": {
+      "description": "Toggle or set autoplay mode",
+      "options": { "mode": "Autoplay setting (leave empty to toggle)" },
+      "choices": { "mode": { "on": "On", "off": "Off" } }
+    },
+    "replay": { "description": "Restart the current track from the beginning" },
     "loop": {
-      "description": "Set loop mode",
-      "options": { "mode": "Loop mode" },
+      "description": "Set or cycle loop mode",
+      "options": { "mode": "Loop mode (leave empty to cycle)" },
       "choices": { "mode": { "off": "Off", "track": "Track", "queue": "Queue" } }
     },
     "filter": {
@@ -238,6 +245,19 @@
       "successHeading": "### ⏩ Seeked",
       "positionLine": "-# {{current}} / {{total}}"
     },
+    "pause": {
+      "pausedHeading": "### ⏸ Paused",
+      "resumedHeading": "### ▶️ Resumed",
+      "trackLine": "-# {{title}}"
+    },
+    "autoplay": {
+      "successHeading": "### 📻 Autoplay Updated",
+      "statusLine": "-# {{status}}"
+    },
+    "replay": {
+      "successHeading": "### 🔁 Replaying",
+      "trackLine": "-# {{title}}"
+    },
     "loop": { "successHeading": "### {{emoji}} Loop Updated" },
     "filter": {
       "presets": {
@@ -318,7 +338,7 @@
       "home": { "label": "Home", "description": "Overview & quick start" },
       "music": { "label": "Music Commands", "description": "Play, skip, queue & more" },
       "filters": { "label": "Filters & Extras", "description": "Audio filters, 24/7 & ChatPlay" },
-      "controls": { "label": "Player Controls", "description": "Button layout guide" },
+      "controls": { "label": "Player Controls", "description": "Buttons and slash commands" },
       "troubleshoot": { "label": "Troubleshooting", "description": "Common issues & fixes" },
       "support": { "label": "Support", "description": "Get help & report bugs" }
     },
@@ -329,8 +349,8 @@
       "openSource": "-# Musicify is [open source](https://github.com/codebymitch/Musicify)."
     },
     "music": {
-      "heading": "### 🎶 Command Browser\n-# 16 commands available",
-      "list": "**1.** {{cmdPlay}} — Play a song or add it to the queue\n\n**2.** {{cmdSkip}} — Skip the current track\n\n**3.** {{cmdSkipto}} — Skip to a track in the queue\n\n**4.** {{cmdStop}} — Stop playback and clear the queue\n\n**5.** {{cmdNowplaying}} — Show the currently playing track\n\n**6.** {{cmdSeek}} — Seek to a position\n\n**7.** {{cmdQueue}} — View the current queue\n\n**8.** {{cmdRemove}} — Remove a track from the queue\n\n**9.** {{cmdMove}} — Move a track's position\n\n**10.** {{cmdShuffle}} — Shuffle all tracks in the queue\n\n**11.** {{cmdLoop}} — Set loop mode for track or queue\n\n**12.** {{cmdVolume}} — Set the playback volume\n\n**13.** {{cmd247}} — Toggle 24/7 mode (confirmation required)\n\n**14.** {{cmdFilter}} — Apply an audio filter preset\n\n**15.** {{cmdChatplay}} — Set up or manage ChatPlay (enable, disable, delete)\n\n**16.** {{cmdAbout}} — Learn more about Musicify"
+      "heading": "### 🎶 Command Browser\n-# 19 commands available",
+      "list": "**1.** {{cmdPlay}} — Play a song or add it to the queue\n\n**2.** {{cmdSkip}} — Skip the current track\n\n**3.** {{cmdSkipto}} — Skip to a track in the queue\n\n**4.** {{cmdPause}} — Pause or resume playback\n\n**5.** {{cmdReplay}} — Restart the current track\n\n**6.** {{cmdStop}} — Stop playback and clear the queue\n\n**7.** {{cmdNowplaying}} — Show the currently playing track\n\n**8.** {{cmdSeek}} — Seek to a position\n\n**9.** {{cmdQueue}} — View the current queue\n\n**10.** {{cmdRemove}} — Remove a track from the queue\n\n**11.** {{cmdMove}} — Move a track's position\n\n**12.** {{cmdShuffle}} — Shuffle all tracks in the queue\n\n**13.** {{cmdLoop}} — Set or cycle loop mode (track or queue)\n\n**14.** {{cmdAutoplay}} — Toggle or set autoplay\n\n**15.** {{cmdVolume}} — Set the playback volume\n\n**16.** {{cmd247}} — Toggle 24/7 mode (confirmation required)\n\n**17.** {{cmdFilter}} — Apply an audio filter preset\n\n**18.** {{cmdChatplay}} — Set up or manage ChatPlay (enable, disable, delete)\n\n**19.** {{cmdAbout}} — Learn more about Musicify"
     },
     "filters": {
       "heading": "### 🎛️ Audio Filters\n-# {{cmdFilter}} `<preset>` — Apply an audio filter",
@@ -343,18 +363,19 @@
       "247HowItWorks": "**How it works**\n-# Musicify stays in the voice channel even after the queue ends.\n-# Setting persists across bot restarts."
     },
     "controls": {
-      "heading": "### 🎮 Player Button Controls\n-# When a track is playing, Musicify shows interactive buttons.",
-      "row1": "**Row 1 — Playback**\n\n**🔀 Shuffle**\n-# Randomize the queue order\n\n**⏮️ Previous**\n-# Go back to the last played track\n\n**⏸️ Pause / Play**\n-# Toggle playback\n\n**⏭️ Skip**\n-# Skip to the next track\n\n**🔁 Loop**\n-# Cycle: Off → Track → Queue",
-      "row2": "**Row 2 — Extras**\n\n**📻 Autoplay**\n-# Auto-queue similar songs when queue ends\n\n**🔉 Vol↓  ·  🔊 Vol↑**\n-# Adjust volume by ±10%\n\n**⏹️ Stop**\n-# Stop playback and disconnect\n\n**📜 Queue**\n-# Open the queue viewer",
+      "heading": "### 🎮 Player Controls\n-# Use the interactive buttons on the player message, or the slash commands shown below.",
+      "row1": "**Row 1 — Playback**\n\n**🔀 Shuffle**\n-# Randomize the queue order · or {{cmdShuffle}}\n\n**⏮️ Previous**\n-# Go back to the last played track\n\n**⏸️ Pause / Play**\n-# Toggle playback · or {{cmdPause}}\n\n**⏭️ Skip**\n-# Skip to the next track · or {{cmdSkip}}\n\n**🔁 Loop**\n-# Cycle: Off → Track → Queue · or {{cmdLoop}}",
+      "row2": "**Row 2 — Extras**\n\n**📻 Autoplay**\n-# Auto-queue similar songs when queue ends · or {{cmdAutoplay}}\n\n**🔉 Vol↓  ·  🔊 Vol↑**\n-# Adjust volume by ±10% · or {{cmdVolume}}\n\n**⏹️ Stop**\n-# Stop playback and disconnect · or {{cmdStop}}\n\n**📜 Queue**\n-# Open the queue viewer · or {{cmdQueue}}",
+      "slashExtras": "**Slash-only extras**\n\n{{cmdReplay}} — Restart the current track from the beginning\n\n{{cmdSkipto}} — Jump to a specific position in the queue\n\n{{cmdSeek}} — Seek to a timestamp in the current track",
       "suggestions": "**🎵 Song Suggestions**\n-# A dropdown with up to **10 similar tracks** appears below the buttons.\n-# Select one to instantly add it to the queue!"
     },
     "troubleshoot": {
       "heading": "### 🛠️ Troubleshooting\n-# Common issues and how to fix them.",
       "wontPlay": "**Bot won't play music / Track Error**\n-# The song may be age-restricted or region-blocked.\n-# The streaming source may be temporarily unavailable.\n-# **Fix:** Try a different song or paste a direct URL from {{platforms}}.",
       "joinsLeaves": "**Bot joins but immediately leaves**\n-# Musicify may lack Speak/Connect permissions in that channel.\n-# The requested song may have failed to load.\n-# **Fix:** Check bot permissions and try another song.",
-      "noSound": "**No sound but bot is in VC**\n-# Check if the bot is paused — use the ▶️ button.\n-# Check volume with {{cmdVolume}}.\n-# **Fix:** Make sure you're in the same VC and not deafened.",
+      "noSound": "**No sound but bot is in VC**\n-# Check if the bot is paused — use the ▶️ button or {{cmdPause}}.\n-# Check volume with {{cmdVolume}}.\n-# **Fix:** Make sure you're in the same VC and not deafened.",
       "chatplayNotResponding": "**ChatPlay not responding**\n-# Ensure ChatPlay is enabled — run {{cmdChatplay}} and tap **Enable**.\n-# Make sure you're typing in the correct channel.\n-# **Fix:** Try disabling and re-enabling it.",
-      "noActivePlayer": "**Buttons say \"No active player\"**\n-# The player was closed after the track finished.\n-# **Fix:** Play a new song with {{cmdPlay}} to start fresh!",
+      "noActivePlayer": "**\"No active player\" or \"Nothing is playing\"**\n-# The player was closed after the track finished.\n-# Playback slash commands need something playing first.\n-# **Fix:** Play a new song with {{cmdPlay}} to start fresh!",
       "language": "**Wrong language / bot replies in another language**\n-# Run {{cmdLanguage}} to see the current server language.\n-# **Fix:** Ask a server admin to set the language, or use **Auto** if you want personal Discord language for commands.",
       "languageAuto": "**Commands and ChatPlay in different languages**\n-# With **Auto** (default), your command replies follow *your* Discord language; ChatPlay and the player follow the *server's* Discord language.\n-# If your language isn't supported yet, your replies fall back to **English** (supported: English, Spanish, Portuguese, French, German).\n-# **Fix:** Ask an admin to set one language for everyone in {{cmdLanguage}}, or change your or the server's Discord language to a supported one.",
       "languageCommunity": "**Can't change Discord's server language (Auto stays English)**\n-# Discord only lets you set the server language when **Community** is enabled.\n-# Turn it on in **Server Settings → Enable Community**, then change it under **Server Settings → Community Overview → Server Primary Language**.\n-# **Fix:** Or ask an admin to set Musicify's language with {{cmdLanguage}} — no Community required."

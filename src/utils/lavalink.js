@@ -63,19 +63,8 @@ function isPrimaryNode(node) {
 }
 
 function createPreferredConnection(client, options) {
-    if (!client.riffy?.initiated) {
-        throw new Error("Riffy is not initialized");
-    }
-
-    const existing = client.riffy.players.get(options.guildId);
-    if (existing) return existing;
-
-    const node = getPreferredNode(client);
-    if (!node) {
-        throw new Error("No Lavalink nodes are available");
-    }
-
-    return client.riffy.createPlayer(node, options);
+    const { getOrCreateHealthyPlayer } = require("./playerConnection");
+    return getOrCreateHealthyPlayer(client, options);
 }
 
 async function getStatusCommandRef(client) {
@@ -102,6 +91,7 @@ module.exports = {
     getPreferredNode,
     getPrimaryNodeName,
     isPrimaryNode,
+    isNodeConnected,
     createPreferredConnection,
     countConnectedNodes,
     isLavalinkAvailable,

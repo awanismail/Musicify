@@ -1,5 +1,9 @@
 const { getGuildData } = require("../utils/playerStore");
-const { isLavalinkAvailable, getLavalinkUnavailableError, createPreferredConnection } = require("../utils/lavalink");
+const { isLavalinkAvailable, getLavalinkUnavailableError } = require("../utils/lavalink");
+const {
+    isPlayerConnectionHealthy,
+    getOrCreateHealthyPlayer,
+} = require("../utils/playerConnection");
 const { getVoiceChannelMismatch, getVoiceChannelMismatchError } = require("../utils/voiceChannel");
 const { getVoicePermissionError } = require("../utils/voicePermissions");
 const { VOICE_ERROR_KEYS } = require("../i18n");
@@ -55,10 +59,16 @@ async function playQuery(client, { guild, member, query, textChannelId, source, 
     const voiceChannelId = member.voice.channel.id;
     const existingPlayer = client.riffy.players.get(guildId);
     const botVoiceChannelId = guild.members.me?.voice?.channelId ?? null;
+    const hadHealthyPlayer = isPlayerConnectionHealthy(
+        client,
+        guildId,
+        existingPlayer,
+        voiceChannelId
+    );
     const mismatch = getVoiceChannelMismatch(
         guildData,
         voiceChannelId,
-        existingPlayer,
+        hadHealthyPlayer ? existingPlayer : null,
         botVoiceChannelId
     );
     if (mismatch) {
@@ -69,10 +79,10 @@ async function playQuery(client, { guild, member, query, textChannelId, source, 
         };
     }
 
-    let player = existingPlayer;
-    const joinedForThisRequest = !existingPlayer;
-    if (!player) {
-        player = createPreferredConnection(client, {
+    let player;
+    const joinedForThisRequest = !hadHealthyPlayer;
+    try {
+        player = getOrCreateHealthyPlayer(client, {
             guildId,
             voiceChannel: voiceChannelId,
             textChannel: textChannelId,
@@ -81,12 +91,21 @@ async function playQuery(client, { guild, member, query, textChannelId, source, 
         if (source === "slash") {
             guildData.playerChannelId = textChannelId;
         }
+    } catch (err) {
+        console.error(`[Musicify] playQuery connection error (${source}):`, err.message);
+        return {
+            ok: false,
+            type: "lavalink_down",
+            error: await getLavalinkUnavailableError(client),
+        };
     }
 
     player.setVolume(guildData.volume);
 
     const hasActivePlayback =
-        existingPlayer?.current && (existingPlayer.playing || existingPlayer.paused);
+        hadHealthyPlayer &&
+        existingPlayer?.current &&
+        (existingPlayer.playing || existingPlayer.paused);
 
     if (isChatPlay && !hasActivePlayback) {
         await showChatPlayLoading(client, guildId);

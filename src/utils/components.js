@@ -12,6 +12,7 @@ const {
     StringSelectMenuOptionBuilder,
 } = require("discord.js");
 const { ButtonStyle } = require("discord.js");
+const { resolveTrackArtworkUrl } = require("./trackArtwork");
 
 function formatDuration(ms) {
     if (!ms || isNaN(ms)) return "0:00";
@@ -103,9 +104,7 @@ function createNowPlayingContainer(t, track, player, guildData, musicardBuffer) 
             new TextDisplayBuilder().setContent(t("player.requestedBy", { userId: requesterId }))
         )
         .setThumbnailAccessory(
-            new ThumbnailBuilder().setURL(
-                track.info.artworkUrl || track.info.thumbnail || "https://i.imgur.com/4YFmJMi.png"
-            )
+            new ThumbnailBuilder().setURL(resolveTrackArtworkUrl(track))
         );
 
     container.addSectionComponents(section);
@@ -250,9 +249,7 @@ function createChatPlayNowPlayingContainer(t, track, player, guildData, musicard
             new TextDisplayBuilder().setContent(t("player.requestedBy", { userId: requesterId }))
         )
         .setThumbnailAccessory(
-            new ThumbnailBuilder().setURL(
-                track.info.artworkUrl || track.info.thumbnail || "https://i.imgur.com/4YFmJMi.png"
-            )
+            new ThumbnailBuilder().setURL(resolveTrackArtworkUrl(track))
         );
 
     container.addSectionComponents(section);

@@ -1,5 +1,6 @@
 const { initializeFonts, Bloom } = require("musicard");
 const config = require("../../config");
+const { resolveTrackArtworkUrl } = require("./trackArtwork");
 
 let fontsInitialized = false;
 
@@ -24,7 +25,7 @@ async function generateMusicCard(track, player, guildData, translator) {
         const card = await Bloom({
             trackName: (track.info.title || unknown).substring(0, 40),
             artistName: (track.info.author || unknownArtist).substring(0, 30),
-            albumArt: track.info.artworkUrl || track.info.thumbnail || "https://i.imgur.com/4YFmJMi.png",
+            albumArt: resolveTrackArtworkUrl(track),
             timeAdjust: {
                 timeStart: formatTime(position),
                 timeEnd: formatTime(duration),

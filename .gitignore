@@ -5,4 +5,3 @@ data/*.db
 data/*.db-wal
 data/*.db-shm
 MESSAGE_CONTENT_INTENT.md
-config.js

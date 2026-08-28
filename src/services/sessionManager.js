@@ -1,29 +1,27 @@
-const { MessageFlags, AttachmentBuilder } = require("discord.js");
+const { MessageFlags } = require("discord.js");
 const { getGuildData, clearUpdateInterval } = require("../utils/playerStore");
 const { setGuildSetting, getGuildSettings } = require("../utils/database");
-const {
-    createChatPlayIdleContainer,
-    createChatPlayNowPlayingContainer,
-} = require("../utils/components");
-const { generateMusicCard } = require("../utils/musicard");
+const { createChatPlayIdleContainer } = require("../utils/components");
 const { getT } = require("../i18n");
 const { createPreferredConnection } = require("../utils/lavalink");
 const {
     isPlayerConnectionHealthy,
     destroyPlayerSafe,
     getAllPlayers,
+    safePlayerPlay,
 } = require("../utils/playerConnection");
+const { clearPlayerUiBlocked } = require("../utils/playerMessageDelivery");
 const {
     capturePlayerSnapshot,
     shouldSnapshotPlayer,
 } = require("./lavalinkRecovery");
+const { maybePromptOnQueueEnd } = require("../utils/votePrompt");
 
 const IDLE_LEAVE_MS = 30 * 1000;
 const ALONE_LEAVE_MS = 15 * 1000; // leave sooner when the voice channel has no users
 const AUTOPLAY_WATCHDOG_MS = 8 * 1000;
 const RECONNECT_247_DELAY_MS = 1500;
 const RECONNECT_247_MAX_ATTEMPTS = 5;
-const recreatingChatPlay = new Set();
 const reconnect247Timers = new Map();
 const pending247Snapshots = new Map();
 
@@ -68,78 +66,20 @@ async function resetChatPlayToIdle(client, guildId) {
     if (!guildData.chatPlayChannelId || !guildData.chatPlayMessageId) return;
 
     const t = getT.forGuild(guildId, client);
-
-    try {
-        const channel = client.channels.cache.get(guildData.chatPlayChannelId);
-        if (!channel) return;
-
-        const msg = await channel.messages.fetch(guildData.chatPlayMessageId);
-        await msg.edit({
-            components: [createChatPlayIdleContainer(t, guildData)],
-            attachments: [],
-            flags: MessageFlags.IsComponentsV2,
-        });
-    } catch (err) {
-        await recreateChatPlayMessage(client, guildId);
+    const { editChatPlayMessage, recreateChatPlayMessageFromState } = require("./chatPlayPlayer");
+    const ok = await editChatPlayMessage(
+        client,
+        guildId,
+        createChatPlayIdleContainer(t, guildData)
+    );
+    if (!ok) {
+        await recreateChatPlayMessageFromState(client, guildId);
     }
 }
 
 async function recreateChatPlayMessage(client, guildId) {
-    if (recreatingChatPlay.has(guildId)) return null;
-
-    const guildData = getGuildData(guildId);
-    if (!guildData.chatPlayChannelId) return null;
-
-    recreatingChatPlay.add(guildId);
-    try {
-        const channel = client.channels.cache.get(guildData.chatPlayChannelId);
-        if (!channel) return null;
-
-        const t = getT.forGuild(guildId, client);
-        const player = client.riffy?.players?.get(guildId);
-        let container;
-        let files = [];
-
-        if (player?.current) {
-            const musicardBuffer = await generateMusicCard(player.current, player, guildData, t);
-            container = createChatPlayNowPlayingContainer(
-                t,
-                player.current,
-                player,
-                guildData,
-                musicardBuffer
-            );
-            if (musicardBuffer) {
-                files.push(new AttachmentBuilder(musicardBuffer, { name: "musicard.png" }));
-            }
-        } else {
-            container = createChatPlayIdleContainer(t, guildData);
-        }
-
-        const chatMsg = await channel.send({
-            components: [container],
-            files,
-            flags: MessageFlags.IsComponentsV2,
-        });
-
-        guildData.chatPlayMessageId = chatMsg.id;
-        setGuildSetting(guildId, "chatPlayMessageId", chatMsg.id);
-
-        if (guildData.chatPlayPinPlayerMessage) {
-            const { pinChatPlayPlayerMessage } = require("../utils/chatPlaySetup");
-            await pinChatPlayPlayerMessage(channel, chatMsg, channel.guild.members.me, t);
-        }
-
-        return chatMsg;
-    } catch (err) {
-        console.error(
-            `[Musicify] Failed to recreate ChatPlay message for guild ${guildId}:`,
-            err.message
-        );
-        return null;
-    } finally {
-        recreatingChatPlay.delete(guildId);
-    }
+    const { recreateChatPlayMessageFromState } = require("./chatPlayPlayer");
+    return recreateChatPlayMessageFromState(client, guildId);
 }
 
 async function clearRegularPlayerMessage(client, guildData) {
@@ -245,6 +185,7 @@ async function handleQueueEnd(client, player) {
     if (pending247Snapshots.has(player.guildId)) return;
 
     clearUpdateInterval(guildData);
+    clearPlayerUiBlocked(guildData);
 
     if (guildData.autoplay) {
         try {
@@ -271,6 +212,9 @@ async function handleQueueEnd(client, player) {
     }
 
     await transitionToIdle(client, player.guildId);
+    void maybePromptOnQueueEnd(client, player.guildId, player).catch((err) => {
+        console.warn("[Musicify] Vote prompt on queue end failed:", err.message);
+    });
 }
 
 async function handlePlayerDisconnect(client, player) {
@@ -493,16 +437,14 @@ async function resumeTwentyFourSevenPlayback(client, guildId) {
     guildData.pendingLavalinkPause = snapshot.paused;
     guildData.lavalinkRecovering = true;
 
-    try {
-        await player.play();
-        return true;
-    } catch (err) {
-        console.error(`[Musicify] 24/7 resume play failed for guild ${guildId}:`, err.message);
+    const playResult = await safePlayerPlay(player, guildId);
+    if (!playResult.ok) {
         guildData.lavalinkRecovering = false;
         guildData.pendingLavalinkSeek = null;
         guildData.pendingLavalinkPause = false;
         return false;
     }
+    return true;
 }
 
 async function finishTwentyFourSevenReconnect(client, guildId) {

@@ -1,4 +1,4 @@
-const SCHEMA_VERSION = 8;
+const SCHEMA_VERSION = 9;
 
 function getSchemaVersion(db) {
     db.exec(`
@@ -75,6 +75,15 @@ function migrateToV8(db) {
     }
 }
 
+function migrateToV9(db) {
+    db.exec(`
+        CREATE TABLE IF NOT EXISTS users (
+            user_id TEXT PRIMARY KEY,
+            vote_prompt_snoozed_until INTEGER
+        )
+    `);
+}
+
 function runMigrations(db) {
     let version = getSchemaVersion(db);
 
@@ -106,6 +115,12 @@ function runMigrations(db) {
         migrateToV8(db);
         setSchemaVersion(db, 8);
         version = 8;
+    }
+
+    if (version < 9) {
+        migrateToV9(db);
+        setSchemaVersion(db, 9);
+        version = 9;
     }
 
     if (version !== SCHEMA_VERSION) {

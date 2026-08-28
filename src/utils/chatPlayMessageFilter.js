@@ -89,12 +89,10 @@ function isLikelySongRequest(content) {
     const trimmed = (content || "").trim();
     if (!trimmed) return false;
 
+    // Keep the filter conservative: known music links always pass, and only
+    // obvious chat-only messages are rejected. Everything else is searchable.
     if (URL_PATTERN.test(trimmed)) {
         return true;
-    }
-
-    if (trimmed.length <= 1) {
-        return false;
     }
 
     if (UNICODE_EMOJI_PATTERN.test(trimmed) || CUSTOM_EMOJI_PATTERN.test(trimmed)) {
@@ -112,10 +110,6 @@ function isLikelySongRequest(content) {
 
     if (isBlockedChatToken(trimmed)) {
         return false;
-    }
-
-    if (/\s/.test(trimmed)) {
-        return true;
     }
 
     return true;

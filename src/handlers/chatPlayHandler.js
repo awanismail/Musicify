@@ -2,6 +2,7 @@ const { getGuildData } = require("../utils/playerStore");
 const { playQuery } = require("../services/playQuery");
 const { getT, translateError } = require("../i18n");
 const { isLikelySongRequest } = require("../utils/chatPlayMessageFilter");
+const { maybePromptOnChatPlaySong } = require("../utils/votePrompt");
 
 const FEEDBACK_DELETE_MS = 5000;
 const FEEDBACK_DELETE_SHORT_MS = 3000;
@@ -66,84 +67,119 @@ async function handleChatPlayMessage(client, message) {
         return false;
     }
 
-    if (!guildData.chatPlayEnabled) return false;
-
     if (message.author.bot) return false;
 
     const query = message.content.trim();
     if (!query) return false;
 
-    const deleteUserRequests = shouldDeleteUserRequests(guildData);
-
-    const smartFilterOn = guildData.chatPlaySmartFilter !== false;
-    if (smartFilterOn && !isLikelySongRequest(query)) {
-        deleteUserRequestMessage(message);
-        return true;
-    }
-
-    if (deleteUserRequests) {
-        deleteUserRequestMessage(message);
-    }
-
     const t = getT.forGuild(message.guild.id, client);
 
-    const result = await playQuery(client, {
-        guild: message.guild,
-        member: message.member,
-        query,
-        textChannelId: message.channel.id,
-        source: "chatplay",
-        t,
-    });
-
-    if (!result.ok) {
-        const feedback = formatPlayErrorFeedback(t, result);
-        await sendChatPlayFeedback(
-            message.channel,
-            feedback,
-            result.type === "lavalink_down" || result.type === "vc_mismatch"
-                ? FEEDBACK_DELETE_LONG_MS
-                : FEEDBACK_DELETE_MS
-        );
-        return true;
-    }
-
-    if (result.type === "playlist") {
-        let feedbackMsg = t("chatplay.feedback.playlistAdded", {
-            addedCount: result.addedCount,
-            totalCount: result.totalCount,
-            playlistName: result.playlistName || t("common.playlist"),
-        });
-        if (result.duplicates.length > 0) {
-            const list = result.duplicates.slice(0, 3).join(", ");
-            const suffix = result.duplicates.length > 3 ? "..." : "";
-            feedbackMsg += `\n${t("chatplay.feedback.duplicatesSkipped", {
-                count: result.duplicates.length,
-                list: `${list}${suffix}`,
-            })}`;
+    try {
+        if (!guildData.chatPlayEnabled) {
+            await sendChatPlayFeedback(
+                message.channel,
+                t("chatplay.feedback.disabled"),
+                FEEDBACK_DELETE_MS
+            );
+            return true;
         }
-        await sendChatPlayFeedback(message.channel, feedbackMsg);
+
+        const deleteUserRequests = shouldDeleteUserRequests(guildData);
+        const smartFilterOn = guildData.chatPlaySmartFilter === true;
+
+        if (smartFilterOn && !isLikelySongRequest(query)) {
+            if (deleteUserRequests) {
+                deleteUserRequestMessage(message);
+            }
+            await sendChatPlayFeedback(
+                message.channel,
+                t("chatplay.feedback.filtered"),
+                FEEDBACK_DELETE_SHORT_MS
+            );
+            return true;
+        }
+
+        if (deleteUserRequests) {
+            deleteUserRequestMessage(message);
+        }
+
+        const result = await playQuery(client, {
+            guild: message.guild,
+            member: message.member,
+            query,
+            textChannelId: message.channel.id,
+            source: "chatplay",
+            t,
+        });
+
+        if (!result.ok) {
+            const feedback = formatPlayErrorFeedback(t, result);
+            await sendChatPlayFeedback(
+                message.channel,
+                feedback,
+                result.type === "lavalink_down" || result.type === "vc_mismatch"
+                    ? FEEDBACK_DELETE_LONG_MS
+                    : FEEDBACK_DELETE_MS
+            );
+            return true;
+        }
+
+        if (result.type === "playlist") {
+            let feedbackMsg = t("chatplay.feedback.playlistAdded", {
+                addedCount: result.addedCount,
+                totalCount: result.totalCount,
+                playlistName: result.playlistName || t("common.playlist"),
+            });
+            if (result.duplicates.length > 0) {
+                const list = result.duplicates.slice(0, 3).join(", ");
+                const suffix = result.duplicates.length > 3 ? "..." : "";
+                feedbackMsg += `\n${t("chatplay.feedback.duplicatesSkipped", {
+                    count: result.duplicates.length,
+                    list: `${list}${suffix}`,
+                })}`;
+            }
+            await sendChatPlayFeedback(message.channel, feedbackMsg);
+            void maybePromptOnChatPlaySong(client, message.guild, message.author.id).catch(
+                () => {}
+            );
+            return true;
+        }
+
+        if (result.startedPlayback) {
+            await sendChatPlayFeedback(
+                message.channel,
+                t("chatplay.feedback.nowPlaying", { title: result.title }),
+                FEEDBACK_DELETE_SHORT_MS
+            );
+        } else {
+            await sendChatPlayFeedback(
+                message.channel,
+                t("chatplay.feedback.addedToQueue", {
+                    title: result.title,
+                    position: result.queuePosition,
+                }),
+                FEEDBACK_DELETE_SHORT_MS
+            );
+        }
+
+        void maybePromptOnChatPlaySong(client, message.guild, message.author.id).catch(() => {});
+
+        return true;
+    } catch (err) {
+        console.error("[Musicify] ChatPlay message error:", err);
+        try {
+            await sendChatPlayFeedback(
+                message.channel,
+                t("chatplay.feedback.error"),
+                FEEDBACK_DELETE_MS
+            );
+            const { refreshChatPlayPlayer } = require("../services/chatPlayPlayer");
+            await refreshChatPlayPlayer(client, message.guild.id);
+        } catch (feedbackErr) {
+            console.error("[Musicify] ChatPlay error feedback failed:", feedbackErr.message);
+        }
         return true;
     }
-
-    if (result.startedPlayback) {
-        await sendChatPlayFeedback(
-            message.channel,
-            t("chatplay.feedback.nowPlaying", { title: result.title }),
-            FEEDBACK_DELETE_SHORT_MS
-        );
-    } else {
-        await sendChatPlayFeedback(
-            message.channel,
-            t("chatplay.feedback.addedToQueue", {
-                title: result.title,
-                position: result.queuePosition,
-            }),
-            FEEDBACK_DELETE_SHORT_MS
-        );
-    }
-
-    return true;
 }
 
 function isChatPlayChannel(guildId, channelId) {

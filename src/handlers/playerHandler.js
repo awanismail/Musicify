@@ -22,6 +22,13 @@ const {
 const { getT } = require("../i18n");
 const config = require("../../config");
 const { limitedResolve, PRIORITY_SUGGESTIONS } = require("../utils/resolveLimiter");
+const { rememberTrackRequester } = require("../utils/votePrompt");
+const {
+    isPlayerUiBlocked,
+    clearPlayerUiBlocked,
+    handleMessageDeliveryError,
+} = require("../utils/playerMessageDelivery");
+const { isChannelAccessError } = require("../utils/discordErrors");
 
 const UPDATE_INTERVAL_MS = 15 * 1000; // 15 seconds
 const LAVALINK_RECONNECT_INTERVAL_MS = 30 * 60 * 1000;
@@ -67,16 +74,31 @@ function startLavalinkReconnectMonitor(client) {
 }
 
 /**
- * Helper: edit the existing player message or send a new one (never duplicates)
+ * Helper: edit the existing player message or send a new one (never duplicates).
+ * @returns {Promise<boolean>} Whether delivery succeeded.
  */
-async function editOrSendPlayerMessage(client, guildData, channelId, container, files) {
+async function editOrSendPlayerMessage(client, guildData, guildId, channelId, container, files) {
+    if (isPlayerUiBlocked(guildData)) {
+        return false;
+    }
+
+    if (guildData.chatPlayChannelId && channelId === guildData.chatPlayChannelId) {
+        const channel = client.channels.cache.get(channelId);
+        if (!channel) {
+            guildData.chatPlayMessageId = null;
+            return false;
+        }
+
+        const { editChatPlayMessage } = require("../services/chatPlayPlayer");
+        return editChatPlayMessage(client, channel.guild.id, container, files || []);
+    }
+
     const channel = client.channels.cache.get(channelId);
     if (!channel) {
-        // Channel no longer exists; clear stale IDs
         guildData.chatPlayMessageId = null;
         guildData.playerMessageId = null;
         guildData.playerChannelId = null;
-        return;
+        return false;
     }
 
     const messageId = guildData.chatPlayMessageId || guildData.playerMessageId;
@@ -87,16 +109,27 @@ async function editOrSendPlayerMessage(client, guildData, channelId, container, 
             await msg.edit({
                 components: [container],
                 files: files,
+                attachments: [],
                 flags: MessageFlags.IsComponentsV2,
             });
-            return;
+            clearPlayerUiBlocked(guildData);
+            return true;
         } catch (err) {
-            // Message or channel no longer exists — clear stale IDs and send a new one
+            if (isChannelAccessError(err)) {
+                handleMessageDeliveryError(
+                    guildId,
+                    channelId,
+                    err,
+                    guildData,
+                    "Cannot edit player message"
+                );
+                return false;
+            }
+
             guildData.chatPlayMessageId = null;
             guildData.playerMessageId = null;
             guildData.playerChannelId = null;
-            guildData.updateInterval && clearInterval(guildData.updateInterval);
-            guildData.updateInterval = null;
+            clearUpdateInterval(guildData);
         }
     }
 
@@ -113,8 +146,18 @@ async function editOrSendPlayerMessage(client, guildData, channelId, container, 
             guildData.playerMessageId = newMsg.id;
             guildData.playerChannelId = channel.id;
         }
+
+        clearPlayerUiBlocked(guildData);
+        return true;
     } catch (sendErr) {
-        console.error("[Musicify] Failed to send player message:", sendErr.message);
+        handleMessageDeliveryError(
+            guildId,
+            channelId,
+            sendErr,
+            guildData,
+            "Failed to send player message"
+        );
+        return false;
     }
 }
 
@@ -127,6 +170,8 @@ async function refreshPlayerMessage(client, guildId) {
         if (!player || !player.current) return;
 
         const guildData = getGuildData(guildId);
+        if (isPlayerUiBlocked(guildData)) return;
+
         const track = player.current;
         const t = getT.forGuild(guildId, client);
 
@@ -141,7 +186,7 @@ async function refreshPlayerMessage(client, guildId) {
         }
 
         const channelId = guildData.chatPlayChannelId || guildData.playerChannelId || player.textChannel;
-        await editOrSendPlayerMessage(client, guildData, channelId, container, files);
+        await editOrSendPlayerMessage(client, guildData, guildId, channelId, container, files);
     } catch (error) {
         console.error("[Musicify] Auto-update error:", error);
     }
@@ -208,6 +253,8 @@ function setupPlayerHandler(client) {
 
             const guildData = getGuildData(player.guildId);
             const t = getT.forGuild(player.guildId, client);
+            rememberTrackRequester(player.guildId, track.info.requester);
+            clearPlayerUiBlocked(guildData);
 
             // Save the previous track for the "Previous" button
             if (player.previous) {
@@ -241,10 +288,18 @@ function setupPlayerHandler(client) {
 
             // Get the channel
             const channelId = guildData.chatPlayChannelId || guildData.playerChannelId || player.textChannel;
-            await editOrSendPlayerMessage(client, guildData, channelId, container, files);
+            const delivered = await editOrSendPlayerMessage(
+                client,
+                guildData,
+                player.guildId,
+                channelId,
+                container,
+                files
+            );
 
-            // Start 15-second auto-update interval
-            startUpdateInterval(client, player.guildId);
+            if (delivered) {
+                startUpdateInterval(client, player.guildId);
+            }
 
             // Fetch suggestions for the dropdown
             try {

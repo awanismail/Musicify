@@ -17,17 +17,16 @@ const {
     ephemeralV2,
 } = require("../utils/replies");
 const {
-    handleChatPlaySetupButton,
     handleChatPlayManageButton,
-    isChatPlaySetupButton,
     isChatPlayManageButton,
 } = require("./chatPlaySetupHandler");
 const { notifyPlayerFeedback } = require("./chatPlayHandler");
 const { dismissWelcomeMessage } = require("../utils/guildWelcome");
+const { dismissVotePrompt, VOTE_PROMPT_DISMISS_ID } = require("../utils/votePrompt");
 const { buildStatusContainer, getNodeDisplayName } = require("../utils/statusPage");
 const config = require("../../config");
 const { createPreferredConnection } = require("../utils/lavalink");
-const { isPlayerConnectionHealthy } = require("../utils/playerConnection");
+const { isPlayerConnectionHealthy, safePlayerPlay } = require("../utils/playerConnection");
 const { getTrackQueuePosition, getDuplicateTrackError } = require("../utils/queueUtils");
 const { persistGuildPlaybackSettings } = require("../utils/database");
 
@@ -43,12 +42,13 @@ async function handleButtonInteraction(client, interaction) {
             return;
         }
 
-        if (isLanguageButton(customId)) {
-            return handleLanguageButton(client, interaction);
+        if (customId === VOTE_PROMPT_DISMISS_ID) {
+            await dismissVotePrompt(interaction);
+            return;
         }
 
-        if (isChatPlaySetupButton(customId)) {
-            return handleChatPlaySetupButton(client, interaction);
+        if (isLanguageButton(customId)) {
+            return handleLanguageButton(client, interaction);
         }
 
         if (isChatPlayManageButton(customId)) {
@@ -61,13 +61,9 @@ async function handleButtonInteraction(client, interaction) {
         return;
     }
 
-    // Fetch commands for IDs
-    let commands;
-    try {
-        commands = await client.application.commands.fetch();
-    } catch (e) {
-        commands = null;
-    }
+    // Never make a Discord API request before acknowledging a component.
+    // The cache is sufficient for mentions; fall back to plain slash-command text.
+    const commands = client.application?.commands?.cache;
 
     const getCmd = (name, subcommand = null) => {
         const cmd = commands?.find(c => c.name === name);
@@ -167,29 +163,6 @@ async function handleButtonInteraction(client, interaction) {
                 }
             }
             return;
-        }
-    }
-
-    // If no healthy player exists but ChatPlay is active, recreate the connection
-    if (
-        !isPlayerConnectionHealthy(client, guildId, player, interaction.member?.voice?.channel?.id) &&
-        guildData.chatPlayChannelId &&
-        guildData.chatPlayEnabled
-    ) {
-        const voiceChannel = interaction.member?.voice?.channel;
-        if (voiceChannel) {
-            try {
-                player = createPreferredConnection(client, {
-                    guildId: guildId,
-                    voiceChannel: voiceChannel.id,
-                    textChannel: guildData.chatPlayChannelId,
-                    deaf: true,
-                });
-                player.setVolume(guildData.volume);
-                console.log(`[Musicify] Recreated player for guild ${guildId}`);
-            } catch (err) {
-                console.error(`[Musicify] Failed to recreate player for guild ${guildId}:`, err.message);
-            }
         }
     }
 
@@ -314,7 +287,19 @@ async function handleButtonInteraction(client, interaction) {
             const wasIdle = !player.current && !player.playing && !player.paused;
             suggestion.info.requester = interaction.user;
             player.queue.add(suggestion);
-            if (wasIdle) player.play();
+            if (wasIdle) {
+                const playResult = await safePlayerPlay(player, interaction.guild.id);
+                if (!playResult.ok) {
+                    if (player.queue.length > 0) {
+                        player.queue.remove(player.queue.length - 1);
+                    }
+                    return interaction.followUp(
+                        ephemeralV2(
+                            buildErrorContainer(tUser("errors.unexpected"), tUser)
+                        )
+                    );
+                }
+            }
 
             const title = suggestion.info?.title || tUser("common.unknown");
             const feedback = wasIdle
@@ -442,6 +427,30 @@ async function handleButtonInteraction(client, interaction) {
 
     // Defer immediately to avoid 3s timeout
     await interaction.deferUpdate();
+
+    // Connection recovery can involve network work, so only do it after Discord
+    // has acknowledged the button interaction.
+    if (
+        !isPlayerConnectionHealthy(client, guildId, player, interaction.member?.voice?.channel?.id) &&
+        guildData.chatPlayChannelId &&
+        guildData.chatPlayEnabled
+    ) {
+        const voiceChannel = interaction.member?.voice?.channel;
+        if (voiceChannel) {
+            try {
+                player = createPreferredConnection(client, {
+                    guildId,
+                    voiceChannel: voiceChannel.id,
+                    textChannel: guildData.chatPlayChannelId,
+                    deaf: true,
+                });
+                player.setVolume(guildData.volume);
+                console.log(`[Musicify] Recreated player for guild ${guildId}`);
+            } catch (err) {
+                console.error(`[Musicify] Failed to recreate player for guild ${guildId}:`, err.message);
+            }
+        }
+    }
 
     let needsVisualUpdate = false;
 
@@ -581,6 +590,12 @@ async function editPlayerMessageDirectly(client, player, guildData) {
             files.push(new AttachmentBuilder(musicardBuffer, { name: "musicard.png" }));
         }
 
+        if (guildData.chatPlayChannelId && guildData.chatPlayMessageId) {
+            const { editChatPlayMessage } = require("../services/chatPlayPlayer");
+            await editChatPlayMessage(client, player.guildId, container, files);
+            return;
+        }
+
         const channelId = guildData.chatPlayChannelId || guildData.playerChannelId || player.textChannel;
         const channel = client.channels.cache.get(channelId);
         if (!channel) {
@@ -597,6 +612,7 @@ async function editPlayerMessageDirectly(client, player, guildData) {
         await msg.edit({
             components: [container],
             files: files,
+            attachments: [],
             flags: MessageFlags.IsComponentsV2,
         });
     } catch (error) {

@@ -12,6 +12,7 @@ const {
     StringSelectMenuOptionBuilder,
 } = require("discord.js");
 const { getT, slashMeta } = require("../i18n");
+const config = require("../../config");
 
 const PAGE_KEYS = ["home", "music", "filters", "controls", "troubleshoot", "support"];
 
@@ -166,7 +167,7 @@ function addHomePage(container, t, cmd) {
         .setButtonAccessory(
             new ButtonBuilder()
                 .setLabel(t("common.vote"))
-                .setURL("https://top.gg/bot/1502977716196999309/vote")
+                .setURL(config.vote.url)
                 .setStyle(ButtonStyle.Link)
         );
 

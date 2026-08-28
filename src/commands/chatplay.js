@@ -2,9 +2,8 @@ const { MessageFlags, PermissionFlagsBits } = require("discord.js");
 const { getGuildData } = require("../utils/playerStore");
 const { slashMeta, getT } = require("../i18n");
 const { buildErrorContainer, ephemeralV2 } = require("../utils/replies");
-const { createSession, auditChannelPermissions } = require("../utils/chatPlaySetupSession");
 const {
-    buildSetupStep2Container,
+    buildSetupModal,
     buildChatPlayManageContainer,
     hasChatPlayConfigured,
 } = require("../utils/chatPlaySetup");
@@ -25,25 +24,8 @@ async function startChatPlaySetup(interaction, client) {
         );
     }
 
-    const { canProceed } = auditChannelPermissions(interaction.guild, interaction.channel);
-    if (!canProceed) {
-        return interaction.reply(
-            ephemeralV2(buildErrorContainer(t("commands.chatplay.missingPermissions"), t))
-        );
-    }
-
-    const session = createSession(
-        interaction.guild.id,
-        interaction.user.id,
-        interaction.channel.id
-    );
     const tGuild = getT.forGuild(interaction.guild.id, client);
-    const container = buildSetupStep2Container(tGuild, session, interaction.guild);
-
-    await interaction.reply({
-        components: [container],
-        flags: MessageFlags.Ephemeral | MessageFlags.IsComponentsV2,
-    });
+    return interaction.showModal(buildSetupModal(tGuild, { channel: interaction.channel }));
 }
 
 module.exports = {

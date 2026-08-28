@@ -12,20 +12,110 @@ const {
     ModalBuilder,
     LabelBuilder,
     ChannelSelectMenuBuilder,
+    CheckboxGroupBuilder,
+    CheckboxGroupOptionBuilder,
     ChannelType,
 } = require("discord.js");
 const { getGuildData } = require("../utils/playerStore");
 const { setGuildSettings } = require("../utils/database");
 const { createChatPlayIdleContainer } = require("./components");
 const { toggleTwentyFourSeven } = require("../services/sessionManager");
-const { deleteSession } = require("./chatPlaySetupSession");
-
-const SETUP_STEPS = 2;
 const EMOJI_UNCHECKED = { id: "1522858566141214844", name: "Musicify_Unchecked" };
 const EMOJI_CHECKED = { id: "1522858608478388275", name: "Musicify_Checked" };
 
-function buildSetupStepHeader(t, step) {
-    return t("chatplay.setup.stepHeader", { step, totalSteps: SETUP_STEPS });
+const SETUP_BEHAVIOUR_GROUP_ID = "cp_setup_behaviour";
+const MANAGE_SETTINGS_MODAL_ID = "cp_manage_settings_modal";
+const MANAGE_BEHAVIOUR_GROUP_ID = "cp_manage_behaviour";
+const MANAGE_CHANNEL_SELECT_ID = "cp_manage_settings_channel_select";
+const SETUP_BEHAVIOUR = {
+    SLOWMODE: "slowmode",
+    DELETE_MSG: "deletemsg",
+    PIN: "pin",
+    TWENTY_FOUR_SEVEN: "247",
+    SMART_FILTER: "smartfilter",
+};
+function stripRecommended(title) {
+    return title.replace(/ \*\(recommended\)\*/g, "");
+}
+
+function stripMarkdown(title) {
+    return stripRecommended(title).replace(/\*\*/g, "");
+}
+
+function parseSetupBehaviourSelection(selectedValues) {
+    const selected = new Set(selectedValues ?? []);
+
+    return {
+        slowmode: selected.has(SETUP_BEHAVIOUR.SLOWMODE),
+        deleteMessages: selected.has(SETUP_BEHAVIOUR.DELETE_MSG),
+        pinPlayerMessage: selected.has(SETUP_BEHAVIOUR.PIN),
+        enable247: selected.has(SETUP_BEHAVIOUR.TWENTY_FOUR_SEVEN),
+        smartFilter: selected.has(SETUP_BEHAVIOUR.SMART_FILTER),
+    };
+}
+
+function buildBehaviourGroupLabel(
+    t,
+    groupCustomId,
+    defaults = {
+        slowmode: true,
+        deleteMessages: true,
+        pinPlayerMessage: true,
+        enable247: false,
+        smartFilter: false,
+    }
+) {
+    const behaviourGroup = new CheckboxGroupBuilder()
+        .setCustomId(groupCustomId)
+        .setRequired(false)
+        .setMinValues(0)
+        .setMaxValues(5)
+        .addOptions(
+            new CheckboxGroupOptionBuilder()
+                .setLabel(stripMarkdown(t("chatplay.setup.slowmodeTitle")))
+                .setDescription(t("chatplay.setup.slowmodeDescription"))
+                .setValue(SETUP_BEHAVIOUR.SLOWMODE)
+                .setDefault(defaults.slowmode),
+            new CheckboxGroupOptionBuilder()
+                .setLabel(stripMarkdown(t("chatplay.setup.deleteMessagesTitle")))
+                .setDescription(t("chatplay.setup.deleteMessagesDescription"))
+                .setValue(SETUP_BEHAVIOUR.DELETE_MSG)
+                .setDefault(defaults.deleteMessages),
+            new CheckboxGroupOptionBuilder()
+                .setLabel(stripMarkdown(t("chatplay.setup.pinTitle")))
+                .setDescription(t("chatplay.setup.pinDescription"))
+                .setValue(SETUP_BEHAVIOUR.PIN)
+                .setDefault(defaults.pinPlayerMessage),
+            new CheckboxGroupOptionBuilder()
+                .setLabel(stripMarkdown(t("chatplay.setup.247Title")))
+                .setDescription(t("chatplay.setup.247Description"))
+                .setValue(SETUP_BEHAVIOUR.TWENTY_FOUR_SEVEN)
+                .setDefault(defaults.enable247),
+            new CheckboxGroupOptionBuilder()
+                .setLabel(stripMarkdown(t("chatplay.setup.smartFilterTitle")))
+                .setDescription(t("chatplay.setup.smartFilterDescription"))
+                .setValue(SETUP_BEHAVIOUR.SMART_FILTER)
+                .setDefault(defaults.smartFilter)
+        );
+
+    return new LabelBuilder()
+        .setLabel(t("chatplay.setup.behaviourGroupLabel"))
+        .setDescription(t("chatplay.setup.behaviourGroupDescription"))
+        .setCheckboxGroupComponent(behaviourGroup);
+}
+
+function buildSetupBehaviourGroupLabel(t) {
+    return buildBehaviourGroupLabel(t, SETUP_BEHAVIOUR_GROUP_ID);
+}
+
+function getGuildBehaviourDefaults(guildData) {
+    return {
+        slowmode: guildData.chatPlaySlowmode !== false,
+        deleteMessages: guildData.chatPlayDeleteMessages !== false,
+        pinPlayerMessage: guildData.chatPlayPinPlayerMessage !== false,
+        enable247: Boolean(guildData.twentyFourSeven),
+        smartFilter: guildData.chatPlaySmartFilter === true,
+    };
 }
 
 function buildToggleButton(customId, enabled) {
@@ -82,24 +172,55 @@ async function pinChatPlayPlayerMessage(channel, message, botMember, t) {
     }
 }
 
-function buildChannelSection(t, session, guild) {
-    const channel = guild.channels.cache.get(session.channelId);
-    const channelLine = channel
-        ? `<#${session.channelId}>`
-        : t("chatplay.setup.unknownChannel");
-
-    return new SectionBuilder()
-        .addTextDisplayComponents(
-            new TextDisplayBuilder().setContent(
-                `${t("chatplay.setup.channelTitle")}\n-# ${t("chatplay.setup.channelDescription", { channel: channelLine })}`
-            )
-        )
-        .setButtonAccessory(
-            new ButtonBuilder()
-                .setCustomId("cp_setup_change_channel")
-                .setLabel(t("chatplay.setup.editButton"))
-                .setStyle(ButtonStyle.Secondary)
+function buildSetupCheckboxLabel(t, titleKey, descriptionKey, customId, defaultChecked) {
+    return new LabelBuilder()
+        .setLabel(stripMarkdown(t(titleKey)))
+        .setDescription(t(descriptionKey))
+        .setCheckboxComponent((checkbox) =>
+            checkbox.setCustomId(customId).setDefault(defaultChecked)
         );
+}
+
+function isAllowedSetupChannelType(type) {
+    return type === ChannelType.GuildText || type === ChannelType.GuildAnnouncement;
+}
+
+function resolveDefaultSetupChannelId(channel) {
+    if (!channel) return null;
+
+    if (channel.isThread?.()) {
+        const parent = channel.parent;
+        return parent && isAllowedSetupChannelType(parent.type) ? parent.id : null;
+    }
+
+    if (channel.isTextBased?.() && isAllowedSetupChannelType(channel.type)) {
+        return channel.id;
+    }
+
+    return null;
+}
+
+function buildSetupModal(t, { channel = null } = {}) {
+    const defaultChannelId = resolveDefaultSetupChannelId(channel);
+    const channelSelect = new ChannelSelectMenuBuilder()
+        .setCustomId("cp_setup_channel_select")
+        .setPlaceholder(t("chatplay.setup.modalPlaceholder"))
+        .setRequired(true)
+        .addChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement);
+
+    if (defaultChannelId) {
+        channelSelect.setDefaultChannels(defaultChannelId);
+    }
+
+    const channelLabel = new LabelBuilder()
+        .setLabel(t("chatplay.setup.modalChannelLabel"))
+        .setDescription(t("chatplay.setup.modalChannelDescription"))
+        .setChannelSelectMenuComponent(channelSelect);
+
+    return new ModalBuilder()
+        .setCustomId("cp_setup_modal")
+        .setTitle(t("chatplay.setup.setupModalTitle"))
+        .addLabelComponents(channelLabel, buildSetupBehaviourGroupLabel(t));
 }
 
 function buildChangeChannelModal(t, { modalCustomId, selectCustomId } = {}) {
@@ -120,14 +241,32 @@ function buildChangeChannelModal(t, { modalCustomId, selectCustomId } = {}) {
         .addLabelComponents(channelLabel);
 }
 
-function buildManageChangeChannelModal(t) {
-    return buildChangeChannelModal(t, {
-        modalCustomId: "cp_manage_change_channel_modal",
-        selectCustomId: "cp_manage_channel_select",
-    });
+function buildManageSettingsModal(t, guildData) {
+    const channelSelect = new ChannelSelectMenuBuilder()
+        .setCustomId(MANAGE_CHANNEL_SELECT_ID)
+        .setPlaceholder(t("chatplay.setup.modalPlaceholder"))
+        .setRequired(true)
+        .addChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement);
+
+    if (guildData.chatPlayChannelId) {
+        channelSelect.setDefaultChannels(guildData.chatPlayChannelId);
+    }
+
+    const channelLabel = new LabelBuilder()
+        .setLabel(t("chatplay.setup.modalChannelLabel"))
+        .setDescription(t("chatplay.setup.modalChannelDescription"))
+        .setChannelSelectMenuComponent(channelSelect);
+
+    return new ModalBuilder()
+        .setCustomId(MANAGE_SETTINGS_MODAL_ID)
+        .setTitle(t("chatplay.setup.manageSettingsModalTitle"))
+        .addLabelComponents(
+            channelLabel,
+            buildBehaviourGroupLabel(t, MANAGE_BEHAVIOUR_GROUP_ID, getGuildBehaviourDefaults(guildData))
+        );
 }
 
-function buildManageStatusSection(t, guildData, guild) {
+function buildManageStatusDisplay(t, guildData, guild) {
     const channel = guild.channels.cache.get(guildData.chatPlayChannelId);
     const channelLine = channel
         ? `<#${guildData.chatPlayChannelId}>`
@@ -136,40 +275,8 @@ function buildManageStatusSection(t, guildData, guild) {
         ? t("chatplay.setup.manageEnabled", { channel: channelLine })
         : t("chatplay.setup.manageDisabled", { channel: channelLine });
 
-    return new SectionBuilder()
-        .addTextDisplayComponents(
-            new TextDisplayBuilder().setContent(
-                `${t("common.labels.status")}\n-# ${statusLine}`
-            )
-        )
-        .setButtonAccessory(
-            new ButtonBuilder()
-                .setCustomId("cp_manage_change_channel")
-                .setLabel(t("chatplay.setup.editButton"))
-                .setStyle(ButtonStyle.Secondary)
-        );
-}
-
-function buildReviewSection(title, description, customId, valueLabel) {
-    return new SectionBuilder()
-        .addTextDisplayComponents(
-            new TextDisplayBuilder().setContent(`${title}\n-# ${description}`)
-        )
-        .setButtonAccessory(
-            new ButtonBuilder()
-                .setCustomId(customId)
-                .setLabel(valueLabel)
-                .setStyle(ButtonStyle.Secondary)
-                .setDisabled(true)
-        );
-}
-
-function buildManage247Section(t, guildData) {
-    return buildBehaviourSection(
-        t("chatplay.setup.247Title"),
-        t("chatplay.setup.247Description"),
-        "cp_manage_toggle_247",
-        Boolean(guildData.twentyFourSeven)
+    return new TextDisplayBuilder().setContent(
+        `${t("common.labels.status")}\n-# ${statusLine}`
     );
 }
 
@@ -182,197 +289,67 @@ async function getCommandMention(client, name) {
     return `\`/${name}\``;
 }
 
-function getSetupBehaviours(t) {
-    return [
-        {
-            title: t("chatplay.setup.slowmodeTitle"),
-            description: t("chatplay.setup.slowmodeDescription"),
-            toggleCustomId: "cp_setup_toggle_slowmode",
-            reviewCustomId: "cp_setup_review_slowmode",
-            isEnabled: (session) => session.slowmode,
-            reviewValue: (session) =>
-                session.slowmode ? t("chatplay.setup.slowmodeOn") : t("common.off"),
-        },
-        {
-            title: t("chatplay.setup.deleteMessagesTitle"),
-            description: t("chatplay.setup.deleteMessagesDescription"),
-            toggleCustomId: "cp_setup_toggle_deletemsg",
-            reviewCustomId: "cp_setup_review_deletemsg",
-            isEnabled: (session) => session.deleteMessages,
-            reviewValue: (session) =>
-                session.deleteMessages ? t("common.on") : t("common.off"),
-        },
-        {
-            title: t("chatplay.setup.pinTitle"),
-            description: t("chatplay.setup.pinDescription"),
-            toggleCustomId: "cp_setup_toggle_pin",
-            reviewCustomId: "cp_setup_review_pin",
-            isEnabled: (session) => session.pinPlayerMessage,
-            reviewValue: (session) =>
-                session.pinPlayerMessage ? t("common.on") : t("common.off"),
-        },
-        {
-            title: t("chatplay.setup.247Title"),
-            description: t("chatplay.setup.247Description"),
-            toggleCustomId: "cp_setup_toggle_247",
-            reviewCustomId: "cp_setup_review_247",
-            isEnabled: (session) => session.enable247,
-            reviewValue: (session) =>
-                session.enable247 ? t("common.on") : t("common.off"),
-        },
-    ];
-}
-
-function stripRecommended(title) {
-    return title.replace(/ \*\(recommended\)\*/g, "");
-}
-
-function buildSetupStep2Container(t, session, guild) {
-    const container = new ContainerBuilder();
-    container.addTextDisplayComponents(
-        new TextDisplayBuilder().setContent(buildSetupStepHeader(t, 1))
-    );
-
-    container.addSeparatorComponents(new SeparatorBuilder().setDivider(false));
-
-    container.addSectionComponents(buildChannelSection(t, session, guild));
-
-    container.addSeparatorComponents(new SeparatorBuilder().setDivider(false));
-
-    container.addTextDisplayComponents(
-        new TextDisplayBuilder().setContent(t("chatplay.setup.behaviourHeading"))
-    );
-
-    container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
-
-    const behaviours = getSetupBehaviours(t);
-    container.addSectionComponents(
-        ...behaviours.map((option) =>
-            buildBehaviourSection(
-                option.title,
-                option.description,
-                option.toggleCustomId,
-                option.isEnabled(session)
-            )
-        )
-    );
-
-    container.addSeparatorComponents(new SeparatorBuilder().setDivider(false));
-
-    const navRow = new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-            .setCustomId("cp_setup_cancel")
-            .setLabel(t("common.cancel"))
-            .setStyle(ButtonStyle.Secondary),
-        new ButtonBuilder()
-            .setCustomId("cp_setup_continue")
-            .setLabel(t("chatplay.setup.continueButton"))
-            .setStyle(ButtonStyle.Primary)
-    );
-
-    container.addActionRowComponents(navRow);
-    return container;
-}
-
-function buildSetupStep3Container(t, session, guild) {
-    const channel = guild.channels.cache.get(session.channelId);
-    const channelLine = channel
-        ? `<#${session.channelId}>`
-        : t("chatplay.setup.unknownChannel");
-    const behaviours = getSetupBehaviours(t);
-
-    const container = new ContainerBuilder();
-    container.addTextDisplayComponents(
-        new TextDisplayBuilder().setContent(
-            `${buildSetupStepHeader(t, 2)}\n\n` +
-                `${t("chatplay.setup.reviewHeading")}\n` +
-                t("chatplay.setup.reviewChannel", { channel: channelLine })
-        )
-    );
-
-    container.addSeparatorComponents(new SeparatorBuilder().setDivider(false));
-
-    container.addTextDisplayComponents(
-        new TextDisplayBuilder().setContent(t("chatplay.setup.reviewSettings"))
-    );
-
-    container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
-
-    container.addSectionComponents(
-        ...behaviours.map((option) =>
-            buildReviewSection(
-                stripRecommended(option.title),
-                option.description,
-                option.reviewCustomId,
-                option.reviewValue(session, guild)
-            )
-        )
-    );
-
-    container.addSeparatorComponents(new SeparatorBuilder().setDivider(false));
-
-    const row = new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-            .setCustomId("cp_setup_back")
-            .setLabel(t("chatplay.setup.backButton"))
-            .setStyle(ButtonStyle.Secondary),
-        new ButtonBuilder()
-            .setCustomId("cp_setup_confirm")
-            .setLabel(t("chatplay.setup.createButton"))
-            .setStyle(ButtonStyle.Success)
-    );
-
-    container.addActionRowComponents(row);
-    return container;
-}
-
-function buildSetupCancelledContainer(t) {
-    const container = new ContainerBuilder();
-    container.addTextDisplayComponents(
-        new TextDisplayBuilder().setContent(
-            `${t("chatplay.setup.cancelledHeading")}\n\n${t("chatplay.setup.cancelledBody")}`
-        )
-    );
-    return container;
-}
-
 function hasChatPlayConfigured(guildData) {
     return Boolean(guildData.chatPlayChannelId);
 }
 
-function buildManageSettingsSections(t, guildData) {
-    const slowmode = guildData.chatPlaySlowmode !== false;
-    const deleteMessages = guildData.chatPlayDeleteMessages !== false;
-    const pinPlayer = guildData.chatPlayPinPlayerMessage !== false;
-    const smartFilter = guildData.chatPlaySmartFilter !== false;
+async function applyChatPlaySettings(client, guild, guildData, settings, t) {
+    const guildId = guild.id;
+    const warnings = [];
+    let twentyFourSevenWarning = "";
 
-    return [
-        buildBehaviourSection(
-            stripRecommended(t("chatplay.setup.slowmodeTitle")),
-            t("chatplay.setup.slowmodeDescription"),
-            "cp_manage_toggle_slowmode",
-            slowmode
-        ),
-        buildBehaviourSection(
-            stripRecommended(t("chatplay.setup.deleteMessagesTitle")),
-            t("chatplay.setup.deleteMessagesDescription"),
-            "cp_manage_toggle_deletemsg",
-            deleteMessages
-        ),
-        buildBehaviourSection(
-            stripRecommended(t("chatplay.setup.pinTitle")),
-            t("chatplay.setup.pinDescription"),
-            "cp_manage_toggle_pin",
-            pinPlayer
-        ),
-        buildBehaviourSection(
-            t("chatplay.setup.smartFilterTitle"),
-            t("chatplay.setup.smartFilterDescription"),
-            "cp_manage_toggle_smartfilter",
-            smartFilter
-        ),
-        buildManage247Section(t, guildData),
-    ];
+    guildData.chatPlaySlowmode = settings.slowmode;
+    guildData.chatPlayDeleteMessages = settings.deleteMessages;
+    guildData.chatPlayPinPlayerMessage = settings.pinPlayerMessage;
+    guildData.chatPlaySmartFilter = settings.smartFilter;
+
+    setGuildSettings(guildId, {
+        chatPlaySlowmode: settings.slowmode,
+        chatPlayDeleteMessages: settings.deleteMessages,
+        chatPlayPinPlayerMessage: settings.pinPlayerMessage,
+        chatPlaySmartFilter: settings.smartFilter,
+    });
+
+    if (settings.channelId && settings.channelId !== guildData.chatPlayChannelId) {
+        const relocateWarnings = await relocateChatPlayChannel(
+            client,
+            guild,
+            guildData,
+            settings.channelId,
+            t
+        );
+        warnings.push(...relocateWarnings);
+    } else {
+        const slowmodeWarning = await applyChatPlaySlowmode(guild, guildData, t);
+        if (slowmodeWarning) warnings.push(slowmodeWarning);
+
+        const pinWarning = await applyChatPlayPin(guild, guildData, t);
+        if (pinWarning) warnings.push(pinWarning);
+    }
+
+    const was247 = Boolean(guildData.twentyFourSeven);
+    if (settings.enable247 && !was247) {
+        if (settings.voiceChannelIdFor247) {
+            await toggleTwentyFourSeven(client, guildId, {
+                voiceChannelId: settings.voiceChannelIdFor247,
+                textChannelId: guildData.chatPlayChannelId,
+                enabled: true,
+            });
+        } else {
+            twentyFourSevenWarning = t("chatplay.setup.warning247NotEnabled");
+        }
+    } else if (!settings.enable247 && was247) {
+        await toggleTwentyFourSeven(client, guildId, {
+            textChannelId: guildData.chatPlayChannelId,
+            enabled: false,
+        });
+    }
+
+    if (twentyFourSevenWarning) {
+        warnings.push(twentyFourSevenWarning);
+    }
+
+    return { warnings };
 }
 
 async function applyChatPlaySlowmode(guild, guildData, t) {
@@ -512,17 +489,13 @@ async function buildChatPlayManageContainer(t, guildData, guild, client) {
 
     container.addSeparatorComponents(new SeparatorBuilder().setDivider(false));
 
-    container.addSectionComponents(buildManageStatusSection(t, guildData, guild));
+    container.addTextDisplayComponents(buildManageStatusDisplay(t, guildData, guild));
 
     container.addSeparatorComponents(new SeparatorBuilder().setDivider(false));
 
     container.addTextDisplayComponents(
-        new TextDisplayBuilder().setContent(t("chatplay.setup.manageSettings"))
+        new TextDisplayBuilder().setContent(t("chatplay.setup.manageSettingsHint"))
     );
-
-    container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
-
-    container.addSectionComponents(...buildManageSettingsSections(t, guildData));
 
     container.addSeparatorComponents(new SeparatorBuilder().setDivider(false));
 
@@ -538,6 +511,17 @@ async function buildChatPlayManageContainer(t, guildData, guild, client) {
                 .setLabel(t("chatplay.setup.disableButton"))
                 .setStyle(ButtonStyle.Secondary)
                 .setDisabled(!guildData.chatPlayEnabled),
+            new ButtonBuilder()
+                .setCustomId("cp_manage_settings")
+                .setLabel(t("chatplay.setup.settingsButton"))
+                .setStyle(ButtonStyle.Primary)
+        )
+    );
+
+    container.addSeparatorComponents(new SeparatorBuilder().setDivider(false));
+
+    container.addActionRowComponents(
+        new ActionRowBuilder().addComponents(
             new ButtonBuilder()
                 .setCustomId("cp_manage_delete")
                 .setLabel(t("chatplay.setup.deleteButton"))
@@ -599,6 +583,15 @@ async function buildChatPlayDeletedContainer(t, client) {
 async function deleteChatPlay(client, guild, guildData) {
     const guildId = guild.id;
     const channelId = guildData.chatPlayChannelId;
+    const { handleStop } = require("../services/sessionManager");
+    const { clearUpdateInterval } = require("../utils/playerStore");
+
+    if (guildData.twentyFourSeven) {
+        await toggleTwentyFourSeven(client, guildId, { enabled: false });
+    }
+
+    clearUpdateInterval(guildData);
+    await handleStop(client, guildId, { destroyPlayer: true });
 
     if (channelId && guildData.chatPlayMessageId) {
         const messageId = guildData.chatPlayMessageId;
@@ -707,6 +700,7 @@ async function finalizeChatPlaySetup(client, session, guild, { voiceChannelId = 
     guildData.chatPlaySlowmode = session.slowmode;
     guildData.chatPlayDeleteMessages = session.deleteMessages;
     guildData.chatPlayPinPlayerMessage = session.pinPlayerMessage;
+    guildData.chatPlaySmartFilter = session.smartFilter;
 
     let twentyFourSevenWarning = "";
     const voiceChannelIdFor247 = session.voiceChannelIdFor247 ?? voiceChannelId ?? null;
@@ -748,21 +742,22 @@ async function finalizeChatPlaySetup(client, session, guild, { voiceChannelId = 
         chatPlaySlowmode: session.slowmode,
         chatPlayDeleteMessages: session.deleteMessages,
         chatPlayPinPlayerMessage: session.pinPlayerMessage,
-        chatPlaySmartFilter: guildData.chatPlaySmartFilter !== false,
+        chatPlaySmartFilter: session.smartFilter,
     });
-
-    deleteSession(guildId, session.userId);
 
     return { slowmodeWarning, twentyFourSevenWarning, pinWarning };
 }
 
 module.exports = {
     getCommandMention,
-    buildSetupStep2Container,
-    buildSetupStep3Container,
+    buildSetupModal,
+    SETUP_BEHAVIOUR_GROUP_ID,
+    MANAGE_SETTINGS_MODAL_ID,
+    MANAGE_BEHAVIOUR_GROUP_ID,
+    MANAGE_CHANNEL_SELECT_ID,
+    parseSetupBehaviourSelection,
+    buildManageSettingsModal,
     buildChangeChannelModal,
-    buildManageChangeChannelModal,
-    buildSetupCancelledContainer,
     buildSetupSuccessContainer,
     buildChatPlayManageContainer,
     buildChatPlayDeleteConfirmContainer,
@@ -770,6 +765,7 @@ module.exports = {
     hasChatPlayConfigured,
     finalizeChatPlaySetup,
     deleteChatPlay,
+    applyChatPlaySettings,
     pinChatPlayPlayerMessage,
     applyChatPlaySlowmode,
     applyChatPlayPin,

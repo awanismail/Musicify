@@ -396,6 +396,8 @@
       "channelDescription": "ChatPlay sera configuré dans {{channel}}.",
       "unknownChannel": "Salon inconnu",
       "behaviourHeading": "**Comportement du salon**\n-# Appuyez sur le bouton à côté de chaque option.",
+      "behaviourGroupLabel": "Comportement du salon",
+      "behaviourGroupDescription": "Options recommandées cochées par défaut.",
       "slowmodeTitle": "**Mode lent (5 s)** *(recommandé)*",
       "slowmodeDescription": "Réduit le spam dans le salon de demandes.",
       "slowmodeOn": "5 secondes",
@@ -403,8 +405,8 @@
       "deleteMessagesDescription": "Supprime les messages de demande de morceau. Les confirmations du bot disparaissent d'elles-mêmes.",
       "pinTitle": "**Épingler le message du lecteur** *(recommandé)*",
       "pinDescription": "Épingle le message du lecteur pour le retrouver facilement.",
-      "smartFilterTitle": "**Filtre intelligent**",
-      "smartFilterDescription": "Ignore le chat évident (ex. lol, brb) — pas de recherche ni d'ajout à la file.",
+      "smartFilterTitle": "**Filtre de chat simple (BETA)**",
+      "smartFilterDescription": "Ignore les messages évidents comme lol, brb, les émojis seuls et les mentions.",
       "247Title": "**Mode 24/7**",
       "247Description": "Rejoignez un salon vocal pour l'activer — le bot y reste 24 h/24.",
       "reviewHeading": "**Vérifier et confirmer**",
@@ -417,6 +419,7 @@
       "cancelledHeading": "### Configuration annulée",
       "cancelledBody": "-# ChatPlay n'a pas été modifié.",
       "modalTitle": "Modifier le salon ChatPlay",
+      "setupModalTitle": "Configurer ChatPlay",
       "modalChannelLabel": "Salon ChatPlay",
       "modalChannelDescription": "Où les membres tapent des noms de morceaux pour demander de la musique",
       "modalPlaceholder": "Choisir un salon textuel",
@@ -424,6 +427,9 @@
       "manageEnabled": "Activé dans {{channel}}",
       "manageDisabled": "Désactivé dans {{channel}}",
       "manageSettings": "**Vos paramètres**\n-# Appuyez sur l'interrupteur à côté de chaque option pour la modifier.",
+      "manageSettingsHint": "**Paramètres**\n-# Utilisez **Paramètres** pour modifier le salon et les options de comportement.",
+      "manageSettingsModalTitle": "Paramètres ChatPlay",
+      "settingsButton": "Paramètres",
       "manage247Description": "Cliquez sur **{{action}}** pour basculer, ou utilisez {{cmd247}}.",
       "turnOn": "Activer",
       "turnOff": "Désactiver",
@@ -465,15 +471,27 @@
       "noChannelSelected": "**Aucun salon sélectionné**\n-# Choisissez un salon textuel et réessayez.",
       "invalidChannel": "**Salon invalide**\n-# ChatPlay a besoin d'un salon textuel où les membres peuvent envoyer des messages.",
       "missingPermissionsChannel": "**Permissions manquantes**\n-# Musicify a besoin de **Voir le salon**, **Envoyer des messages**, **Intégrer des liens** et **Se connecter et parler** dans un salon vocal avant que ChatPlay puisse utiliser ce salon.",
+      "missingPermissionsList": "**Permissions manquantes**\n-# Musicify a encore besoin de :\n{{list}}",
       "joinVcEnable247": "**Rejoignez un salon vocal**\n-# Rejoignez d'abord un salon vocal — le bot y restera 24 h/24.",
       "joinVcChange247": "**Rejoignez un salon vocal**\n-# Rejoignez un salon vocal pour modifier le mode 24/7.",
-      "channelMoveFailed": "**Impossible de déplacer ChatPlay**\n-# {{message}}"
+      "channelMoveFailed": "**Impossible de déplacer ChatPlay**\n-# {{message}}",
+      "settingsFailed": "**Paramètres non enregistrés**\n-# {{message}}"
     },
     "feedback": {
       "playlistAdded": "✅ **{{addedCount}}** sur **{{totalCount}}** morceaux ajoutés depuis **{{playlistName}}** !",
       "duplicatesSkipped": "⚠️ {{count}} doublon(s) ignoré(s) : {{list}}",
       "nowPlaying": "✅ En cours de lecture : **{{title}}** !",
-      "addedToQueue": "✅ **{{title}}** ajouté — **#{{position}}** en file d'attente !"
+      "addedToQueue": "✅ **{{title}}** ajouté — **#{{position}}** en file d'attente !",
+      "disabled": "⏸ ChatPlay est désactivé — un admin peut le réactiver avec `/chatplay`.",
+      "filtered": "💬 Ça ne ressemble pas à une demande de musique.",
+      "error": "❌ Un problème est survenu — réessayez."
+    },
+    "permissions": {
+      "viewChannel": "Voir le salon",
+      "sendMessages": "Envoyer des messages",
+      "embedLinks": "Intégrer des liens",
+      "manageChannels": "Gérer les salons",
+      "connectSpeak": "Se connecter et parler dans un salon vocal"
     }
   },
   "handlers": {
@@ -538,5 +556,13 @@
     "footer": "- Si vous avez besoin d'aide ou avez trouvé un bug, rejoignez notre [serveur d'assistance](https://discord.gg/MRjEUhDCpZ), lancez {{cmdStatus}} pour vérifier si les systèmes du bot sont en ligne, ou consultez le dépôt [GitHub](https://github.com/codebymitch/Musicify) open source !",
     "deleteNotice": "-# Ce message sera supprimé <t:{{timestamp}}:R>",
     "dismissButton": "Supprimer le message maintenant"
+  },
+  "votePrompt": {
+    "heading": "## ⭐ Vous aimez Musicify ?",
+    "body": "Un vote rapide sur top.gg nous aide à grandir et à maintenir le bot. Cela ne prend que quelques secondes — merci !",
+    "snoozeNotice": "-# Suppression <t:{{timestamp}}:R>  •  **Pas maintenant** masque ceci pendant 2 jours",
+    "dismissButton": "Pas maintenant",
+    "thankYouDm": "## ⭐ Merci pour votre vote !\n\nVotre soutien aide à maintenir Musicify. Nous vous en sommes reconnaissants !",
+    "thankYouChannel": "⭐ Merci d'avoir voté, {{user}} ! Votre soutien compte beaucoup."
   }
 }

@@ -10,6 +10,7 @@ const { loadCommands } = require("./handlers/commandHandler");
 const { setupPlayerHandler } = require("./handlers/playerHandler");
 const db = require("./db/sqlite");
 const { runBackup, stopBackupScheduler } = require("./db/backup");
+const { startTopGgWebhookServer } = require("./services/topGgWebhook");
 
 async function start() {
     await initI18n();
@@ -54,7 +55,9 @@ async function start() {
     setupPlayerHandler(client);
 
     process.on("unhandledRejection", (reason) => {
-        if (reason && reason.message && reason.message.includes("Queue is empty")) return;
+        const message = reason?.message || String(reason);
+        if (message.includes("Queue is empty")) return;
+        if (message.includes("establishing") || message.includes("connection not ready")) return;
         console.error("[Musicify] Unhandled Rejection:", reason);
     });
 
@@ -88,6 +91,8 @@ async function start() {
     }
 
     await client.login(token);
+
+    startTopGgWebhookServer(client);
 
     let shuttingDown = false;
 

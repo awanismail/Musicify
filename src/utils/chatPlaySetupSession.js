@@ -1,45 +1,5 @@
 const { PermissionFlagsBits } = require("discord.js");
 
-const SETUP_TTL_MS = 15 * 60 * 1000;
-const sessions = new Map();
-
-function sessionKey(guildId, userId) {
-    return `${guildId}:${userId}`;
-}
-
-function createSession(guildId, userId, channelId) {
-    const key = sessionKey(guildId, userId);
-    const session = {
-        step: 1,
-        guildId,
-        userId,
-        channelId,
-        slowmode: true,
-        deleteMessages: true,
-        pinPlayerMessage: true,
-        enable247: false,
-        voiceChannelIdFor247: null,
-        expiresAt: Date.now() + SETUP_TTL_MS,
-    };
-    sessions.set(key, session);
-    return session;
-}
-
-function getSession(guildId, userId) {
-    const key = sessionKey(guildId, userId);
-    const session = sessions.get(key);
-    if (!session) return null;
-    if (Date.now() > session.expiresAt) {
-        sessions.delete(key);
-        return null;
-    }
-    return session;
-}
-
-function deleteSession(guildId, userId) {
-    sessions.delete(sessionKey(guildId, userId));
-}
-
 function auditChannelPermissions(guild, channel) {
     const botMember = guild.members.me;
     if (!botMember) {
@@ -49,19 +9,19 @@ function auditChannelPermissions(guild, channel) {
     const perms = botMember.permissionsIn(channel);
     const checks = [
         {
-            label: "View Channel",
+            labelKey: "chatplay.permissions.viewChannel",
             ok: perms.has(PermissionFlagsBits.ViewChannel),
         },
         {
-            label: "Send Messages",
+            labelKey: "chatplay.permissions.sendMessages",
             ok: perms.has(PermissionFlagsBits.SendMessages),
         },
         {
-            label: "Embed Links",
+            labelKey: "chatplay.permissions.embedLinks",
             ok: perms.has(PermissionFlagsBits.EmbedLinks),
         },
         {
-            label: "Manage Channels",
+            labelKey: "chatplay.permissions.manageChannels",
             ok: perms.has(PermissionFlagsBits.ManageChannels),
             optional: true,
         },
@@ -81,7 +41,7 @@ function auditChannelPermissions(guild, channel) {
     }
 
     checks.push({
-        label: "Connect & Speak",
+        labelKey: "chatplay.permissions.connectSpeak",
         ok: voiceOk,
     });
 
@@ -91,9 +51,17 @@ function auditChannelPermissions(guild, channel) {
     return { checks, canProceed };
 }
 
+function formatPermissionAuditFailure(t, checks) {
+    const failedRequired = checks.filter((check) => !check.ok && !check.optional);
+    if (!failedRequired.length) {
+        return t("chatplay.handlers.missingPermissionsChannel");
+    }
+
+    const list = failedRequired.map((check) => `-# ${t(check.labelKey)}`).join("\n");
+    return t("chatplay.handlers.missingPermissionsList", { list });
+}
+
 module.exports = {
-    createSession,
-    getSession,
-    deleteSession,
     auditChannelPermissions,
+    formatPermissionAuditFailure,
 };

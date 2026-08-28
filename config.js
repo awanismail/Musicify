@@ -35,6 +35,16 @@ module.exports = {
     accentColor: 0x2b2d31,
     statusWebhookUrl: process.env.STATUS_WEBHOOK_URL,
 
+    vote: {
+        botId: process.env.TOP_GG_BOT_ID || "1502977716196999309",
+        url: `https://top.gg/bot/${process.env.TOP_GG_BOT_ID || "1502977716196999309"}/vote`,
+        token: process.env.TOP_GG_TOKEN || null,
+        webhookSecret: process.env.TOP_GG_WEBHOOK_SECRET || null,
+        webhookPath: process.env.TOP_GG_WEBHOOK_PATH || "/webhooks/topgg/vote",
+        snoozeMs: 2 * 24 * 60 * 60 * 1000,
+        postVoteSnoozeMs: 12 * 60 * 60 * 1000,
+    },
+
     musicard: {
         theme: "Bloom",
         progressBarColor: "#FACC15",

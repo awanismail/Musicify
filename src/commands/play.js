@@ -2,6 +2,16 @@ const { MessageFlags, ContainerBuilder, TextDisplayBuilder } = require("discord.
 const { slashMeta, applySlashOption, getT, translateError } = require("../i18n");
 const { buildErrorContainer, buildFeedbackContainer, ephemeralV2 } = require("../utils/replies");
 const { playQuery, isYouTubeQuery } = require("../services/playQuery");
+const { maybePromptOnSlashPlay } = require("../utils/votePrompt");
+
+function scheduleSlashVotePrompt(interaction) {
+    void maybePromptOnSlashPlay(
+        interaction.client,
+        interaction.guild,
+        interaction.channel.id,
+        interaction.user.id
+    ).catch(() => {});
+}
 
 module.exports = {
     data: slashMeta("play").addStringOption((opt) =>
@@ -73,6 +83,7 @@ module.exports = {
 
             const container = new ContainerBuilder();
             container.addTextDisplayComponents(new TextDisplayBuilder().setContent(content));
+            scheduleSlashVotePrompt(interaction);
             return interaction.editReply({
                 components: [container],
                 flags: MessageFlags.IsComponentsV2,
@@ -95,6 +106,7 @@ module.exports = {
                 positionLine
             )
         );
+        scheduleSlashVotePrompt(interaction);
         return interaction.editReply({
             components: [container],
             flags: MessageFlags.IsComponentsV2,

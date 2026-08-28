@@ -80,9 +80,38 @@ function getAllPlayers(client) {
     return Object.values(players || {});
 }
 
+/**
+ * Start or resume playback without unhandled rejections from Riffy.
+ * @returns {Promise<{ ok: boolean, error?: Error }>}
+ */
+async function safePlayerPlay(player, guildId) {
+    if (!player) {
+        return { ok: false, error: new Error("No player") };
+    }
+
+    if (!player.connection) {
+        console.warn(
+            `[Musicify] Voice connection not ready for guild ${guildId}; skipping play()`
+        );
+        return { ok: false, error: new Error("Voice connection not ready") };
+    }
+
+    try {
+        await player.play();
+        return { ok: true };
+    } catch (err) {
+        console.error(
+            `[Musicify] player.play() failed for guild ${guildId}:`,
+            err?.message || err
+        );
+        return { ok: false, error: err };
+    }
+}
+
 module.exports = {
     destroyPlayerSafe,
     isPlayerConnectionHealthy,
     getOrCreateHealthyPlayer,
     getAllPlayers,
+    safePlayerPlay,
 };

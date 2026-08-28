@@ -396,6 +396,8 @@
       "channelDescription": "ChatPlay se configurará en {{channel}}.",
       "unknownChannel": "Canal desconocido",
       "behaviourHeading": "**Comportamiento del canal**\n-# Pulsa el interruptor junto a cada opción.",
+      "behaviourGroupLabel": "Comportamiento del canal",
+      "behaviourGroupDescription": "Opciones recomendadas marcadas por defecto.",
       "slowmodeTitle": "**Modo lento (5 s)** *(recomendado)*",
       "slowmodeDescription": "Reduce el spam en el canal de solicitudes.",
       "slowmodeOn": "5 segundos",
@@ -403,8 +405,8 @@
       "deleteMessagesDescription": "Elimina los mensajes de solicitud de canciones. Las confirmaciones del bot desaparecen solas.",
       "pinTitle": "**Fijar mensaje del reproductor** *(recomendado)*",
       "pinDescription": "Fija el mensaje del reproductor para que sea fácil de encontrar.",
-      "smartFilterTitle": "**Filtro inteligente**",
-      "smartFilterDescription": "Ignora chat obvio (p. ej. lol, brb) — no busca ni encola.",
+      "smartFilterTitle": "**Filtro de chat básico (BETA)**",
+      "smartFilterDescription": "Ignora chat obvio como lol, brb, mensajes solo con emojis y menciones.",
       "247Title": "**Modo 24/7**",
       "247Description": "Únete a un canal de voz para activarlo — el bot permanece en ese canal 24/7.",
       "reviewHeading": "**Revisar y confirmar**",
@@ -417,6 +419,7 @@
       "cancelledHeading": "### Configuración cancelada",
       "cancelledBody": "-# ChatPlay no se modificó.",
       "modalTitle": "Editar canal de ChatPlay",
+      "setupModalTitle": "Configurar ChatPlay",
       "modalChannelLabel": "Canal de ChatPlay",
       "modalChannelDescription": "Donde los miembros escriben nombres de canciones para solicitar música",
       "modalPlaceholder": "Elige un canal de texto",
@@ -424,6 +427,9 @@
       "manageEnabled": "Activado en {{channel}}",
       "manageDisabled": "Desactivado en {{channel}}",
       "manageSettings": "**Tu configuración**\n-# Pulsa el interruptor junto a cada opción para cambiarla.",
+      "manageSettingsHint": "**Configuración**\n-# Usa **Configuración** para cambiar el canal y las opciones de comportamiento.",
+      "manageSettingsModalTitle": "Configuración de ChatPlay",
+      "settingsButton": "Configuración",
       "manage247Description": "Pulsa **{{action}}** para alternar, o usa {{cmd247}}.",
       "turnOn": "Activar",
       "turnOff": "Desactivar",
@@ -465,15 +471,27 @@
       "noChannelSelected": "**Ningún canal seleccionado**\n-# Elige un canal de texto e inténtalo de nuevo.",
       "invalidChannel": "**Canal no válido**\n-# ChatPlay necesita un canal de texto donde los miembros puedan enviar mensajes.",
       "missingPermissionsChannel": "**Permisos faltantes**\n-# Musicify necesita **Ver canal**, **Enviar mensajes**, **Insertar enlaces** y **Conectar y hablar** en un canal de voz antes de que ChatPlay pueda usar ese canal.",
+      "missingPermissionsList": "**Permisos faltantes**\n-# Musicify aún necesita:\n{{list}}",
       "joinVcEnable247": "**Únete a un canal de voz**\n-# Únete primero a un canal de voz — el bot permanecerá en ese canal 24/7.",
       "joinVcChange247": "**Únete a un canal de voz**\n-# Únete a un canal de voz para cambiar el modo 24/7.",
-      "channelMoveFailed": "**No se pudo mover ChatPlay**\n-# {{message}}"
+      "channelMoveFailed": "**No se pudo mover ChatPlay**\n-# {{message}}",
+      "settingsFailed": "**No se guardó la configuración**\n-# {{message}}"
     },
     "feedback": {
       "playlistAdded": "✅ ¡Añadidas **{{addedCount}}** de **{{totalCount}}** pistas de **{{playlistName}}**!",
       "duplicatesSkipped": "⚠️ Se omitieron {{count}} duplicado(s): {{list}}",
       "nowPlaying": "✅ Reproduciendo ahora **{{title}}**!",
-      "addedToQueue": "✅ Añadida **{{title}}** — **#{{position}}** en cola!"
+      "addedToQueue": "✅ Añadida **{{title}}** — **#{{position}}** en cola!",
+      "disabled": "⏸ ChatPlay está desactivado — un admin puede reactivarlo con `/chatplay`.",
+      "filtered": "💬 Eso no parece una petición de canción.",
+      "error": "❌ Algo falló al procesar tu petición — inténtalo de nuevo."
+    },
+    "permissions": {
+      "viewChannel": "Ver canal",
+      "sendMessages": "Enviar mensajes",
+      "embedLinks": "Insertar enlaces",
+      "manageChannels": "Gestionar canales",
+      "connectSpeak": "Conectar y hablar en un canal de voz"
     }
   },
   "handlers": {
@@ -538,5 +556,13 @@
     "footer": "- Si necesitas ayuda o encontraste un error, únete a nuestro [servidor de soporte](https://discord.gg/MRjEUhDCpZ), ejecuta {{cmdStatus}} para ver si los sistemas del bot están en línea, o consulta el repositorio [GitHub](https://github.com/codebymitch/Musicify) de código abierto.",
     "deleteNotice": "-# Este mensaje se eliminará <t:{{timestamp}}:R>",
     "dismissButton": "Eliminar mensaje ahora"
+  },
+  "votePrompt": {
+    "heading": "## ⭐ ¿Te gusta Musicify?",
+    "body": "Un voto rápido en top.gg nos ayuda a crecer y mantener el bot en marcha. Solo lleva unos segundos — ¡gracias!",
+    "snoozeNotice": "-# Se elimina <t:{{timestamp}}:R>  •  **Ahora no** lo oculta durante 2 días",
+    "dismissButton": "Ahora no",
+    "thankYouDm": "## ⭐ ¡Gracias por votar!\n\nTu apoyo ayuda a mantener Musicify en marcha. ¡Lo apreciamos mucho!",
+    "thankYouChannel": "⭐ ¡Gracias por votar, {{user}}! Tu apoyo significa mucho."
   }
 }

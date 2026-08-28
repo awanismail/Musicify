@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "bottleneck": "^2.19.5",
-    "discord.js": "14.25.1",
+    "discord.js": "^14.26.1",
     "dotenv": "^16.4.7",
     "i18next": "^26.3.6",
     "i18next-fs-backend": "^2.6.7",

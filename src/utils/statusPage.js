@@ -94,7 +94,7 @@ function buildStatusContainer(client, { interactive = true, showSupportButton = 
                   .setStyle(ButtonStyle.Link),
               new ButtonBuilder()
                   .setLabel(translate("common.vote"))
-                  .setURL("https://top.gg/bot/1502977716196999309/vote")
+                  .setURL(config.vote.url)
                   .setStyle(ButtonStyle.Link),
           ]
         : [
@@ -106,7 +106,7 @@ function buildStatusContainer(client, { interactive = true, showSupportButton = 
               new ButtonBuilder()
                   .setLabel(translate("common.vote"))
                   .setEmoji("⭐")
-                  .setURL("https://top.gg/bot/1502977716196999309/vote")
+                  .setURL(config.vote.url)
                   .setStyle(ButtonStyle.Link),
               new ButtonBuilder()
                   .setLabel(translate("status.buttons.suggest"))

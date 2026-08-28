@@ -3,6 +3,7 @@ const { isLavalinkAvailable, getLavalinkUnavailableError } = require("../utils/l
 const {
     isPlayerConnectionHealthy,
     getOrCreateHealthyPlayer,
+    safePlayerPlay,
 } = require("../utils/playerConnection");
 const { getVoiceChannelMismatch, getVoiceChannelMismatchError } = require("../utils/voiceChannel");
 const { getVoicePermissionError } = require("../utils/voicePermissions");
@@ -140,7 +141,15 @@ async function playQuery(client, { guild, member, query, textChannelId, source, 
             );
 
             if (!player.playing && !player.paused && !player.current) {
-                player.play();
+                const playResult = await safePlayerPlay(player, guildId);
+                if (!playResult.ok) {
+                    result = {
+                        ok: false,
+                        type: "playback_failed",
+                        error: { key: "errors.unexpected" },
+                    };
+                    return result;
+                }
             }
 
             result = {
@@ -180,7 +189,19 @@ async function playQuery(client, { guild, member, query, textChannelId, source, 
         player.queue.add(track);
 
         if (wasIdle) {
-            player.play();
+            const playResult = await safePlayerPlay(player, guildId);
+            if (!playResult.ok) {
+                if (player.queue.length > 0) {
+                    player.queue.remove(player.queue.length - 1);
+                }
+                result = {
+                    ok: false,
+                    type: "playback_failed",
+                    error: { key: "errors.unexpected" },
+                };
+                return result;
+            }
+
             result = {
                 ok: true,
                 type: "track",

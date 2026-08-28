@@ -1,6 +1,7 @@
 const { ContainerBuilder, TextDisplayBuilder, MessageFlags } = require("discord.js");
 const { getGuildData } = require("../utils/playerStore");
 const { isLavalinkAvailable, getStatusCommandRef, createPreferredConnection } = require("../utils/lavalink");
+const { safePlayerPlay } = require("../utils/playerConnection");
 const { getT } = require("../i18n");
 
 const pendingSnapshots = new Map();
@@ -218,7 +219,13 @@ async function resumeSnapshot(client, snapshot) {
     }
 
     guildData.lavalinkRecovering = true;
-    player.play();
+    const playResult = await safePlayerPlay(player, guildId);
+    if (!playResult.ok) {
+        guildData.lavalinkRecovering = false;
+        guildData.pendingLavalinkSeek = null;
+        guildData.pendingLavalinkPause = false;
+        return false;
+    }
 
     guildData.lavalinkSuspended = false;
     pendingSnapshots.delete(guildId);

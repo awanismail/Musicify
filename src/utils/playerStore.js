@@ -12,7 +12,7 @@ class GuildData {
         this.chatPlaySlowmode = true;
         this.chatPlayDeleteMessages = true;
         this.chatPlayPinPlayerMessage = true;
-        this.chatPlaySmartFilter = true;
+        this.chatPlaySmartFilter = false;
         this.autoplay = false;
         this.loop = "none"; // "none" | "track" | "queue"
         this.volume = 75;
@@ -33,6 +33,9 @@ class GuildData {
         this.lavalinkRecovering = false;
         this.lavalinkNotifyMessageId = null;
         this.lavalinkNotifyChannelId = null;
+        this.playerUiBlocked = false;
+        this.lastTrackRequesterId = null;
+        this.lastVotePromptAt = null;
     }
 }
 

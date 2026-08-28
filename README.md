@@ -37,7 +37,7 @@ docker compose logs -f musicify
 
 ### Prerequisites
 
-- Node.js 18 or newer
+- Node.js 22.5 or newer (required for built-in SQLite)
 - A Lavalink server (required by `config.js`)
 - Discord bot application with proper intents and `BOT_TOKEN`/`CLIENT_ID`
 

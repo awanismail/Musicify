@@ -1,5 +1,65 @@
 const { isNodeConnected, getPreferredNode } = require("./lavalink");
 
+const VOICE_READY_TIMEOUT_MS = 10_000;
+
+function isPlayerVoicePlaybackReady(player) {
+    const connection = player?.connection;
+    return Boolean(connection?.isReady && !connection.establishing);
+}
+
+function waitForPlayerVoiceReady(player, timeoutMs = VOICE_READY_TIMEOUT_MS) {
+    if (isPlayerVoicePlaybackReady(player)) {
+        return Promise.resolve(true);
+    }
+
+    if (!player?.connection) {
+        return Promise.resolve(false);
+    }
+
+    const riffy = player.riffy;
+
+    return new Promise((resolve) => {
+        let settled = false;
+
+        const finish = (ready) => {
+            if (settled) return;
+            settled = true;
+            clearTimeout(timer);
+            if (riffy) riffy.off("playerUpdate", onPlayerUpdate);
+            player.off("connectionRestored", onConnectionRestored);
+            resolve(ready);
+        };
+
+        const checkReady = () => isPlayerVoicePlaybackReady(player);
+
+        const onPlayerUpdate = (updatedPlayer) => {
+            if (updatedPlayer.guildId !== player.guildId) return;
+            if (checkReady()) finish(true);
+        };
+
+        const onConnectionRestored = () => {
+            if (checkReady()) finish(true);
+        };
+
+        const timer = setTimeout(() => finish(checkReady()), timeoutMs);
+
+        if (riffy) riffy.on("playerUpdate", onPlayerUpdate);
+        player.on("connectionRestored", onConnectionRestored);
+
+        if (checkReady()) finish(true);
+    });
+}
+
+function isTransientPlayError(err) {
+    const message = err?.message || String(err);
+    return (
+        message.includes("establishing") ||
+        message.includes("connection is not initiated") ||
+        message.includes("Connection timed out") ||
+        message.includes("Voice connection not ready")
+    );
+}
+
 function destroyPlayerSafe(client, guildId) {
     const player = client.riffy?.players.get(guildId);
     if (!player) return false;
@@ -89,7 +149,12 @@ async function safePlayerPlay(player, guildId) {
         return { ok: false, error: new Error("No player") };
     }
 
-    if (!player.connection) {
+    if (!player.queue?.length && !player.current) {
+        return { ok: false, error: new Error("Queue is empty") };
+    }
+
+    const voiceReady = await waitForPlayerVoiceReady(player);
+    if (!voiceReady || !player.connection) {
         console.warn(
             `[Musicify] Voice connection not ready for guild ${guildId}; skipping play()`
         );
@@ -100,10 +165,17 @@ async function safePlayerPlay(player, guildId) {
         await player.play();
         return { ok: true };
     } catch (err) {
-        console.error(
-            `[Musicify] player.play() failed for guild ${guildId}:`,
-            err?.message || err
-        );
+        const message = err?.message || String(err);
+        if (isTransientPlayError(err)) {
+            console.warn(
+                `[Musicify] player.play() skipped for guild ${guildId}: ${message}`
+            );
+        } else {
+            console.error(
+                `[Musicify] player.play() failed for guild ${guildId}:`,
+                message
+            );
+        }
         return { ok: false, error: err };
     }
 }

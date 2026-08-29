@@ -560,9 +560,9 @@
   "votePrompt": {
     "heading": "## ⭐ ¿Te gusta Musicify?",
     "body": "Un voto rápido en top.gg nos ayuda a crecer y mantener el bot en marcha. Solo lleva unos segundos — ¡gracias!",
-    "snoozeNotice": "-# Se elimina <t:{{timestamp}}:R>  •  **Ahora no** lo oculta durante 2 días",
+    "deleteNotice": "-# Este mensaje se eliminará <t:{{timestamp}}:R>",
     "dismissButton": "Ahora no",
     "thankYouDm": "## ⭐ ¡Gracias por votar!\n\nTu apoyo ayuda a mantener Musicify en marcha. ¡Lo apreciamos mucho!",
-    "thankYouChannel": "⭐ ¡Gracias por votar, {{user}}! Tu apoyo significa mucho."
+    "thankYouChannel": "## ⭐ ¡Gracias por votar, {{user}}!\n\nTu apoyo ayuda a mantener Musicify en marcha. ¡Lo apreciamos mucho!"
   }
 }

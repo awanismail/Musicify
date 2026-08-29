@@ -1,8 +1,8 @@
 const {
     MessageFlags,
     PermissionsBitField,
+    ContainerBuilder,
     TextDisplayBuilder,
-    SectionBuilder,
     ButtonBuilder,
     ButtonStyle,
     ActionRowBuilder,
@@ -42,30 +42,32 @@ function canSendInChannel(channel, me) {
     );
 }
 
-function buildVotePromptComponents(deleteAtUnix, t, guildId) {
-    return [
+function buildVotePromptContainer(t, guildId, deleteAtUnix) {
+    const container = new ContainerBuilder();
+
+    container.addTextDisplayComponents(
         new TextDisplayBuilder().setContent(
             `${t("votePrompt.heading")}\n\n${t("votePrompt.body")}`
         ),
-        new SectionBuilder()
-            .addTextDisplayComponents(
-                new TextDisplayBuilder().setContent(
-                    t("votePrompt.snoozeNotice", { timestamp: deleteAtUnix })
-                )
-            )
-            .setButtonAccessory(
-                new ButtonBuilder()
-                    .setCustomId(VOTE_PROMPT_DISMISS_ID)
-                    .setLabel(t("votePrompt.dismissButton"))
-                    .setStyle(ButtonStyle.Secondary)
-            ),
+        new TextDisplayBuilder().setContent(
+            t("votePrompt.deleteNotice", { timestamp: deleteAtUnix })
+        )
+    );
+
+    container.addActionRowComponents(
         new ActionRowBuilder().addComponents(
             new ButtonBuilder()
                 .setLabel(t("common.vote"))
                 .setStyle(ButtonStyle.Link)
-                .setURL(buildVoteUrl(guildId))
-        ),
-    ];
+                .setURL(buildVoteUrl(guildId)),
+            new ButtonBuilder()
+                .setCustomId(VOTE_PROMPT_DISMISS_ID)
+                .setLabel(t("votePrompt.dismissButton"))
+                .setStyle(ButtonStyle.Secondary)
+        )
+    );
+
+    return container;
 }
 
 function cancelPromptDeleteTimer(messageId) {
@@ -105,7 +107,7 @@ async function sendVotePrompt(client, guild, channelId, userId) {
 
     try {
         const message = await channel.send({
-            components: buildVotePromptComponents(deleteAt, t, guild.id),
+            components: [buildVotePromptContainer(t, guild.id, deleteAt)],
             flags: MessageFlags.IsComponentsV2,
         });
 

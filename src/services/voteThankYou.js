@@ -1,4 +1,4 @@
-const { MessageFlags, TextDisplayBuilder } = require("discord.js");
+const { MessageFlags, ContainerBuilder, TextDisplayBuilder } = require("discord.js");
 const config = require("../../config");
 const { getT, tEn } = require("../i18n");
 const { snoozeVotePrompt } = require("../utils/userPrefs");
@@ -13,6 +13,16 @@ function parseGuildIdFromQuery(query) {
     return guildId || null;
 }
 
+function buildThankYouContainer(t, userId = null) {
+    const container = new ContainerBuilder();
+    const content = userId
+        ? t("votePrompt.thankYouChannel", { user: `<@${userId}>` })
+        : t("votePrompt.thankYouDm");
+
+    container.addTextDisplayComponents(new TextDisplayBuilder().setContent(content));
+    return container;
+}
+
 function resolveThankYouChannelId(guildData) {
     return guildData.chatPlayChannelId || guildData.playerChannelId || null;
 }
@@ -21,9 +31,7 @@ async function sendThankYouDm(client, userId, t) {
     try {
         const user = await client.users.fetch(userId);
         await user.send({
-            components: [
-                new TextDisplayBuilder().setContent(t("votePrompt.thankYouDm")),
-            ],
+            components: [buildThankYouContainer(t)],
             flags: MessageFlags.IsComponentsV2,
         });
         return true;
@@ -50,7 +58,8 @@ async function sendThankYouInGuild(client, guildId, userId, t) {
     if (!perms?.has("ViewChannel") || !perms?.has("SendMessages")) return false;
 
     const message = await channel.send({
-        content: t("votePrompt.thankYouChannel", { user: `<@${userId}>` }),
+        components: [buildThankYouContainer(t, userId)],
+        flags: MessageFlags.IsComponentsV2,
     });
 
     setTimeout(() => message.delete().catch(() => {}), 15_000);

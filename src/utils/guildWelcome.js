@@ -26,6 +26,7 @@ function buildWelcomeBody(cmd, t) {
         `${t("welcome.step2", { cmdPlay: cmd.play, platforms: t("common.supportedPlatforms") })}\n` +
         `${t("welcome.step3")}\n\n` +
         `${t("welcome.languageLine", { cmdLanguage: cmd.language })}\n\n` +
+        `${t("welcome.brandingLine", { cmdProfile: cmd.profile })}\n\n` +
         t("welcome.footer", { cmdStatus: cmd.status })
     );
 }
@@ -135,8 +136,14 @@ async function sendGuildWelcome(client, guild) {
             return;
         }
 
-        const t = getT.forGuild(guild.id, client, guild);
-        const cmd = await resolveCommandMentions(client, ["play", "chatplay", "status", "language"]);
+        const t = getT.brand(guild.id, client, guild);
+        const cmd = await resolveCommandMentions(client, [
+            "play",
+            "chatplay",
+            "status",
+            "language",
+            "profile",
+        ]);
         const deleteAt = Math.floor((Date.now() + WELCOME_TTL_MS) / 1000);
         const message = await channel.send({
             components: buildWelcomeComponents(deleteAt, cmd, t),

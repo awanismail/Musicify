@@ -12,7 +12,7 @@ module.exports = {
     data: slashMeta("stats"),
 
     async execute(interaction, client) {
-        const t = getT(interaction, client);
+        const t = getT.brandFromInteraction(interaction, client);
         await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
         const container = new ContainerBuilder();

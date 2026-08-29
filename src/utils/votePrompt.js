@@ -102,7 +102,7 @@ async function sendVotePrompt(client, guild, channelId, userId) {
     const me = guild.members.me ?? (await guild.members.fetchMe().catch(() => null));
     if (!canSendInChannel(channel, me)) return false;
 
-    const t = getT.forGuild(guild.id, client, guild);
+    const t = getT.brand(guild.id, client, guild);
     const deleteAt = Math.floor((Date.now() + PROMPT_TTL_MS) / 1000);
 
     try {

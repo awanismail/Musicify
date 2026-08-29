@@ -1,6 +1,7 @@
 const { MessageFlags, ContainerBuilder, TextDisplayBuilder } = require("discord.js");
 const config = require("../../config");
 const { getT, tEn } = require("../i18n");
+const { DEFAULT_BOT_NAME } = require("../utils/guildBranding");
 const { snoozeVotePrompt } = require("../utils/userPrefs");
 const { markUserAsVoted } = require("./topGg");
 const { clearPendingVotePrompt } = require("../utils/votePrompt");
@@ -76,8 +77,8 @@ async function handleVoteReceived(client, { userId, query }) {
     await clearPendingVotePrompt(client, userId);
 
     const t = guildId
-        ? getT.forGuild(guildId, client)
-        : (key, params) => tEn(key, params);
+        ? getT.brand(guildId, client)
+        : (key, params = {}) => tEn(key, { botName: DEFAULT_BOT_NAME, ...params });
 
     const dmSent = await sendThankYouDm(client, userId, t);
     if (!dmSent && guildId) {

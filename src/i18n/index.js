@@ -3,6 +3,7 @@ const fs = require("fs");
 const i18next = require("i18next");
 const Backend = require("i18next-fs-backend");
 const { SlashCommandBuilder } = require("discord.js");
+const { resolveBotDisplayName, DEFAULT_BOT_NAME } = require("../utils/guildBranding");
 const { getGuildSettings } = require("../utils/database");
 
 const LOCALES_DIR = path.join(__dirname, "locales");
@@ -78,14 +79,32 @@ function t(locale, key, params = {}) {
     return i18next.t(key, { lng: locale, ...params });
 }
 
+function wrapTranslator(locale, botName) {
+    return (key, params = {}) => t(locale, key, { botName, ...params });
+}
+
 function getT(interaction, client) {
     const locale = resolveLocale(interaction, client);
-    return (key, params) => t(locale, key, params);
+    const botName = resolveBotDisplayName(interaction?.guild, client);
+    return wrapTranslator(locale, botName);
 }
 
 getT.forGuild = (guildId, client, guild = null) => {
     const locale = resolveGuildLocale(guildId, client, guild);
-    return (key, params) => t(locale, key, params);
+    const resolvedGuild = guild ?? client?.guilds?.cache?.get(guildId) ?? null;
+    const botName = resolveBotDisplayName(resolvedGuild, client);
+    return wrapTranslator(locale, botName);
+};
+
+/** Always uses the default Musicify brand — for vote prompts, welcome, status, etc. */
+getT.brand = (guildId, client, guild = null) => {
+    const locale = guildId ? resolveGuildLocale(guildId, client, guild) : "en";
+    return wrapTranslator(locale, DEFAULT_BOT_NAME);
+};
+
+getT.brandFromInteraction = (interaction, client) => {
+    const locale = resolveLocale(interaction, client);
+    return wrapTranslator(locale, DEFAULT_BOT_NAME);
 };
 
 function tEn(key, params = {}) {

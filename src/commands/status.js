@@ -6,7 +6,7 @@ module.exports = {
     data: slashMeta("status"),
 
     async execute(interaction, client) {
-        const t = getT(interaction, client);
+        const t = getT.brandFromInteraction(interaction, client);
         const container = buildStatusContainer(client, { t });
 
         return interaction.reply({

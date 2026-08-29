@@ -13,6 +13,7 @@ const {
 } = require("discord.js");
 const { ButtonStyle } = require("discord.js");
 const { resolveTrackArtworkUrl } = require("./trackArtwork");
+const { maybeAppendBrandWatermark, hasCustomGuildBranding } = require("./guildBranding");
 
 function formatDuration(ms) {
     if (!ms || isNaN(ms)) return "0:00";
@@ -91,7 +92,15 @@ function formatPlayerStatus(t, guildData) {
     );
 }
 
-function createNowPlayingContainer(t, track, player, guildData, musicardBuffer) {
+function createNowPlayingContainer(
+    t,
+    track,
+    player,
+    guildData,
+    musicardBuffer,
+    guild = null,
+    client = null
+) {
     const container = new ContainerBuilder();
     const title = track.info.title || t("common.unknown");
     const author = track.info.author || t("common.unknownArtist");
@@ -183,11 +192,15 @@ function createNowPlayingContainer(t, track, player, guildData, musicardBuffer) 
     );
 
     container.addActionRowComponents(row1, row2);
+    maybeAppendBrandWatermark(container, t, guild, client);
     return container;
 }
 
-function buildChatPlayHeaderContent(t) {
-    return t("components.chatplay.header");
+function buildChatPlayHeaderContent(t, guild = null, client = null) {
+    const key = hasCustomGuildBranding(guild, client)
+        ? "components.chatplay.headerPlain"
+        : "components.chatplay.header";
+    return t(key);
 }
 
 function formatChatPlayIdleStatusLine(t, guildData = {}) {
@@ -201,10 +214,10 @@ function formatChatPlayIdleStatusLine(t, guildData = {}) {
         : t("components.chatplay.statusWaiting");
 }
 
-function createChatPlayIdleContainer(t, guildData = {}) {
+function createChatPlayIdleContainer(t, guildData = {}, guild = null, client = null) {
     const container = new ContainerBuilder();
     container.addTextDisplayComponents(
-        new TextDisplayBuilder().setContent(buildChatPlayHeaderContent(t))
+        new TextDisplayBuilder().setContent(buildChatPlayHeaderContent(t, guild, client))
     );
     container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
     container.addTextDisplayComponents(
@@ -228,13 +241,22 @@ function createChatPlayIdleContainer(t, guildData = {}) {
     );
 
     container.addActionRowComponents(row1, row2);
+    maybeAppendBrandWatermark(container, t, guild, client);
     return container;
 }
 
-function createChatPlayNowPlayingContainer(t, track, player, guildData, musicardBuffer) {
+function createChatPlayNowPlayingContainer(
+    t,
+    track,
+    player,
+    guildData,
+    musicardBuffer,
+    guild = null,
+    client = null
+) {
     const container = new ContainerBuilder();
     container.addTextDisplayComponents(
-        new TextDisplayBuilder().setContent(buildChatPlayHeaderContent(t))
+        new TextDisplayBuilder().setContent(buildChatPlayHeaderContent(t, guild, client))
     );
     container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
 
@@ -328,10 +350,11 @@ function createChatPlayNowPlayingContainer(t, track, player, guildData, musicard
     );
 
     container.addActionRowComponents(row1, row2);
+    maybeAppendBrandWatermark(container, t, guild, client);
     return container;
 }
 
-function createQueueContainer(t, queue, currentTrack, page = 0) {
+function createQueueContainer(t, queue, currentTrack, page = 0, guild = null, client = null) {
     const container = new ContainerBuilder();
     const pageSize = 12;
     const totalTracks = queue?.length || 0;
@@ -399,13 +422,14 @@ function createQueueContainer(t, queue, currentTrack, page = 0) {
         );
     }
 
+    maybeAppendBrandWatermark(container, t, guild, client);
     return container;
 }
 
-function createChatPlayLoadingContainer(t) {
+function createChatPlayLoadingContainer(t, guild = null, client = null) {
     const container = new ContainerBuilder();
     container.addTextDisplayComponents(
-        new TextDisplayBuilder().setContent(buildChatPlayHeaderContent(t))
+        new TextDisplayBuilder().setContent(buildChatPlayHeaderContent(t, guild, client))
     );
     container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
     container.addTextDisplayComponents(
@@ -429,6 +453,7 @@ function createChatPlayLoadingContainer(t) {
     );
 
     container.addActionRowComponents(row1, row2);
+    maybeAppendBrandWatermark(container, t, guild, client);
     return container;
 }
 

@@ -39,7 +39,9 @@ module.exports = {
             player.current,
             player,
             guildData,
-            musicardBuffer
+            musicardBuffer,
+            interaction.guild,
+            client
         );
 
         const files = [];

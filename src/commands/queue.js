@@ -21,7 +21,14 @@ module.exports = {
         }
 
         const page = (interaction.options.getInteger("page") || 1) - 1;
-        const container = createQueueContainer(t, player.queue, player.current, page);
+        const container = createQueueContainer(
+            t,
+            player.queue,
+            player.current,
+            page,
+            interaction.guild,
+            client
+        );
 
         await interaction.reply({
             components: [container],

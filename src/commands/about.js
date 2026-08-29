@@ -10,6 +10,7 @@ const {
     ButtonStyle,
 } = require("discord.js");
 const { slashMeta, getT } = require("../i18n");
+const { resolveBotAvatarUrl, hasCustomGuildBranding, getBrandWatermarkContent } = require("../utils/guildBranding");
 const config = require("../../config");
 
 module.exports = {
@@ -19,7 +20,7 @@ module.exports = {
         const t = getT(interaction, client);
         const container = new ContainerBuilder();
 
-        const botAvatar = client.user.displayAvatarURL({ size: 256 });
+        const botAvatar = resolveBotAvatarUrl(interaction.guild, client, { size: 256 });
 
         container.addSectionComponents(
             new SectionBuilder()
@@ -45,8 +46,12 @@ module.exports = {
             new TextDisplayBuilder().setContent(t("commands.about.legal"))
         );
 
+        const footerText = hasCustomGuildBranding(interaction.guild, client)
+            ? getBrandWatermarkContent(t, client)
+            : t("commands.about.footer");
+
         container.addTextDisplayComponents(
-            new TextDisplayBuilder().setContent(t("commands.about.footer"))
+            new TextDisplayBuilder().setContent(footerText)
         );
 
         container.addSeparatorComponents(new SeparatorBuilder().setDivider(false));

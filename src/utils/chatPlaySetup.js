@@ -19,6 +19,7 @@ const {
 const { getGuildData } = require("../utils/playerStore");
 const { setGuildSettings } = require("../utils/database");
 const { createChatPlayIdleContainer } = require("./components");
+const { maybeAppendBrandWatermark } = require("./guildBranding");
 const { toggleTwentyFourSeven } = require("../services/sessionManager");
 const EMOJI_UNCHECKED = { id: "1522858566141214844", name: "Musicify_Unchecked" };
 const EMOJI_CHECKED = { id: "1522858608478388275", name: "Musicify_Checked" };
@@ -529,6 +530,7 @@ async function buildChatPlayManageContainer(t, guildData, guild, client) {
         )
     );
 
+    maybeAppendBrandWatermark(container, t, guild, client);
     return container;
 }
 
@@ -720,7 +722,7 @@ async function finalizeChatPlaySetup(client, session, guild, { voiceChannelId = 
     guildData.chatPlayEnabled = true;
     guildData.playerChannelId = session.channelId;
 
-    const container = createChatPlayIdleContainer(t, guildData);
+    const container = createChatPlayIdleContainer(t, guildData, guild, client);
     const chatMsg = await channel.send({
         components: [container],
         flags: MessageFlags.IsComponentsV2,

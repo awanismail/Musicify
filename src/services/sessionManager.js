@@ -1,6 +1,7 @@
 const { MessageFlags } = require("discord.js");
 const { getGuildData, clearUpdateInterval } = require("../utils/playerStore");
 const { setGuildSetting, getGuildSettings } = require("../utils/database");
+const { resolveGuild } = require("../utils/guildBranding");
 const { createChatPlayIdleContainer } = require("../utils/components");
 const { getT } = require("../i18n");
 const { createPreferredConnection } = require("../utils/lavalink");
@@ -67,10 +68,11 @@ async function resetChatPlayToIdle(client, guildId) {
 
     const t = getT.forGuild(guildId, client);
     const { editChatPlayMessage, recreateChatPlayMessageFromState } = require("./chatPlayPlayer");
+    const guild = resolveGuild(client, guildId);
     const ok = await editChatPlayMessage(
         client,
         guildId,
-        createChatPlayIdleContainer(t, guildData)
+        createChatPlayIdleContainer(t, guildData, guild, client)
     );
     if (!ok) {
         await recreateChatPlayMessageFromState(client, guildId);

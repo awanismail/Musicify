@@ -154,12 +154,15 @@ module.exports = {
                                         guildData,
                                         tGuild
                                     );
+                                    const guild = client.guilds.cache.get(guildId);
                                     const container = createChatPlayNowPlayingContainer(
                                         tGuild,
                                         player.current,
                                         player,
                                         guildData,
-                                        musicardBuffer
+                                        musicardBuffer,
+                                        guild,
+                                        client
                                     );
                                     
                                     const files = [];

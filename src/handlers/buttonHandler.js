@@ -1,6 +1,7 @@
 const { MessageFlags, AttachmentBuilder, ContainerBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, SeparatorBuilder } = require("discord.js");
 const { getGuildData, clearUpdateInterval } = require("../utils/playerStore");
 const { createNowPlayingContainer, createChatPlayNowPlayingContainer, createQueueContainer, createStopConfirmContainer } = require("../utils/components");
+const { resolveGuild } = require("../utils/guildBranding");
 const { generateMusicCard } = require("../utils/musicard");
 const { addNodeDetails } = require("../utils/nodeDetails");
 const { canControlMusic, VOICE_CHANNEL_DENIAL_KEY } = require("../utils/permissions");
@@ -234,7 +235,7 @@ async function handleButtonInteraction(client, interaction) {
 
         const selectedPage = interaction.values[0];
         const { buildHelpPage } = require("../commands/help");
-        const container = await buildHelpPage(client, selectedPage, tUser);
+        const container = await buildHelpPage(client, selectedPage, tUser, interaction.guild);
 
         try {
             await interaction.editReply({
@@ -339,7 +340,9 @@ async function handleButtonInteraction(client, interaction) {
             tUser,
             player.queue,
             player.current,
-            0
+            0,
+            interaction.guild,
+            client
         );
         return interaction.reply({
             components: [queueContainer],
@@ -391,7 +394,9 @@ async function handleButtonInteraction(client, interaction) {
             tUser,
             player.queue,
             player.current,
-            currentPage
+            currentPage,
+            interaction.guild,
+            client
         );
 
         try {
@@ -581,9 +586,26 @@ async function editPlayerMessageDirectly(client, player, guildData) {
 
         const t = getT.forGuild(player.guildId, client);
         const musicardBuffer = await generateMusicCard(player.current, player, guildData, t);
+        const guild = resolveGuild(client, player.guildId);
         const container = guildData.chatPlayChannelId && guildData.chatPlayMessageId
-            ? createChatPlayNowPlayingContainer(t, player.current, player, guildData, musicardBuffer)
-            : createNowPlayingContainer(t, player.current, player, guildData, musicardBuffer);
+            ? createChatPlayNowPlayingContainer(
+                  t,
+                  player.current,
+                  player,
+                  guildData,
+                  musicardBuffer,
+                  guild,
+                  client
+              )
+            : createNowPlayingContainer(
+                  t,
+                  player.current,
+                  player,
+                  guildData,
+                  musicardBuffer,
+                  guild,
+                  client
+              );
 
         const files = [];
         if (musicardBuffer) {

@@ -8,6 +8,7 @@ const {
 } = require("../utils/components");
 const { generateMusicCard } = require("../utils/musicard");
 const { getT } = require("../i18n");
+const { resolveGuild } = require("../utils/guildBranding");
 const {
     isPlayerUiBlocked,
     clearPlayerUiBlocked,
@@ -42,13 +43,15 @@ async function sendChatPlayPlayerMessage(client, guild, channel, guildData, t) {
             player.current,
             player,
             guildData,
-            musicardBuffer
+            musicardBuffer,
+            guild,
+            client
         );
         if (musicardBuffer) {
             files.push(new AttachmentBuilder(musicardBuffer, { name: "musicard.png" }));
         }
     } else {
-        container = createChatPlayIdleContainer(t, guildData);
+        container = createChatPlayIdleContainer(t, guildData, guild, client);
     }
 
     return channel.send({
@@ -124,13 +127,15 @@ async function recreateChatPlayMessageFromState(client, guildId) {
                 player.current,
                 player,
                 guildData,
-                musicardBuffer
+                musicardBuffer,
+                channel.guild,
+                client
             );
             if (musicardBuffer) {
                 files.push(new AttachmentBuilder(musicardBuffer, { name: "musicard.png" }));
             }
         } else {
-            container = createChatPlayIdleContainer(t, guildData);
+            container = createChatPlayIdleContainer(t, guildData, channel.guild, client);
         }
 
         const chatMsg = await channel.send({
@@ -197,7 +202,12 @@ async function editChatPlayMessage(client, guildId, container, files = []) {
 
 async function showChatPlayLoading(client, guildId) {
     const t = getT.forGuild(guildId, client);
-    return editChatPlayMessage(client, guildId, createChatPlayLoadingContainer(t));
+    const guild = resolveGuild(client, guildId);
+    return editChatPlayMessage(
+        client,
+        guildId,
+        createChatPlayLoadingContainer(t, guild, client)
+    );
 }
 
 async function refreshChatPlayPlayer(client, guildId) {
@@ -207,8 +217,14 @@ async function refreshChatPlayPlayer(client, guildId) {
 
     const t = getT.forGuild(guildId, client);
 
+    const guild = resolveGuild(client, guildId);
+
     if (!guildData.chatPlayEnabled) {
-        await editChatPlayMessage(client, guildId, createChatPlayIdleContainer(t, guildData));
+        await editChatPlayMessage(
+            client,
+            guildId,
+            createChatPlayIdleContainer(t, guildData, guild, client)
+        );
         return;
     }
 
@@ -220,7 +236,9 @@ async function refreshChatPlayPlayer(client, guildId) {
             player.current,
             player,
             guildData,
-            musicardBuffer
+            musicardBuffer,
+            guild,
+            client
         );
         const files = musicardBuffer
             ? [new AttachmentBuilder(musicardBuffer, { name: "musicard.png" })]
@@ -229,7 +247,11 @@ async function refreshChatPlayPlayer(client, guildId) {
         return;
     }
 
-    await editChatPlayMessage(client, guildId, createChatPlayIdleContainer(t, guildData));
+    await editChatPlayMessage(
+        client,
+        guildId,
+        createChatPlayIdleContainer(t, guildData, guild, client)
+    );
 }
 
 module.exports = {

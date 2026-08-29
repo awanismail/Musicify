@@ -70,7 +70,27 @@
     "clear": { "description": "Limpar a fila sem parar a faixa atual" },
     "status": { "description": "Verificar o status atual dos sistemas do Musicify" },
     "stats": { "description": "Mostrar as estatísticas do Musicify" },
-    "language": { "description": "Definir o idioma do bot para este servidor" }
+    "language": { "description": "Definir o idioma do bot para este servidor" },
+    "profile": {
+      "description": "Personalize o nome, avatar e banner do Musicify neste servidor",
+      "subcommands": {
+        "set": "Definir ou ver o nome, avatar ou banner do Musicify neste servidor",
+        "clear": "Redefinir o nome, avatar ou banner do Musicify neste servidor"
+      },
+      "options": {
+        "name": "Nome de exibição neste servidor (máx. 32 caracteres)",
+        "avatar": "Imagem de avatar do servidor",
+        "banner": "Imagem de banner do perfil do servidor",
+        "value": "Campo a redefinir (vazio para redefinir tudo)"
+      },
+      "choices": {
+        "value": {
+          "name": "Nome de exibição",
+          "avatar": "Avatar",
+          "banner": "Banner"
+        }
+      }
+    }
   },
   "common": {
     "on": "Ligado",
@@ -84,6 +104,7 @@
     "cancel": "Cancelar",
     "supportServer": "Servidor de Suporte",
     "vote": "⭐ Votar",
+    "brandWatermark": "-# Desenvolvido por [{{brandName}}]({{inviteUrl}})",
     "supportedPlatforms": "Spotify, SoundCloud, Deezer, Apple Music, Tidal, Qobuz e JioSaavn",
     "labels": {
       "title": "**Título**",
@@ -130,8 +151,8 @@
       "userConnect": "❌ Você não tem permissão de **Conectar** nesse canal de voz.\n-# Entre em um canal ao qual você possa se conectar ou peça acesso a um moderador.",
       "botMissing": "❌ Algo deu errado ao verificar as permissões do bot. Tente novamente.",
       "botView": "❌ Não consigo ver esse canal de voz.\n-# Conceda **Ver Canal** para o bot nesse canal.",
-      "botConnect": "❌ Não tenho permissão de **Conectar** no seu canal de voz.\n-# Peça a um moderador para conceder Conectar (e Falar) ao Musicify.",
-      "botSpeak": "❌ Não tenho permissão de **Falar** no seu canal de voz.\n-# Peça a um moderador para conceder Falar ao Musicify."
+      "botConnect": "❌ Não tenho permissão de **Conectar** no seu canal de voz.\n-# Peça a um moderador para conceder Conectar (e Falar) ao {{botName}}.",
+      "botSpeak": "❌ Não tenho permissão de **Falar** no seu canal de voz.\n-# Peça a um moderador para conceder Falar ao {{botName}}."
     },
     "voiceChannel": {
       "mismatch247": "❌ O modo 24/7 está conectado a **{{name}}**.\n-# Entre nesse canal ou use `/247` para desativar o 24/7 antes de tocar aqui.",
@@ -180,7 +201,8 @@
       "button": "PARAR"
     },
     "chatplay": {
-      "header": "## <:Musicify_Logo:1517828581638541493> Musicify ChatPlay\n-# *Digite o nome de uma música neste canal para tocá-la!*\n-# Vou buscar, tocar no seu canal de voz e manter esta mensagem atualizada.",
+      "header": "## <:Musicify_Logo:1517828581638541493> {{botName}} ChatPlay\n-# *Digite o nome de uma música neste canal para tocá-la!*\n-# Vou buscar, tocar no seu canal de voz e manter esta mensagem atualizada.",
+      "headerPlain": "## {{botName}} ChatPlay\n-# *Digite o nome de uma música neste canal para tocá-la!*\n-# Vou buscar, tocar no seu canal de voz e manter esta mensagem atualizada.",
       "statusWaiting": "-# **Status:** Aguardando solicitação de música...",
       "statusWaiting247": "-# **Status:** Aguardando 24 horas por dia, 7 dias por semana por uma solicitação de música...",
       "statusNotWaiting": "-# **Status:** Não aguardando solicitação de música...",
@@ -190,12 +212,12 @@
   },
   "commands": {
     "about": {
-      "heading": "# <:Musicify_Logo:1517828581638541493> Sobre o Musicify",
-      "whatIs": "**O que é o Musicify?**\n-# Um bot de música para Discord focado em ChatPlay que oferece\n-# streaming de música de alta qualidade diretamente nos seus canais de voz.",
+      "heading": "# <:Musicify_Logo:1517828581638541493> Sobre o {{botName}}",
+      "whatIs": "**O que é o {{botName}}?**\n-# Um bot de música para Discord focado em ChatPlay que oferece\n-# streaming de música de alta qualidade diretamente nos seus canais de voz.",
       "poweredBy": "**Desenvolvido com**\n-# [discord.js](https://discord.js.org/) · [Riffy](https://riffy.js.org/) · [Musicard](https://www.npmjs.com/package/musicard)",
       "features": "**Recursos**\n-# • **Cards de now-playing** com barras de progresso\n-# • **Mais de 10 presets** de filtros de áudio\n-# • **Gerenciamento inteligente da fila** com paginação\n-# • **ChatPlay** — solicitações instantâneas de músicas\n-# • **Controles interativos** baseados em botões",
       "legal": "**Legal**\n-# [Política de Privacidade](https://github.com/codebymitch/Musicify/blob/main/PrivacyPolicy.md) · [Termos de Serviço](https://github.com/codebymitch/Musicify/blob/main/TermsOfService.md)",
-      "footer": "-# O Musicify é [open source](https://github.com/codebymitch/Musicify). Feito por uma equipe apaixonada de desenvolvedores."
+      "footer": "-# O {{botName}} é [open source](https://github.com/codebymitch/Musicify). Feito por uma equipe apaixonada de desenvolvedores."
     },
     "play": {
       "playlistHeading": "### ✅ Playlist Adicionada",
@@ -295,7 +317,7 @@
     "chatplay": {
       "permissionSetup": "**Permissão necessária**\n-# Você precisa de **Gerenciar Canais** ou **Administrador** para configurar o ChatPlay.",
       "permissionManage": "**Permissão necessária**\n-# Você precisa de **Gerenciar Canais** ou **Administrador** para gerenciar o ChatPlay.",
-      "missingPermissions": "**Permissões ausentes**\n-# O Musicify precisa de **Ver Canal**, **Enviar Mensagens**, **Inserir Links** e **Conectar e Falar** em um canal de voz antes que o ChatPlay possa ser configurado."
+      "missingPermissions": "**Permissões ausentes**\n-# O {{botName}} precisa de **Ver Canal**, **Enviar Mensagens**, **Inserir Links** e **Conectar e Falar** em um canal de voz antes que o ChatPlay possa ser configurado."
     },
     "clear": {
       "alreadyEmpty": "❌ A fila já está vazia.",
@@ -321,7 +343,7 @@
     },
     "language": {
       "heading": "### 🌐 Idioma do Servidor",
-      "description": "-# Escolha o idioma deste servidor. **Automático** é o padrão quando o Musicify entra.\n-# Quando definido, comandos, player, ChatPlay e ajuda usam esse idioma para todos.\n-# **Automático** usa o idioma do Discord de cada membro nos comandos, e o idioma do servidor Discord na interface compartilhada.",
+      "description": "-# Escolha o idioma deste servidor. **Automático** é o padrão quando o {{botName}} entra.\n-# Quando definido, comandos, player, ChatPlay e ajuda usam esse idioma para todos.\n-# **Automático** usa o idioma do Discord de cada membro nos comandos, e o idioma do servidor Discord na interface compartilhada.",
       "current": "**Atual:** {{language}}",
       "currentAuto": "**Atual:** Automático ({{language}})",
       "viewOnlyNote": "-# Apenas administradores podem alterar o idioma do servidor.",
@@ -329,11 +351,35 @@
       "resetSuccess": "### ✅ Idioma Atualizado\n\n-# Idioma do servidor redefinido para **Automático** ({{language}}).",
       "permissionDenied": "**Permissão necessária**\n-# Você precisa de **Administrador** para alterar o idioma do servidor.",
       "buttons": { "auto": "Automático" }
+    },
+    "profile": {
+      "guildOnly": "**Somente em servidores**\n-# /profile só pode ser usado dentro de um servidor.",
+      "botMissingChangeNickname": "**Permissão ausente**\n-# O {{botName}} precisa de **Alterar apelido** para atualizar o nome de exibição neste servidor.",
+      "missingPermissions": "**Permissão ausente**\n-# O {{botName}} não conseguiu atualizar o perfil — verifique se ele tem **Alterar apelido** (para mudanças de nome) e tente novamente.",
+      "invalidImage": "**Imagem inválida**\n-# O Discord rejeitou essa imagem. Tente outro arquivo PNG, JPG, GIF ou WebP.",
+      "invalidImageFormat": "**Imagem inválida**\n-# Apenas arquivos de imagem são suportados (PNG, JPG, GIF, WebP).",
+      "imageTooLarge": "**Imagem muito grande**\n-# As imagens devem ter 8 MB ou menos.",
+      "downloadFailed": "**Falha no download**\n-# Não foi possível baixar o anexo. Envie novamente e tente de novo.",
+      "rateLimited": "**Limite de taxa**\n-# O Discord está limitando atualizações de perfil. Aguarde um momento e tente novamente.",
+      "updateFailed": "**Falha na atualização**\n-# {{message}}",
+      "viewHeading": "### 🎨 Perfil do Servidor",
+      "viewName": "**Nome de exibição:** {{name}}",
+      "viewAvatar": "**Avatar:** {{status}}",
+      "viewBanner": "**Banner:** {{status}}",
+      "viewFooter": "-# As alterações de perfil aplicam-se apenas neste servidor e são armazenadas pelo Discord.",
+      "statusCustom": "Personalizado",
+      "statusDefault": "Padrão",
+      "clearAllSuccess": "### ✅ Perfil Redefinido\n\n-# O perfil do {{botName}} neste servidor voltou ao padrão.",
+      "clearFieldSuccess": {
+        "name": "### ✅ Perfil Atualizado\n\n-# Nome de exibição redefinido para o padrão.",
+        "avatar": "### ✅ Perfil Atualizado\n\n-# Avatar do servidor redefinido para o padrão.",
+        "banner": "### ✅ Perfil Atualizado\n\n-# Banner do servidor redefinido para o padrão."
+      }
     }
   },
   "help": {
     "placeholder": "📖 Navegar pelas seções de ajuda",
-    "header": "# <:Musicify_Logo:1517828581638541493> Musicify",
+    "header": "# <:Musicify_Logo:1517828581638541493> {{botName}}",
     "pages": {
       "home": { "label": "Início", "description": "Visão geral e início rápido" },
       "music": { "label": "Comandos de Música", "description": "Tocar, pular, fila e mais" },
@@ -343,24 +389,24 @@
       "support": { "label": "Suporte", "description": "Obter ajuda e reportar bugs" }
     },
     "home": {
-      "welcome": "### 👋 Bem-vindo ao Musicify!\n-# Seu bot de música simples, rápido e cheio de recursos para o Discord.",
+      "welcome": "### 👋 Bem-vindo ao {{botName}}!\n-# Seu bot de música simples, rápido e cheio de recursos para o Discord.",
       "quickStart": "**Início Rápido**\n\n**1.** Entre em um canal de voz\n-# Certifique-se de estar conectado antes de solicitar uma música.\n**2.** Use {{cmdPlay}} `<nome da música ou URL>`\n-# Suporta {{platforms}}.\n**3.** Controle com botões ou comandos!\n-# Use o player interativo ou comandos slash.",
       "features": "**Recursos**\n-# • **Sugestões de músicas** — menu com 10 faixas parecidas\n-# • **Mais de 10 presets** de filtros de áudio\n-# • **ChatPlay** — digite nomes de músicas para tocar na hora\n-# • **Gerenciamento inteligente da fila** com paginação\n-# • **Modo 24/7** — nunca sai do canal de voz",
-      "openSource": "-# O Musicify é [open source](https://github.com/codebymitch/Musicify)."
+      "openSource": "-# O {{botName}} é [open source](https://github.com/codebymitch/Musicify)."
     },
     "music": {
-      "heading": "### 🎶 Navegador de Comandos\n-# 19 comandos disponíveis",
-      "list": "**1.** {{cmdPlay}} — Tocar uma música ou adicioná-la à fila\n\n**2.** {{cmdSkip}} — Pular a faixa atual\n\n**3.** {{cmdSkipto}} — Pular para uma faixa na fila\n\n**4.** {{cmdPause}} — Pausar ou retomar a reprodução\n\n**5.** {{cmdReplay}} — Reiniciar a faixa atual\n\n**6.** {{cmdStop}} — Parar a reprodução e limpar a fila\n\n**7.** {{cmdNowplaying}} — Mostrar a faixa que está tocando\n\n**8.** {{cmdSeek}} — Avançar para uma posição\n\n**9.** {{cmdQueue}} — Ver a fila atual\n\n**10.** {{cmdRemove}} — Remover uma faixa da fila\n\n**11.** {{cmdMove}} — Mover a posição de uma faixa\n\n**12.** {{cmdShuffle}} — Embaralhar todas as faixas da fila\n\n**13.** {{cmdLoop}} — Definir ou alternar o modo de repetição\n\n**14.** {{cmdAutoplay}} — Ativar, desativar ou alternar o autoplay\n\n**15.** {{cmdVolume}} — Definir o volume da reprodução\n\n**16.** {{cmd247}} — Alternar o modo 24/7 (confirmação necessária)\n\n**17.** {{cmdFilter}} — Aplicar um preset de filtro de áudio\n\n**18.** {{cmdChatplay}} — Configurar ou gerenciar o ChatPlay (ativar, desativar, excluir)\n\n**19.** {{cmdAbout}} — Saiba mais sobre o Musicify"
+      "heading": "### 🎶 Navegador de Comandos\n-# 20 comandos disponíveis",
+      "list": "**1.** {{cmdPlay}} — Tocar uma música ou adicioná-la à fila\n\n**2.** {{cmdSkip}} — Pular a faixa atual\n\n**3.** {{cmdSkipto}} — Pular para uma faixa na fila\n\n**4.** {{cmdPause}} — Pausar ou retomar a reprodução\n\n**5.** {{cmdReplay}} — Reiniciar a faixa atual\n\n**6.** {{cmdStop}} — Parar a reprodução e limpar a fila\n\n**7.** {{cmdNowplaying}} — Mostrar a faixa que está tocando\n\n**8.** {{cmdSeek}} — Avançar para uma posição\n\n**9.** {{cmdQueue}} — Ver a fila atual\n\n**10.** {{cmdRemove}} — Remover uma faixa da fila\n\n**11.** {{cmdMove}} — Mover a posição de uma faixa\n\n**12.** {{cmdShuffle}} — Embaralhar todas as faixas da fila\n\n**13.** {{cmdLoop}} — Definir ou alternar o modo de repetição\n\n**14.** {{cmdAutoplay}} — Ativar, desativar ou alternar o autoplay\n\n**15.** {{cmdVolume}} — Definir o volume da reprodução\n\n**16.** {{cmd247}} — Alternar o modo 24/7 (confirmação necessária)\n\n**17.** {{cmdFilter}} — Aplicar um preset de filtro de áudio\n\n**18.** {{cmdChatplay}} — Configurar ou gerenciar o ChatPlay (ativar, desativar, excluir)\n\n**19.** {{cmdAbout}} — Saiba mais sobre o {{botName}}\n\n**20.** {{cmdProfile}} — Personalize o nome, avatar e banner do {{botName}} neste servidor"
     },
     "filters": {
       "heading": "### 🎛️ Filtros de Áudio\n-# {{cmdFilter}} `<preset>` — Aplicar um filtro de áudio",
       "presets": "**Presets Disponíveis**\n\n**🔊 Bass Boost**\n-# Reforço intenso de graves\n\n**🌙 Nightcore**\n-# Aceleração + tom mais agudo\n\n**🌊 Vaporwave**\n-# Desaceleração + tom mais grave\n\n**🎧 Áudio 8D**\n-# Efeito surround rotativo\n\n**〰️ Tremolo**\n-# Oscilação de volume\n\n**🎸 Vibrato**\n-# Oscilação de tom\n\n**🎤 Karaoke**\n-# Redução de vocais\n\n**🔈 Low Pass**\n-# Efeito abafado / submerso\n\n**🐌 Modo Lento**\n-# Reprodução mais lenta\n\n**💥 Distortion**\n-# Efeito de áudio distorcido\n\n-# Use **❌ Resetar Tudo** para remover todos os filtros ativos.",
       "chatplayHeading": "### 💬 ChatPlay",
       "chatplaySetup": "**Configurar e gerenciar**\n-# {{cmdChatplay}} — Executa a configuração se o ChatPlay ainda não estiver configurado\n-# Se o ChatPlay existir, abre um painel para **Ativar**, **Desativar** ou **Excluir**",
-      "chatplayUsage": "-# Depois de configurado, basta **digitar o nome de uma música** no canal e o Musicify toca automaticamente!",
+      "chatplayUsage": "-# Depois de configurado, basta **digitar o nome de uma música** no canal e o {{botName}} toca automaticamente!",
       "247Heading": "### 🔁 Modo 24/7",
       "247Toggle": "**Alternar**\n-# {{cmd247}} — Permanece no canal de voz quando ocioso; confirme antes de alternar\n\n-# {{cmdStop}} — Limpa a fila; desconecta a menos que o 24/7 esteja ativo",
-      "247HowItWorks": "**Como funciona**\n-# O Musicify permanece no canal de voz mesmo depois que a fila termina.\n-# A configuração persiste após reinícios do bot."
+      "247HowItWorks": "**Como funciona**\n-# O {{botName}} permanece no canal de voz mesmo depois que a fila termina.\n-# A configuração persiste após reinícios do bot."
     },
     "controls": {
       "heading": "### 🎮 Controles do player\n-# Use os botões interativos da mensagem do player ou os comandos slash abaixo.",
@@ -372,13 +418,16 @@
     "troubleshoot": {
       "heading": "### 🛠️ Solução de Problemas\n-# Problemas comuns e como corrigi-los.",
       "wontPlay": "**O bot não toca música / Erro na faixa**\n-# A música pode ter restrição de idade ou bloqueio regional.\n-# A fonte de streaming pode estar temporariamente indisponível.\n-# **Correção:** Tente outra música ou cole uma URL direta de {{platforms}}.",
-      "joinsLeaves": "**O bot entra e sai imediatamente**\n-# O Musicify pode não ter permissões de Falar/Conectar nesse canal.\n-# A música solicitada pode ter falhado ao carregar.\n-# **Correção:** Verifique as permissões do bot e tente outra música.",
+      "joinsLeaves": "**O bot entra e sai imediatamente**\n-# O {{botName}} pode não ter permissões de Falar/Conectar nesse canal.\n-# A música solicitada pode ter falhado ao carregar.\n-# **Correção:** Verifique as permissões do bot e tente outra música.",
       "noSound": "**Sem som, mas o bot está no canal de voz**\n-# Verifique se o bot está pausado — use o botão ▶️ ou {{cmdPause}}.\n-# Verifique o volume com {{cmdVolume}}.\n-# **Correção:** Certifique-se de estar no mesmo canal de voz e não estar ensurdecido.",
       "chatplayNotResponding": "**ChatPlay não responde**\n-# Verifique se o ChatPlay está ativado — execute {{cmdChatplay}} e toque em **Ativar**.\n-# Certifique-se de estar digitando no canal correto.\n-# **Correção:** Tente desativar e reativar.",
       "noActivePlayer": "**\"Nenhum player ativo\" ou \"Nada está tocando\"**\n-# O player foi fechado após a faixa terminar.\n-# Comandos slash de reprodução precisam de algo tocando.\n-# **Correção:** Toque uma nova música com {{cmdPlay}} para recomeçar!",
       "language": "**Idioma errado / o bot responde em outro idioma**\n-# Use {{cmdLanguage}} para ver o idioma atual do servidor.\n-# **Correção:** Peça a um admin para definir o idioma, ou use **Automático** se quiser seu idioma do Discord nos comandos.",
       "languageAuto": "**Comandos e ChatPlay em idiomas diferentes**\n-# Com **Automático** (padrão), suas respostas seguem *seu* idioma do Discord; ChatPlay e o player seguem o idioma do *servidor*.\n-# Se seu idioma não for suportado, suas respostas usam **inglês** (suportados: inglês, espanhol, português, francês, alemão).\n-# **Correção:** Peça a um admin para definir um idioma para todos em {{cmdLanguage}}, ou mude seu idioma ou o do servidor para um suportado.",
-      "languageCommunity": "**Não consigo mudar o idioma do servidor no Discord (Automático fica em inglês)**\n-# O Discord só permite definir o idioma do servidor com **Comunidade** ativada.\n-# Ative em **Configurações do servidor → Ativar Comunidade**, depois altere em **Configurações do servidor → Visão geral da Comunidade → Idioma principal do servidor**.\n-# **Correção:** Ou peça a um admin para definir o idioma do Musicify com {{cmdLanguage}} — Comunidade não é necessária."
+      "languageCommunity": "**Não consigo mudar o idioma do servidor no Discord (Automático fica em inglês)**\n-# O Discord só permite definir o idioma do servidor com **Comunidade** ativada.\n-# Ative em **Configurações do servidor → Ativar Comunidade**, depois altere em **Configurações do servidor → Visão geral da Comunidade → Idioma principal do servidor**.\n-# **Correção:** Ou peça a um admin para definir o idioma do {{botName}} com {{cmdLanguage}} — Comunidade não é necessária.",
+      "profilePermission": "**Não consigo personalizar o nome do bot / falha ao atualizar o perfil**\n-# Você precisa de **Gerenciar apelidos** para usar {{cmdProfile}}.\n-# O {{botName}} precisa de **Alterar apelido** para mudar o nome.\n-# **Correção:** Conceda essas permissões e tente novamente.",
+      "profileNotUpdating": "**Perfil alterado, mas o player continua igual**\n-# O ChatPlay atualiza automaticamente; outras mensagens abertas podem não atualizar.\n-# **Correção:** Execute {{cmdProfile}} para ver o perfil atual ou abra {{cmdHelp}} / {{cmdNowplaying}} de novo.",
+      "profileImageFailed": "**Avatar ou banner rejeitado**\n-# Apenas PNG, JPG, GIF ou WebP de até 8 MB são aceitos.\n-# O Discord pode rejeitar algumas imagens mesmo que pareçam válidas.\n-# **Correção:** Tente uma imagem menor ou mais simples com {{cmdProfile}}."
     },
     "support": {
       "heading": "### 🤝 Suporte e Links\n-# Obtenha ajuda, reporte bugs ou saiba mais.",
@@ -386,12 +435,12 @@
       "joinSupportServer": "Entrar no Servidor de Suporte",
       "reportBug": "**Como Reportar um Bug**\n\n**1.** Anote qual comando você estava usando\n-# Inclua o comando exato e qualquer erro exibido.\n\n**2.** Entre no nosso Servidor de Suporte\n-# Use o botão **Entrar no Servidor de Suporte** acima.\n\n**3.** Abra um ticket\n-# Ou pergunte no canal de suporte.\n\n**4.** Anexe evidências\n-# Capturas de tela ou gravações nos ajudam a corrigir mais rápido!",
       "botInfo": "**Comandos de Informações do Bot**\n**1.** {{cmdStats}}\n-# Veja ping, tempo online e memória\n**2.** {{cmdStatus}}\n-# Veja o status da conexão Lavalink\n**3.** {{cmdHelp}}\n-# Você está aqui!",
-      "footer": "-# O Musicify é [open source](https://github.com/codebymitch/Musicify)."
+      "footer": "-# O {{botName}} é [open source](https://github.com/codebymitch/Musicify)."
     }
   },
   "chatplay": {
     "setup": {
-      "stepHeader": "## <:Musicify_Logo:1517828581638541493> Musicify ChatPlay\n-# Etapa {{step}} de {{totalSteps}}",
+      "stepHeader": "## <:Musicify_Logo:1517828581638541493> {{botName}} ChatPlay\n-# Etapa {{step}} de {{totalSteps}}",
       "channelTitle": "**Canal do ChatPlay**",
       "channelDescription": "O ChatPlay será configurado em {{channel}}.",
       "unknownChannel": "Canal desconhecido",
@@ -423,7 +472,7 @@
       "modalChannelLabel": "Canal do ChatPlay",
       "modalChannelDescription": "Onde os membros digitam nomes de músicas para solicitar",
       "modalPlaceholder": "Escolha um canal de texto",
-      "manageHeading": "## <:Musicify_Logo:1517828581638541493> Musicify ChatPlay",
+      "manageHeading": "## <:Musicify_Logo:1517828581638541493> {{botName}} ChatPlay",
       "manageEnabled": "Ativado em {{channel}}",
       "manageDisabled": "Desativado em {{channel}}",
       "manageSettings": "**Suas configurações**\n-# Toque no botão ao lado de cada opção para alterá-la.",
@@ -470,8 +519,8 @@
       "setupFailed": "**Configuração falhou**\n-# {{message}}",
       "noChannelSelected": "**Nenhum canal selecionado**\n-# Escolha um canal de texto e tente novamente.",
       "invalidChannel": "**Canal inválido**\n-# O ChatPlay precisa de um canal de texto onde os membros possam enviar mensagens.",
-      "missingPermissionsChannel": "**Permissões ausentes**\n-# O Musicify precisa de **Ver Canal**, **Enviar Mensagens**, **Inserir Links** e **Conectar e Falar** em um canal de voz antes que o ChatPlay possa usar esse canal.",
-      "missingPermissionsList": "**Permissões ausentes**\n-# O Musicify ainda precisa de:\n{{list}}",
+      "missingPermissionsChannel": "**Permissões ausentes**\n-# O {{botName}} precisa de **Ver Canal**, **Enviar Mensagens**, **Inserir Links** e **Conectar e Falar** em um canal de voz antes que o ChatPlay possa usar esse canal.",
+      "missingPermissionsList": "**Permissões ausentes**\n-# O {{botName}} ainda precisa de:\n{{list}}",
       "joinVcEnable247": "**Entre em um canal de voz**\n-# Entre em um canal de voz primeiro — o bot permanecerá nesse canal 24/7.",
       "joinVcChange247": "**Entre em um canal de voz**\n-# Entre em um canal de voz para alterar o modo 24/7.",
       "channelMoveFailed": "**Não foi possível mover o ChatPlay**\n-# {{message}}",
@@ -546,23 +595,24 @@
     "restVersionLine": "-# Versão Rest: {{version}}"
   },
   "welcome": {
-    "heading": "## 👋 Bem-vindo ao Musicify!",
+    "heading": "## 👋 Bem-vindo ao {{botName}}!",
     "chatplayLine": "- Use {{cmdChatplay}} para ativar o **ChatPlay** — digite nomes de músicas em um canal para tocar na hora",
     "quickStartHeading": "**Início rápido**",
     "step1": "1. Entre em um canal de voz",
     "step2": "2. Use {{cmdPlay}} `<nome da música ou URL>` — suporta {{platforms}}",
     "step3": "3. Controle a reprodução com botões interativos ou comandos slash",
     "languageLine": "-# O idioma é **Automático** por padrão — o bot segue o idioma do Discord deste servidor. Admins podem definir um idioma fixo com {{cmdLanguage}}.",
+    "brandingLine": "-# Admins com **Gerenciar apelidos** podem usar {{cmdProfile}} para personalizar o nome, avatar e banner do Musicify neste servidor.",
     "footer": "- Se precisar de ajuda ou encontrou um bug, entre no nosso [servidor de suporte](https://discord.gg/MRjEUhDCpZ), execute {{cmdStatus}} para ver se os sistemas do bot estão online ou confira o repositório [open source no GitHub](https://github.com/codebymitch/Musicify)!",
     "deleteNotice": "-# Esta mensagem será excluída <t:{{timestamp}}:R>",
     "dismissButton": "Excluir mensagem agora"
   },
   "votePrompt": {
-    "heading": "## ⭐ Gostando do Musicify?",
+    "heading": "## ⭐ Gostando do {{botName}}?",
     "body": "Um voto rápido no top.gg nos ajuda a crescer e manter o bot funcionando. Leva só alguns segundos — obrigado!",
     "deleteNotice": "-# Esta mensagem será excluída <t:{{timestamp}}:R>",
     "dismissButton": "Agora não",
-    "thankYouDm": "## ⭐ Obrigado por votar!\n\nSeu apoio ajuda a manter o Musicify funcionando. Agradecemos muito!",
-    "thankYouChannel": "## ⭐ Obrigado por votar, {{user}}!\n\nSeu apoio ajuda a manter o Musicify funcionando. Agradecemos muito!"
+    "thankYouDm": "## ⭐ Obrigado por votar!\n\nSeu apoio ajuda a manter o {{botName}} funcionando. Agradecemos muito!",
+    "thankYouChannel": "## ⭐ Obrigado por votar, {{user}}!\n\nSeu apoio ajuda a manter o {{botName}} funcionando. Agradecemos muito!"
   }
 }

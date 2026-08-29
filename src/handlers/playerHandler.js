@@ -1,6 +1,7 @@
 const { MessageFlags, AttachmentBuilder } = require("discord.js");
 const { getGuildData, clearUpdateInterval } = require("../utils/playerStore");
 const { createNowPlayingContainer, createChatPlayNowPlayingContainer } = require("../utils/components");
+const { resolveGuild } = require("../utils/guildBranding");
 const { generateMusicCard } = require("../utils/musicard");
 const { recordIncident } = require("../utils/incidents");
 const { scheduleStatusUpdate } = require("../services/statusMonitor");
@@ -175,10 +176,27 @@ async function refreshPlayerMessage(client, guildId) {
         const track = player.current;
         const t = getT.forGuild(guildId, client);
 
+        const guild = resolveGuild(client, guildId);
         const musicardBuffer = await generateMusicCard(track, player, guildData, t);
         const container = guildData.chatPlayChannelId
-            ? createChatPlayNowPlayingContainer(t, track, player, guildData, musicardBuffer)
-            : createNowPlayingContainer(t, track, player, guildData, musicardBuffer);
+            ? createChatPlayNowPlayingContainer(
+                  t,
+                  track,
+                  player,
+                  guildData,
+                  musicardBuffer,
+                  guild,
+                  client
+              )
+            : createNowPlayingContainer(
+                  t,
+                  track,
+                  player,
+                  guildData,
+                  musicardBuffer,
+                  guild,
+                  client
+              );
 
         const files = [];
         if (musicardBuffer) {
@@ -276,9 +294,26 @@ function setupPlayerHandler(client) {
             const musicardBuffer = await generateMusicCard(track, player, guildData, t);
 
             // Build the container - use ChatPlay version if in ChatPlay channel
+            const guild = resolveGuild(client, player.guildId);
             const container = guildData.chatPlayChannelId
-                ? createChatPlayNowPlayingContainer(t, track, player, guildData, musicardBuffer)
-                : createNowPlayingContainer(t, track, player, guildData, musicardBuffer);
+                ? createChatPlayNowPlayingContainer(
+                      t,
+                      track,
+                      player,
+                      guildData,
+                      musicardBuffer,
+                      guild,
+                      client
+                  )
+                : createNowPlayingContainer(
+                      t,
+                      track,
+                      player,
+                      guildData,
+                      musicardBuffer,
+                      guild,
+                      client
+                  );
 
             // Prepare files
             const files = [];

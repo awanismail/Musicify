@@ -19,7 +19,7 @@ const { auditChannelPermissions, formatPermissionAuditFailure } = require("../ut
 const { getGuildData } = require("../utils/playerStore");
 const { setGuildSetting } = require("../utils/database");
 const { refreshChatPlayPlayer } = require("../services/chatPlayPlayer");
-const { safeInteractionUpdate, ephemeralV2, buildErrorContainer, buildFeedbackContainer } = require("../utils/replies");
+const { safeInteractionUpdate, ephemeralV2, buildErrorContainer, buildFeedbackContainer, isInteractionExpired } = require("../utils/replies");
 const { getT } = require("../i18n");
 
 const MANAGE_BUTTONS = new Set([
@@ -230,13 +230,17 @@ async function handleSetupModalSubmit(client, interaction) {
     }
 
     try {
+        await interaction.deferReply({
+            flags: MessageFlags.Ephemeral | MessageFlags.IsComponentsV2,
+        });
+
         const { slowmodeWarning, twentyFourSevenWarning, pinWarning } =
             await finalizeChatPlaySetup(client, session, interaction.guild, {
                 voiceChannelId: session.voiceChannelIdFor247,
                 t: tGuild,
             });
 
-        await interaction.reply({
+        await interaction.editReply({
             components: [
                 await buildSetupSuccessContainer(
                     tGuild,
@@ -250,18 +254,25 @@ async function handleSetupModalSubmit(client, interaction) {
                     }
                 ),
             ],
-            flags: MessageFlags.Ephemeral | MessageFlags.IsComponentsV2,
         });
     } catch (err) {
         console.error("[Musicify] ChatPlay setup failed:", err.message);
-        await interaction.reply(
-            ephemeralV2(
-                buildErrorContainer(
-                    t("chatplay.handlers.setupFailed", { message: err.message }),
-                    t
-                )
-            )
+        const errorContainer = buildErrorContainer(
+            t("chatplay.handlers.setupFailed", { message: err.message }),
+            t
         );
+
+        try {
+            if (interaction.deferred) {
+                await interaction.editReply({ components: [errorContainer] });
+            } else {
+                await interaction.reply(ephemeralV2(errorContainer));
+            }
+        } catch (replyErr) {
+            if (!isInteractionExpired(replyErr)) {
+                console.error("[Musicify] Failed to send setup error reply:", replyErr.message);
+            }
+        }
     }
 
     return true;

@@ -12,6 +12,7 @@ const {
     StringSelectMenuOptionBuilder,
 } = require("discord.js");
 const { getT, slashMeta } = require("../i18n");
+const { resolveBotAvatarUrl, maybeAppendBrandWatermark, hasCustomGuildBranding, getBrandWatermarkContent } = require("../utils/guildBranding");
 const config = require("../../config");
 
 const PAGE_KEYS = ["home", "music", "filters", "controls", "troubleshoot", "support"];
@@ -50,6 +51,7 @@ function buildCmdParams(getCmd) {
         cmdStatus: getCmd("status"),
         cmdHelp: getCmd("help"),
         cmdLanguage: getCmd("language"),
+        cmdProfile: getCmd("profile"),
     };
 }
 
@@ -80,7 +82,7 @@ function buildDropdown(activePage, t) {
 /**
  * Build the full container for a given page
  */
-async function buildHelpPage(client, page = "home", t) {
+async function buildHelpPage(client, page = "home", t, guild = null) {
     const container = new ContainerBuilder();
 
     const section = new SectionBuilder()
@@ -89,7 +91,7 @@ async function buildHelpPage(client, page = "home", t) {
         )
         .setThumbnailAccessory(
             new ThumbnailBuilder().setURL(
-                client.user.displayAvatarURL({ size: 128 })
+                resolveBotAvatarUrl(guild, client, { size: 128 })
             )
         );
 
@@ -114,7 +116,7 @@ async function buildHelpPage(client, page = "home", t) {
 
     switch (page) {
         case "home":
-            addHomePage(container, t, cmd);
+            addHomePage(container, t, cmd, guild, client);
             break;
         case "music":
             addMusicPage(container, t, cmd);
@@ -132,13 +134,16 @@ async function buildHelpPage(client, page = "home", t) {
             addSupportPage(container, t, cmd);
             break;
         default:
-            addHomePage(container, t, cmd);
+            addHomePage(container, t, cmd, guild, client);
     }
 
+    if (page !== "home") {
+        maybeAppendBrandWatermark(container, t, guild, client);
+    }
     return container;
 }
 
-function addHomePage(container, t, cmd) {
+function addHomePage(container, t, cmd, guild = null, client = null) {
     container.addTextDisplayComponents(
         new TextDisplayBuilder().setContent(t("help.home.welcome"))
     );
@@ -160,10 +165,12 @@ function addHomePage(container, t, cmd) {
         new TextDisplayBuilder().setContent(t("help.home.features"))
     );
 
-    const openSourceSection = new SectionBuilder()
-        .addTextDisplayComponents(
-            new TextDisplayBuilder().setContent(t("help.home.openSource"))
-        )
+    const footerText = hasCustomGuildBranding(guild, client)
+        ? getBrandWatermarkContent(t, client)
+        : t("help.home.openSource");
+
+    const footerSection = new SectionBuilder()
+        .addTextDisplayComponents(new TextDisplayBuilder().setContent(footerText))
         .setButtonAccessory(
             new ButtonBuilder()
                 .setLabel(t("common.vote"))
@@ -171,7 +178,7 @@ function addHomePage(container, t, cmd) {
                 .setStyle(ButtonStyle.Link)
         );
 
-    container.addSectionComponents(openSourceSection);
+    container.addSectionComponents(footerSection);
 }
 
 function addMusicPage(container, t, cmd) {
@@ -274,7 +281,10 @@ function addTroubleshootPage(container, t, cmd) {
                 `${t("help.troubleshoot.noActivePlayer", { cmdPlay: cmd.cmdPlay })}\n\n` +
                 `${t("help.troubleshoot.language", { cmdLanguage: cmd.cmdLanguage })}\n\n` +
                 `${t("help.troubleshoot.languageAuto", { cmdLanguage: cmd.cmdLanguage })}\n\n` +
-                t("help.troubleshoot.languageCommunity", { cmdLanguage: cmd.cmdLanguage })
+                `${t("help.troubleshoot.languageCommunity", { cmdLanguage: cmd.cmdLanguage })}\n\n` +
+                `${t("help.troubleshoot.profilePermission", { cmdProfile: cmd.cmdProfile })}\n\n` +
+                `${t("help.troubleshoot.profileNotUpdating", { cmdProfile: cmd.cmdProfile })}\n\n` +
+                t("help.troubleshoot.profileImageFailed", { cmdProfile: cmd.cmdProfile })
         )
     );
 }
@@ -327,7 +337,7 @@ module.exports = {
 
     async execute(interaction, client) {
         const t = getT(interaction, client);
-        const container = await buildHelpPage(client, "home", t);
+        const container = await buildHelpPage(client, "home", t, interaction.guild);
 
         await interaction.reply({
             components: [container],

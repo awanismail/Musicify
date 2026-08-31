@@ -240,8 +240,8 @@ async function handleSetupModalSubmit(client, interaction) {
                 t: tGuild,
             });
 
-        await interaction.editReply({
-            components: [
+        await interaction.editReply(
+            ephemeralV2(
                 await buildSetupSuccessContainer(
                     tGuild,
                     session,
@@ -252,9 +252,9 @@ async function handleSetupModalSubmit(client, interaction) {
                         twentyFourSevenWarning,
                         pinWarning,
                     }
-                ),
-            ],
-        });
+                )
+            )
+        );
     } catch (err) {
         console.error("[Musicify] ChatPlay setup failed:", err.message);
         const errorContainer = buildErrorContainer(
@@ -264,7 +264,7 @@ async function handleSetupModalSubmit(client, interaction) {
 
         try {
             if (interaction.deferred) {
-                await interaction.editReply({ components: [errorContainer] });
+                await interaction.editReply(ephemeralV2(errorContainer));
             } else {
                 await interaction.reply(ephemeralV2(errorContainer));
             }

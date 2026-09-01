@@ -59,4 +59,8 @@ function deleteGuildData(guildId) {
     guildStore.delete(guildId);
 }
 
-module.exports = { getGuildData, deleteGuildData, clearUpdateInterval, GuildData };
+function listGuildData() {
+    return [...guildStore.entries()];
+}
+
+module.exports = { getGuildData, deleteGuildData, clearUpdateInterval, GuildData, listGuildData };

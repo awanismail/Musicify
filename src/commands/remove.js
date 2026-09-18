@@ -1,6 +1,8 @@
 const { MessageFlags, ContainerBuilder, TextDisplayBuilder } = require("discord.js");
 const { slashMeta, getT, applySlashOption } = require("../i18n");
 const { buildErrorContainer, ephemeralV2 } = require("../utils/replies");
+const { requirePlayerControl } = require("../utils/playerControls");
+const { PLAYER_ACTIONS } = require("../utils/permissions");
 
 module.exports = {
     data: slashMeta("remove").addIntegerOption((opt) =>
@@ -20,12 +22,6 @@ module.exports = {
             );
         }
 
-        if (!interaction.member.voice?.channel) {
-            return interaction.reply(
-                ephemeralV2(buildErrorContainer(t("errors.voiceChannelRequired"), t))
-            );
-        }
-
         const pos = interaction.options.getInteger("position");
         if (pos > player.queue.length) {
             return interaction.reply(
@@ -37,6 +33,13 @@ module.exports = {
                 )
             );
         }
+
+        const trackToRemove = player.queue[pos - 1];
+        const ctx = await requirePlayerControl(interaction, client, t, {
+            action: PLAYER_ACTIONS.REMOVE,
+            track: trackToRemove,
+        });
+        if (!ctx) return;
 
         const removed = player.queue.splice(pos - 1, 1);
         const trackName = removed[0]?.info?.title || t("common.unknown");

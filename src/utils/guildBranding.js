@@ -54,7 +54,7 @@ function hasCustomGuildBranding(guild, client) {
     const member = getBotMember(guild, client);
     if (!member) return false;
 
-    return Boolean(member.nickname || member.avatar || member.banner);
+    return Boolean(member.nickname || member.avatar || member.banner || member.bio);
 }
 
 function getBrandWatermarkContent(t, client) {

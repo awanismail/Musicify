@@ -27,7 +27,50 @@ function getDuplicateTrackError(title, position, t) {
     };
 }
 
+function countUserQueuedTracks(player, userId) {
+    if (!player || !userId) return 0;
+
+    let count = 0;
+    const { resolveRequesterId } = require("./permissions");
+    const currentRequester = resolveRequesterId(player.current?.info?.requester);
+    if (currentRequester === userId) {
+        count++;
+    }
+
+    for (const track of player.queue) {
+        if (resolveRequesterId(track?.info?.requester) === userId) {
+            count++;
+        }
+    }
+
+    return count;
+}
+
+function getRemainingQueueSlots(member, player, guildId) {
+    const { getDjSettings, isDjPrivileged } = require("./permissions");
+    const { djQueueLimit } = getDjSettings(guildId);
+
+    if (!djQueueLimit || isDjPrivileged(member, guildId)) {
+        return Infinity;
+    }
+
+    const used = countUserQueuedTracks(player, member?.id);
+    return Math.max(0, djQueueLimit - used);
+}
+
+function getQueueLimitError(guildId) {
+    const { getDjSettings } = require("./permissions");
+    const { djQueueLimit } = getDjSettings(guildId);
+    return {
+        key: "errors.queueLimit",
+        params: { limit: djQueueLimit },
+    };
+}
+
 module.exports = {
     getTrackQueuePosition,
     getDuplicateTrackError,
+    countUserQueuedTracks,
+    getRemainingQueueSlots,
+    getQueueLimitError,
 };

@@ -1,6 +1,8 @@
 const { MessageFlags, ContainerBuilder, TextDisplayBuilder } = require("discord.js");
 const { slashMeta, getT, applySlashOption } = require("../i18n");
 const { buildErrorContainer, ephemeralV2 } = require("../utils/replies");
+const { requirePlayerControl } = require("../utils/playerControls");
+const { PLAYER_ACTIONS } = require("../utils/permissions");
 
 module.exports = {
     data: slashMeta("move")
@@ -17,19 +19,12 @@ module.exports = {
 
     async execute(interaction, client) {
         const t = getT(interaction, client);
-        const player = client.riffy.players.get(interaction.guild.id);
-        if (!player) {
-            return interaction.reply(
-                ephemeralV2(buildErrorContainer(t("errors.noActivePlayer"), t))
-            );
-        }
+        const ctx = await requirePlayerControl(interaction, client, t, {
+            action: PLAYER_ACTIONS.MOVE,
+        });
+        if (!ctx) return;
 
-        if (!interaction.member.voice?.channel) {
-            return interaction.reply(
-                ephemeralV2(buildErrorContainer(t("errors.voiceChannelRequired"), t))
-            );
-        }
-
+        const { player } = ctx;
         const from = interaction.options.getInteger("from");
         const to = interaction.options.getInteger("to");
         const queueLen = player.queue.length;

@@ -17,6 +17,26 @@ module.exports = {
             applyChatPlayEphemeral(interaction);
         }
 
+        if (interaction.isAutocomplete()) {
+            const command = client.commands.get(interaction.commandName);
+            if (!command?.autocomplete) return;
+
+            try {
+                await command.autocomplete(interaction, client);
+            } catch (error) {
+                console.error(
+                    `[Musicify] Autocomplete error (${interaction.commandName}):`,
+                    error.message
+                );
+                try {
+                    await interaction.respond([]);
+                } catch {
+                    // interaction already answered
+                }
+            }
+            return;
+        }
+
         if (interaction.isChatInputCommand()) {
             const command = client.commands.get(interaction.commandName);
             if (!command) return;
@@ -57,6 +77,12 @@ module.exports = {
             const t = getT(interaction, client);
 
             try {
+                const { handleDjModal } = require("../commands/dj");
+                if (await handleDjModal(client, interaction)) return;
+
+                const { handleProfileBioModal } = require("../commands/profile");
+                if (await handleProfileBioModal(client, interaction)) return;
+
                 const handled = await handleChatPlaySetupModal(client, interaction);
                 if (handled) return;
             } catch (error) {
@@ -82,7 +108,11 @@ module.exports = {
             return;
         }
 
-        if (interaction.isButton() || interaction.isStringSelectMenu()) {
+        if (
+            interaction.isButton() ||
+            interaction.isStringSelectMenu() ||
+            interaction.isRoleSelectMenu()
+        ) {
             const t = getT(interaction, client);
 
             try {

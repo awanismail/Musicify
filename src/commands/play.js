@@ -1,8 +1,14 @@
 const { MessageFlags, ContainerBuilder, TextDisplayBuilder } = require("discord.js");
 const { slashMeta, applySlashOption, getT, translateError } = require("../i18n");
 const { buildErrorContainer, buildFeedbackContainer, ephemeralV2 } = require("../utils/replies");
-const { playQuery, isYouTubeQuery } = require("../services/playQuery");
+const { playQuery } = require("../services/playQuery");
 const { maybePromptOnSlashPlay } = require("../utils/votePrompt");
+const { requireVoiceForPlay } = require("../utils/playerControls");
+const {
+    fetchPlayAutocompleteChoices,
+    resolveAutocompleteSelection,
+    isYouTubeQuery,
+} = require("../utils/playAutocomplete");
 
 function scheduleSlashVotePrompt(interaction) {
     void maybePromptOnSlashPlay(
@@ -15,12 +21,25 @@ function scheduleSlashVotePrompt(interaction) {
 
 module.exports = {
     data: slashMeta("play").addStringOption((opt) =>
-        applySlashOption(opt.setName("query").setRequired(true), "play", "query")
+        applySlashOption(
+            opt.setName("query").setRequired(true).setAutocomplete(true),
+            "play",
+            "query"
+        )
     ),
+
+    async autocomplete(interaction, client) {
+        const choices = await fetchPlayAutocompleteChoices(client, interaction);
+        await interaction.respond(choices);
+    },
 
     async execute(interaction, client) {
         const t = getT(interaction, client);
-        const query = interaction.options.getString("query");
+        const rawQuery = interaction.options.getString("query");
+        const { query, track: autocompleteTrack } = resolveAutocompleteSelection(
+            interaction.user.id,
+            rawQuery
+        );
 
         if (isYouTubeQuery(query)) {
             return interaction.reply(
@@ -29,10 +48,8 @@ module.exports = {
         }
 
         const member = interaction.member;
-        if (!member.voice?.channel) {
-            return interaction.reply(
-                ephemeralV2(buildErrorContainer(t("errors.voiceChannelRequiredFormatted"), t))
-            );
+        if (!(await requireVoiceForPlay(interaction, t))) {
+            return;
         }
 
         await interaction.deferReply({ flags: MessageFlags.Ephemeral });
@@ -41,17 +58,18 @@ module.exports = {
             guild: interaction.guild,
             member,
             query,
+            resolvedTrack: autocompleteTrack,
             textChannelId: interaction.channel.id,
             source: "slash",
             t,
         });
 
         if (!result.ok) {
-            if (result.type === "duplicate") {
+            if (result.type === "duplicate" || result.type === "queue_limit") {
                 return interaction.editReply(
                     ephemeralV2(
                         buildFeedbackContainer(
-                            `${t("duplicate.heading")}\n\n-# ${translateError(t, result.error)}`
+                            `${result.type === "duplicate" ? t("duplicate.heading") : t("errors.queueLimitHeading")}\n\n-# ${translateError(t, result.error)}`
                         )
                     )
                 );
@@ -81,6 +99,12 @@ module.exports = {
                 })}`;
             }
 
+            if (result.queueLimitSkipped) {
+                content += `\n\n${t("commands.play.queueLimitSkipped", {
+                    count: result.queueLimitSkipped,
+                })}`;
+            }
+
             const container = new ContainerBuilder();
             container.addTextDisplayComponents(new TextDisplayBuilder().setContent(content));
             scheduleSlashVotePrompt(interaction);
@@ -106,6 +130,7 @@ module.exports = {
                 positionLine
             )
         );
+
         scheduleSlashVotePrompt(interaction);
         return interaction.editReply({
             components: [container],

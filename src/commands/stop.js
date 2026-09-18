@@ -2,24 +2,18 @@ const { MessageFlags, ContainerBuilder, TextDisplayBuilder } = require("discord.
 const { handleStop } = require("../services/sessionManager");
 const { slashMeta, getT } = require("../i18n");
 const { buildErrorContainer, ephemeralV2 } = require("../utils/replies");
+const { requirePlayerControl } = require("../utils/playerControls");
+const { PLAYER_ACTIONS } = require("../utils/permissions");
 
 module.exports = {
     data: slashMeta("stop"),
 
     async execute(interaction, client) {
         const t = getT(interaction, client);
-        const player = client.riffy.players.get(interaction.guild.id);
-        if (!player) {
-            return interaction.reply(
-                ephemeralV2(buildErrorContainer(t("commands.stop.noActivePlayer"), t))
-            );
-        }
-
-        if (!interaction.member.voice?.channel) {
-            return interaction.reply(
-                ephemeralV2(buildErrorContainer(t("errors.voiceChannelRequiredFormatted"), t))
-            );
-        }
+        const ctx = await requirePlayerControl(interaction, client, t, {
+            action: PLAYER_ACTIONS.STOP,
+        });
+        if (!ctx) return;
 
         const { stayed } = await handleStop(client, interaction.guild.id);
 

@@ -72,10 +72,10 @@
     "stats": { "description": "Afficher les statistiques de Musicify" },
     "language": { "description": "Définir la langue du bot pour ce serveur" },
     "profile": {
-      "description": "Personnaliser le nom, l'avatar et la bannière de Musicify sur ce serveur",
+      "description": "Personnaliser le nom, l'avatar, la bannière et l'About Me de Musicify sur ce serveur",
       "subcommands": {
-        "set": "Définir ou afficher le nom, l'avatar ou la bannière de Musicify sur ce serveur",
-        "clear": "Réinitialiser le nom, l'avatar ou la bannière de Musicify sur ce serveur"
+        "set": "Définir ou afficher le nom, l'avatar, la bannière ou l'About Me de Musicify sur ce serveur",
+        "clear": "Réinitialiser le nom, l'avatar, la bannière ou l'About Me de Musicify sur ce serveur"
       },
       "options": {
         "name": "Nom affiché sur ce serveur (32 caractères max.)",
@@ -87,7 +87,8 @@
         "value": {
           "name": "Nom affiché",
           "avatar": "Avatar",
-          "banner": "Bannière"
+          "banner": "Bannière",
+          "bio": "About me"
         }
       }
     }
@@ -168,7 +169,8 @@
       "message": "⏳ **Ralentissez**, vous envoyez des requêtes trop rapidement.\n-# Attendez quelques secondes entre chaque morceau. Un mode lent du salon peut aussi s'appliquer."
     },
     "permissions": {
-      "voiceChannelDenial": "❌ Vous devez être dans le même salon vocal que le bot pour utiliser ces contrôles."
+      "voiceChannelDenial": "❌ Vous devez être dans le même salon vocal que le bot pour utiliser ces contrôles.",
+      "djDenial": "❌ Seuls les DJs ou les gestionnaires du serveur peuvent utiliser ce contrôle."
     }
   },
   "duplicate": {
@@ -354,6 +356,7 @@
     },
     "profile": {
       "guildOnly": "**Serveur uniquement**\n-# /profile ne peut être utilisé que dans un serveur.",
+      "permissionDenied": "**Permission requise**\n-# Vous avez besoin de **Gérer les pseudos** pour modifier le profil de {{botName}} sur ce serveur.",
       "botMissingChangeNickname": "**Permission manquante**\n-# {{botName}} a besoin de **Changer le pseudo** pour mettre à jour son nom affiché sur ce serveur.",
       "missingPermissions": "**Permission manquante**\n-# {{botName}} n'a pas pu mettre à jour son profil — vérifiez qu'il a **Changer le pseudo** (pour les changements de nom) et réessayez.",
       "invalidImage": "**Image invalide**\n-# Discord a rejeté cette image. Essayez un autre fichier PNG, JPG, GIF ou WebP.",
@@ -362,18 +365,27 @@
       "downloadFailed": "**Échec du téléchargement**\n-# Impossible de télécharger la pièce jointe. Renvoyez-la et réessayez.",
       "rateLimited": "**Limite de débit**\n-# Discord limite les mises à jour de profil. Attendez un moment et réessayez.",
       "updateFailed": "**Échec de la mise à jour**\n-# {{message}}",
-      "viewHeading": "### 🎨 Profil du serveur",
+      "viewHeading": "### Profil du serveur",
       "viewName": "**Nom affiché :** {{name}}",
       "viewAvatar": "**Avatar :** {{status}}",
       "viewBanner": "**Bannière :** {{status}}",
+      "viewAboutMe": "**About me :** {{status}}",
       "viewFooter": "-# Les changements de profil s'appliquent uniquement sur ce serveur et sont stockés par Discord.",
+      "aboutMeButton": "Modifier About Me",
+      "bioModalTitle": "Modifier About Me",
+      "bioModalLabel": "About Me peut mettre quelques secondes.",
+      "bioModalPlaceholder": "**gras**, *italique*, sauts de ligne OK. URLs simples OK. Max 190 car.",
+      "bioTooLong": "**Bio trop longue**\n-# {{length}}/{{max}} caractères. Raccourcissez votre bio et réessayez.",
+      "bioHyperlinksNotAllowed": "**Hyperliens non autorisés**\n-# Utilisez des URLs simples (https://...) au lieu du markdown [texte](lien).",
+      "bioUnchanged": "**Aucun changement**\n-# La bio n'a pas été mise à jour.",
       "statusCustom": "Personnalisé",
       "statusDefault": "Par défaut",
       "clearAllSuccess": "### ✅ Profil réinitialisé\n\n-# Le profil de {{botName}} sur ce serveur a été remis par défaut.",
       "clearFieldSuccess": {
         "name": "### ✅ Profil mis à jour\n\n-# Nom affiché réinitialisé par défaut.",
         "avatar": "### ✅ Profil mis à jour\n\n-# Avatar du serveur réinitialisé par défaut.",
-        "banner": "### ✅ Profil mis à jour\n\n-# Bannière du serveur réinitialisée par défaut."
+        "banner": "### ✅ Profil mis à jour\n\n-# Bannière du serveur réinitialisée par défaut.",
+        "bio": "### ✅ Profil mis à jour\n\n-# About Me réinitialisé par défaut."
       }
     }
   },

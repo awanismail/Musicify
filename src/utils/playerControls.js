@@ -1,9 +1,28 @@
 const { MessageFlags } = require("discord.js");
 const { getGuildData } = require("./playerStore");
-const { canControlMusic, VOICE_CHANNEL_DENIAL_KEY } = require("./permissions");
+const {
+    getPlayerPermissionDenial,
+    PLAYER_ACTIONS,
+    DJ_DENIAL_KEY,
+    VOICE_CHANNEL_DENIAL_KEY,
+} = require("./permissions");
 const { buildErrorContainer, ephemeralV2 } = require("./replies");
 
-async function requirePlayerControl(interaction, client, t, { requireCurrent = false } = {}) {
+async function replyPermissionDenial(interaction, denial, t) {
+    const message = t(denial.key);
+    if (denial.key === DJ_DENIAL_KEY || denial.key === VOICE_CHANNEL_DENIAL_KEY) {
+        await interaction.reply({ content: message, flags: MessageFlags.Ephemeral });
+        return;
+    }
+    await interaction.reply(ephemeralV2(buildErrorContainer(message, t)));
+}
+
+async function requirePlayerControl(
+    interaction,
+    client,
+    t,
+    { requireCurrent = false, action = PLAYER_ACTIONS.CONTROL, track = null } = {}
+) {
     const player = client.riffy.players.get(interaction.guild.id);
 
     if (!player || (requireCurrent && !player.current)) {
@@ -18,22 +37,29 @@ async function requirePlayerControl(interaction, client, t, { requireCurrent = f
         return null;
     }
 
-    if (!interaction.member.voice?.channel) {
-        await interaction.reply(
-            ephemeralV2(buildErrorContainer(t("errors.voiceChannelRequired"), t))
-        );
-        return null;
-    }
-
-    if (!canControlMusic(interaction.member, player)) {
-        await interaction.reply({
-            content: t(VOICE_CHANNEL_DENIAL_KEY),
-            flags: MessageFlags.Ephemeral,
-        });
+    const denial = getPlayerPermissionDenial(
+        interaction.member,
+        player,
+        interaction.guild.id,
+        action,
+        { track }
+    );
+    if (denial) {
+        await replyPermissionDenial(interaction, denial, t);
         return null;
     }
 
     return { player, guildData: getGuildData(interaction.guild.id) };
+}
+
+async function requireVoiceForPlay(interaction, t) {
+    if (!interaction.member.voice?.channel) {
+        await interaction.reply(
+            ephemeralV2(buildErrorContainer(t("errors.voiceChannelRequiredFormatted"), t))
+        );
+        return false;
+    }
+    return true;
 }
 
 function cycleLoopMode(current) {
@@ -44,5 +70,7 @@ function cycleLoopMode(current) {
 
 module.exports = {
     requirePlayerControl,
+    requireVoiceForPlay,
+    replyPermissionDenial,
     cycleLoopMode,
 };

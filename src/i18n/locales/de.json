@@ -72,10 +72,10 @@
     "stats": { "description": "Zeige Musicify-Statistiken" },
     "language": { "description": "Bot-Sprache für diesen Server festlegen" },
     "profile": {
-      "description": "Musicifys Name, Avatar und Banner auf diesem Server anpassen",
+      "description": "Musicifys Name, Avatar, Banner und About Me auf diesem Server anpassen",
       "subcommands": {
-        "set": "Musicifys Name, Avatar oder Banner auf diesem Server festlegen oder anzeigen",
-        "clear": "Musicifys Name, Avatar oder Banner auf diesem Server zurücksetzen"
+        "set": "Musicifys Name, Avatar, Banner oder About Me auf diesem Server festlegen oder anzeigen",
+        "clear": "Musicifys Name, Avatar, Banner oder About Me auf diesem Server zurücksetzen"
       },
       "options": {
         "name": "Anzeigename auf diesem Server (max. 32 Zeichen)",
@@ -87,7 +87,8 @@
         "value": {
           "name": "Anzeigename",
           "avatar": "Avatar",
-          "banner": "Banner"
+          "banner": "Banner",
+          "bio": "About me"
         }
       }
     }
@@ -168,7 +169,8 @@
       "message": "⏳ **Langsamer** — du sendest Anfragen zu schnell.\n-# Warte ein paar Sekunden zwischen Songs. Kanal-Slowmode kann ebenfalls gelten."
     },
     "permissions": {
-      "voiceChannelDenial": "❌ Du musst im selben Sprachkanal wie der Bot sein, um diese Steuerung zu nutzen."
+      "voiceChannelDenial": "❌ Du musst im selben Sprachkanal wie der Bot sein, um diese Steuerung zu nutzen.",
+      "djDenial": "❌ Nur DJs oder Server-Manager können diese Steuerung nutzen."
     }
   },
   "duplicate": {
@@ -354,6 +356,7 @@
     },
     "profile": {
       "guildOnly": "**Nur auf Servern**\n-# /profile kann nur innerhalb eines Servers verwendet werden.",
+      "permissionDenied": "**Berechtigung erforderlich**\n-# Du brauchst **Nicknames verwalten**, um {{botName}}s Server-Profil zu bearbeiten.",
       "botMissingChangeNickname": "**Fehlende Berechtigung**\n-# {{botName}} braucht **Nickname ändern**, um seinen Anzeigenamen auf diesem Server zu aktualisieren.",
       "missingPermissions": "**Fehlende Berechtigung**\n-# {{botName}} konnte sein Profil nicht aktualisieren — prüfe, ob es **Nickname ändern** hat (für Namensänderungen), und versuche es erneut.",
       "invalidImage": "**Ungültiges Bild**\n-# Discord hat dieses Bild abgelehnt. Versuche eine andere PNG-, JPG-, GIF- oder WebP-Datei.",
@@ -362,18 +365,27 @@
       "downloadFailed": "**Download fehlgeschlagen**\n-# Der Anhang konnte nicht heruntergeladen werden. Lade ihn erneut hoch und versuche es noch einmal.",
       "rateLimited": "**Rate-Limit**\n-# Discord begrenzt Profilaktualisierungen. Warte einen Moment und versuche es erneut.",
       "updateFailed": "**Aktualisierung fehlgeschlagen**\n-# {{message}}",
-      "viewHeading": "### 🎨 Server-Profil",
+      "viewHeading": "### Server-Profil",
       "viewName": "**Anzeigename:** {{name}}",
       "viewAvatar": "**Avatar:** {{status}}",
       "viewBanner": "**Banner:** {{status}}",
+      "viewAboutMe": "**About me:** {{status}}",
       "viewFooter": "-# Profiländerungen gelten nur auf diesem Server und werden von Discord gespeichert.",
+      "aboutMeButton": "About Me bearbeiten",
+      "bioModalTitle": "About Me bearbeiten",
+      "bioModalLabel": "About-Me-Updates können kurz dauern.",
+      "bioModalPlaceholder": "**fett**, *kursiv*, Zeilenumbrüche OK. Plain-URLs OK. Max. 190 Zeichen.",
+      "bioTooLong": "**Bio zu lang**\n-# {{length}}/{{max}} Zeichen. Kürze deine Bio und versuche es erneut.",
+      "bioHyperlinksNotAllowed": "**Hyperlinks nicht erlaubt**\n-# Nutze Plain-URLs (https://...) statt [Text](Link)-Markdown.",
+      "bioUnchanged": "**Keine Änderungen**\n-# Bio wurde nicht aktualisiert.",
       "statusCustom": "Benutzerdefiniert",
       "statusDefault": "Standard",
       "clearAllSuccess": "### ✅ Profil zurückgesetzt\n\n-# {{botName}}s Server-Profil wurde auf Standard zurückgesetzt.",
       "clearFieldSuccess": {
         "name": "### ✅ Profil aktualisiert\n\n-# Anzeigename auf Standard zurückgesetzt.",
         "avatar": "### ✅ Profil aktualisiert\n\n-# Server-Avatar auf Standard zurückgesetzt.",
-        "banner": "### ✅ Profil aktualisiert\n\n-# Server-Banner auf Standard zurückgesetzt."
+        "banner": "### ✅ Profil aktualisiert\n\n-# Server-Banner auf Standard zurückgesetzt.",
+        "bio": "### ✅ Profil aktualisiert\n\n-# About Me auf Standard zurückgesetzt."
       }
     }
   },

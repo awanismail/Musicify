@@ -1,21 +1,20 @@
 const { MessageFlags, ContainerBuilder, TextDisplayBuilder } = require("discord.js");
 const { slashMeta, getT } = require("../i18n");
 const { replyError } = require("../utils/replies");
+const { requirePlayerControl } = require("../utils/playerControls");
+const { PLAYER_ACTIONS } = require("../utils/permissions");
 
 module.exports = {
     data: slashMeta("shuffle"),
 
     async execute(interaction, client) {
         const t = getT(interaction, client);
-        const player = client.riffy.players.get(interaction.guild.id);
+        const ctx = await requirePlayerControl(interaction, client, t, {
+            action: PLAYER_ACTIONS.CONTROL,
+        });
+        if (!ctx) return;
 
-        if (!player) {
-            return replyError(interaction, { key: "errors.noActivePlayer" }, { t });
-        }
-
-        if (!interaction.member.voice?.channel) {
-            return replyError(interaction, { key: "errors.voiceChannelRequired" }, { t });
-        }
+        const { player } = ctx;
 
         if (player.queue.length === 0) {
             return replyError(interaction, t("commands.shuffle.emptyQueue"), { t });

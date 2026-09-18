@@ -11,6 +11,10 @@ const { setupPlayerHandler } = require("./handlers/playerHandler");
 const db = require("./db/sqlite");
 const { runBackup, stopBackupScheduler } = require("./db/backup");
 const { startTopGgWebhookServer } = require("./services/topGgWebhook");
+const {
+    forwardVoiceStateToRiffy,
+    isTransientVoiceStateError,
+} = require("./utils/voiceStateBridge");
 
 async function start() {
     await initI18n();
@@ -58,6 +62,7 @@ async function start() {
         const message = reason?.message || String(reason);
         if (message.includes("Queue is empty")) return;
         if (message.includes("establishing") || message.includes("connection not ready")) return;
+        if (isTransientVoiceStateError(reason)) return;
         console.error("[Musicify] Unhandled Rejection:", reason);
     });
 
@@ -81,7 +86,7 @@ async function start() {
             ].includes(d.t)
         )
             return;
-        client.riffy.updateVoiceState(d);
+        forwardVoiceStateToRiffy(client, d);
     });
 
     const token = process.env.BOT_TOKEN;

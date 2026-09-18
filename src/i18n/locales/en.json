@@ -71,11 +71,14 @@
     "status": { "description": "Check the current status of Musicify's systems" },
     "stats": { "description": "Show Musicify's statistics" },
     "language": { "description": "Set the bot language for this server" },
+    "dj": {
+      "description": "Configure DJ roles and playback control permissions"
+    },
     "profile": {
-      "description": "Customize Musicify's name, avatar, and banner in this server",
+      "description": "Customize Musicify's name, avatar, banner, and About Me in this server",
       "subcommands": {
-        "set": "Set or view Musicify's name, avatar, or banner in this server",
-        "clear": "Reset Musicify's name, avatar, or banner in this server"
+        "set": "Set or view Musicify's name, avatar, banner, or About Me in this server",
+        "clear": "Reset Musicify's name, avatar, banner, or About Me in this server"
       },
       "options": {
         "name": "Display name for this server (max 32 characters)",
@@ -87,7 +90,8 @@
         "value": {
           "name": "Display name",
           "avatar": "Avatar",
-          "banner": "Banner"
+          "banner": "Banner",
+          "bio": "About me"
         }
       }
     }
@@ -168,7 +172,8 @@
       "message": "⏳ **Slow down** you're sending requests too quickly.\n-# Wait a few seconds between songs. Channel slowmode may also apply."
     },
     "permissions": {
-      "voiceChannelDenial": "❌ You need to be in the same voice channel as the bot to use these controls."
+      "voiceChannelDenial": "❌ You need to be in the same voice channel as the bot to use these controls.",
+      "djDenial": "❌ Only DJs or server managers can use this control."
     }
   },
   "duplicate": {
@@ -352,8 +357,37 @@
       "permissionDenied": "**Permission required**\n-# You need **Administrator** to change the server language.",
       "buttons": { "auto": "Auto" }
     },
+    "dj": {
+      "heading": "### 🎧 DJ Settings",
+      "description": "-# Who can skip, stop, change volume, and use player buttons.",
+      "modeLine": "**Mode:** {{mode}}",
+      "modeExplain": {
+        "everyone": "Anyone in the voice channel can control playback.",
+        "dj_only": "Only DJ roles and server managers can control playback.",
+        "dj_and_requester": "DJs control everything. Requesters can skip or remove their own tracks."
+      },
+      "noRolesEveryone": "**DJ roles:** None\n-# Optional — add roles if you switch to a locked mode later.",
+      "noRolesLocked": "**DJ roles:** None\n-# Add a DJ role so non-admins can control playback.",
+      "rolesLine": "**DJ roles:** {{roles}}",
+      "adminBypassNote": "-# **Manage Server** and **Administrator** always have full control.",
+      "settingsHint": "-# Use **Edit settings** to change control mode and DJ roles.",
+      "editSettingsButton": "Edit settings",
+      "modalTitle": "DJ Settings",
+      "modalRolesLabel": "DJ roles",
+      "modalRolesDescription": "Leave empty for admins only when mode is locked. Select multiple roles if needed.",
+      "modalModeLabel": "Control mode",
+      "modalModeDescription": "Choose who can use player controls in this server.",
+      "rolesSelectPlaceholder": "Select DJ roles (optional)…",
+      "permissionDenied": "**Permission required**\n-# You need **Manage Server** to configure DJ settings.",
+      "modes": {
+        "everyone": "Everyone in VC",
+        "dj_only": "DJ only",
+        "dj_and_requester": "DJ + requester"
+      }
+    },
     "profile": {
       "guildOnly": "**Server only**\n-# /profile can only be used inside a server.",
+      "permissionDenied": "**Permission required**\n-# You need **Manage Nicknames** to edit {{botName}}'s server profile.",
       "botMissingChangeNickname": "**Missing permission**\n-# {{botName}} needs **Change Nickname** to update its display name in this server.",
       "missingPermissions": "**Missing permission**\n-# {{botName}} couldn't update its profile — check that it has **Change Nickname** (for name changes) and try again.",
       "invalidImage": "**Invalid image**\n-# Discord rejected that image. Try a different PNG, JPG, GIF, or WebP file.",
@@ -362,18 +396,27 @@
       "downloadFailed": "**Download failed**\n-# Couldn't download that attachment. Upload it again and retry.",
       "rateLimited": "**Rate limited**\n-# Discord is rate limiting profile updates. Wait a moment and try again.",
       "updateFailed": "**Update failed**\n-# {{message}}",
-      "viewHeading": "### 🎨 Server Profile",
+      "viewHeading": "### Server Profile",
       "viewName": "**Display name:** {{name}}",
       "viewAvatar": "**Avatar:** {{status}}",
       "viewBanner": "**Banner:** {{status}}",
+      "viewAboutMe": "**About me:** {{status}}",
       "viewFooter": "-# Profile changes apply in this server only and are stored by Discord.",
+      "aboutMeButton": "Edit About me",
+      "bioModalTitle": "Edit About me",
+      "bioModalLabel": "About Me updates can take a few seconds.",
+      "bioModalPlaceholder": "**bold**, *italic*, new lines OK. Plain URLs OK. Max 190 chars.",
+      "bioTooLong": "**Bio too long**\n-# {{length}}/{{max}} characters. Shorten your bio and try again.",
+      "bioHyperlinksNotAllowed": "**Hyperlinks not allowed**\n-# Use plain URLs (https://...) instead of [text](link) markdown.",
+      "bioUnchanged": "**No changes**\n-# About Me was not updated.",
       "statusCustom": "Custom",
       "statusDefault": "Default",
       "clearAllSuccess": "### ✅ Profile Reset\n\n-# {{botName}}'s server profile was reset to defaults.",
       "clearFieldSuccess": {
         "name": "### ✅ Profile Updated\n\n-# Display name reset to default.",
         "avatar": "### ✅ Profile Updated\n\n-# Server avatar reset to default.",
-        "banner": "### ✅ Profile Updated\n\n-# Server banner reset to default."
+        "banner": "### ✅ Profile Updated\n\n-# Server banner reset to default.",
+        "bio": "### ✅ Profile Updated\n\n-# About Me reset to default."
       }
     }
   },
@@ -396,7 +439,7 @@
     },
     "music": {
       "heading": "### 🎶 Command Browser\n-# 20 commands available",
-      "list": "**1.** {{cmdPlay}} — Play a song or add it to the queue\n\n**2.** {{cmdSkip}} — Skip the current track\n\n**3.** {{cmdSkipto}} — Skip to a track in the queue\n\n**4.** {{cmdPause}} — Pause or resume playback\n\n**5.** {{cmdReplay}} — Restart the current track\n\n**6.** {{cmdStop}} — Stop playback and clear the queue\n\n**7.** {{cmdNowplaying}} — Show the currently playing track\n\n**8.** {{cmdSeek}} — Seek to a position\n\n**9.** {{cmdQueue}} — View the current queue\n\n**10.** {{cmdRemove}} — Remove a track from the queue\n\n**11.** {{cmdMove}} — Move a track's position\n\n**12.** {{cmdShuffle}} — Shuffle all tracks in the queue\n\n**13.** {{cmdLoop}} — Set or cycle loop mode (track or queue)\n\n**14.** {{cmdAutoplay}} — Toggle or set autoplay\n\n**15.** {{cmdVolume}} — Set the playback volume\n\n**16.** {{cmd247}} — Toggle 24/7 mode (confirmation required)\n\n**17.** {{cmdFilter}} — Apply an audio filter preset\n\n**18.** {{cmdChatplay}} — Set up or manage ChatPlay (enable, disable, delete)\n\n**19.** {{cmdAbout}} — Learn more about {{botName}}\n\n**20.** {{cmdProfile}} — Customize {{botName}}'s name, avatar, and banner in this server"
+      "list": "**1.** {{cmdPlay}} — Play a song or add it to the queue\n\n**2.** {{cmdSkip}} — Skip the current track\n\n**3.** {{cmdSkipto}} — Skip to a track in the queue\n\n**4.** {{cmdPause}} — Pause or resume playback\n\n**5.** {{cmdReplay}} — Restart the current track\n\n**6.** {{cmdStop}} — Stop playback and clear the queue\n\n**7.** {{cmdNowplaying}} — Show the currently playing track\n\n**8.** {{cmdSeek}} — Seek to a position\n\n**9.** {{cmdQueue}} — View the current queue\n\n**10.** {{cmdRemove}} — Remove a track from the queue\n\n**11.** {{cmdMove}} — Move a track's position\n\n**12.** {{cmdShuffle}} — Shuffle all tracks in the queue\n\n**13.** {{cmdLoop}} — Set or cycle loop mode (track or queue)\n\n**14.** {{cmdAutoplay}} — Toggle or set autoplay\n\n**15.** {{cmdVolume}} — Set the playback volume\n\n**16.** {{cmd247}} — Toggle 24/7 mode (confirmation required)\n\n**17.** {{cmdFilter}} — Apply an audio filter preset\n\n**18.** {{cmdChatplay}} — Set up or manage ChatPlay (enable, disable, delete)\n\n**19.** {{cmdAbout}} — Learn more about {{botName}}\n\n**20.** {{cmdProfile}} — Customize {{botName}}'s name, avatar, banner, and About Me in this server"
     },
     "filters": {
       "heading": "### 🎛️ Audio Filters\n-# {{cmdFilter}} `<preset>` — Apply an audio filter",

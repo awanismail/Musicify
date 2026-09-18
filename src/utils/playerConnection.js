@@ -1,4 +1,5 @@
 const { isNodeConnected, getPreferredNode } = require("./lavalink");
+const { isTransientVoiceStateError } = require("./voiceStateBridge");
 
 const VOICE_READY_TIMEOUT_MS = 10_000;
 
@@ -51,14 +52,10 @@ function waitForPlayerVoiceReady(player, timeoutMs = VOICE_READY_TIMEOUT_MS) {
 }
 
 function isTransientPlayError(err) {
-    const message = err?.message || String(err);
-    return (
-        message.includes("establishing") ||
-        message.includes("connection is not initiated") ||
-        message.includes("Connection timed out") ||
-        message.includes("Voice connection not ready")
-    );
+    return isTransientVoiceStateError(err);
 }
+
+const RECREATE_VOICE_DELAY_MS = 250;
 
 function destroyPlayerSafe(client, guildId) {
     const player = client.riffy?.players.get(guildId);
@@ -70,6 +67,21 @@ function destroyPlayerSafe(client, guildId) {
     } catch {
         return false;
     }
+}
+
+async function destroyPlayerAndWait(client, guildId, delayMs = RECREATE_VOICE_DELAY_MS) {
+    destroyPlayerSafe(client, guildId);
+    if (delayMs > 0) {
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+}
+
+/**
+ * Destroy any stale player, wait for Discord voice teardown, then create a fresh one.
+ */
+async function recreateHealthyPlayer(client, options) {
+    await destroyPlayerAndWait(client, options.guildId);
+    return getOrCreateHealthyPlayer(client, options);
 }
 
 /**
@@ -182,6 +194,8 @@ async function safePlayerPlay(player, guildId) {
 
 module.exports = {
     destroyPlayerSafe,
+    destroyPlayerAndWait,
+    recreateHealthyPlayer,
     isPlayerConnectionHealthy,
     getOrCreateHealthyPlayer,
     getAllPlayers,

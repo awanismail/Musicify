@@ -26,7 +26,7 @@ async function hasUserVotedRecently(userId) {
     }
 
     try {
-        const url = `https://top.gg/api/users/${userId}/check?botId=${config.vote.botId}`;
+        const url = `https://top.gg/api/bots/${config.vote.botId}/check?userId=${userId}`;
         const res = await fetch(url, {
             headers: { Authorization: config.vote.token },
         });

@@ -1,4 +1,4 @@
-const SCHEMA_VERSION = 9;
+const SCHEMA_VERSION = 11;
 
 function getSchemaVersion(db) {
     db.exec(`
@@ -84,6 +84,23 @@ function migrateToV9(db) {
     `);
 }
 
+function migrateToV10(db) {
+    const columns = db.prepare("PRAGMA table_info(guilds)").all();
+    if (!columns.some((col) => col.name === "dj_role_ids")) {
+        db.exec("ALTER TABLE guilds ADD COLUMN dj_role_ids TEXT");
+    }
+    if (!columns.some((col) => col.name === "dj_mode")) {
+        db.exec("ALTER TABLE guilds ADD COLUMN dj_mode TEXT DEFAULT 'everyone'");
+    }
+}
+
+function migrateToV11(db) {
+    const columns = db.prepare("PRAGMA table_info(guilds)").all();
+    if (!columns.some((col) => col.name === "dj_queue_limit")) {
+        db.exec("ALTER TABLE guilds ADD COLUMN dj_queue_limit INTEGER DEFAULT 0");
+    }
+}
+
 function runMigrations(db) {
     let version = getSchemaVersion(db);
 
@@ -121,6 +138,18 @@ function runMigrations(db) {
         migrateToV9(db);
         setSchemaVersion(db, 9);
         version = 9;
+    }
+
+    if (version < 10) {
+        migrateToV10(db);
+        setSchemaVersion(db, 10);
+        version = 10;
+    }
+
+    if (version < 11) {
+        migrateToV11(db);
+        setSchemaVersion(db, 11);
+        version = 11;
     }
 
     if (version !== SCHEMA_VERSION) {

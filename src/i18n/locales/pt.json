@@ -72,10 +72,10 @@
     "stats": { "description": "Mostrar as estatísticas do Musicify" },
     "language": { "description": "Definir o idioma do bot para este servidor" },
     "profile": {
-      "description": "Personalize o nome, avatar e banner do Musicify neste servidor",
+      "description": "Personalize o nome, avatar, banner e About Me do Musicify neste servidor",
       "subcommands": {
-        "set": "Definir ou ver o nome, avatar ou banner do Musicify neste servidor",
-        "clear": "Redefinir o nome, avatar ou banner do Musicify neste servidor"
+        "set": "Definir ou ver o nome, avatar, banner ou About Me do Musicify neste servidor",
+        "clear": "Redefinir o nome, avatar, banner ou About Me do Musicify neste servidor"
       },
       "options": {
         "name": "Nome de exibição neste servidor (máx. 32 caracteres)",
@@ -87,7 +87,8 @@
         "value": {
           "name": "Nome de exibição",
           "avatar": "Avatar",
-          "banner": "Banner"
+          "banner": "Banner",
+          "bio": "About me"
         }
       }
     }
@@ -168,7 +169,8 @@
       "message": "⏳ **Calma aí** você está enviando solicitações rápido demais.\n-# Aguarde alguns segundos entre as músicas. O slowmode do canal também pode se aplicar."
     },
     "permissions": {
-      "voiceChannelDenial": "❌ Você precisa estar no mesmo canal de voz que o bot para usar esses controles."
+      "voiceChannelDenial": "❌ Você precisa estar no mesmo canal de voz que o bot para usar esses controles.",
+      "djDenial": "❌ Apenas DJs ou gerentes do servidor podem usar este controle."
     }
   },
   "duplicate": {
@@ -354,6 +356,7 @@
     },
     "profile": {
       "guildOnly": "**Somente em servidores**\n-# /profile só pode ser usado dentro de um servidor.",
+      "permissionDenied": "**Permissão necessária**\n-# Você precisa de **Gerenciar apelidos** para editar o perfil do {{botName}} neste servidor.",
       "botMissingChangeNickname": "**Permissão ausente**\n-# O {{botName}} precisa de **Alterar apelido** para atualizar o nome de exibição neste servidor.",
       "missingPermissions": "**Permissão ausente**\n-# O {{botName}} não conseguiu atualizar o perfil — verifique se ele tem **Alterar apelido** (para mudanças de nome) e tente novamente.",
       "invalidImage": "**Imagem inválida**\n-# O Discord rejeitou essa imagem. Tente outro arquivo PNG, JPG, GIF ou WebP.",
@@ -362,18 +365,27 @@
       "downloadFailed": "**Falha no download**\n-# Não foi possível baixar o anexo. Envie novamente e tente de novo.",
       "rateLimited": "**Limite de taxa**\n-# O Discord está limitando atualizações de perfil. Aguarde um momento e tente novamente.",
       "updateFailed": "**Falha na atualização**\n-# {{message}}",
-      "viewHeading": "### 🎨 Perfil do Servidor",
+      "viewHeading": "### Perfil do Servidor",
       "viewName": "**Nome de exibição:** {{name}}",
       "viewAvatar": "**Avatar:** {{status}}",
       "viewBanner": "**Banner:** {{status}}",
+      "viewAboutMe": "**About me:** {{status}}",
       "viewFooter": "-# As alterações de perfil aplicam-se apenas neste servidor e são armazenadas pelo Discord.",
+      "aboutMeButton": "Editar About Me",
+      "bioModalTitle": "Editar About Me",
+      "bioModalLabel": "About Me pode levar alguns segundos.",
+      "bioModalPlaceholder": "**negrito**, *itálico*, quebras de linha OK. URLs simples OK. Máx. 190 car.",
+      "bioTooLong": "**Bio muito longa**\n-# {{length}}/{{max}} caracteres. Encurte sua bio e tente novamente.",
+      "bioHyperlinksNotAllowed": "**Hiperlinks não permitidos**\n-# Use URLs simples (https://...) em vez de markdown [texto](link).",
+      "bioUnchanged": "**Sem alterações**\n-# A bio não foi atualizada.",
       "statusCustom": "Personalizado",
       "statusDefault": "Padrão",
       "clearAllSuccess": "### ✅ Perfil Redefinido\n\n-# O perfil do {{botName}} neste servidor voltou ao padrão.",
       "clearFieldSuccess": {
         "name": "### ✅ Perfil Atualizado\n\n-# Nome de exibição redefinido para o padrão.",
         "avatar": "### ✅ Perfil Atualizado\n\n-# Avatar do servidor redefinido para o padrão.",
-        "banner": "### ✅ Perfil Atualizado\n\n-# Banner do servidor redefinido para o padrão."
+        "banner": "### ✅ Perfil Atualizado\n\n-# Banner do servidor redefinido para o padrão.",
+        "bio": "### ✅ Perfil Atualizado\n\n-# About Me redefinido para o padrão."
       }
     }
   },

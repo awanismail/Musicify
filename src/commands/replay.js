@@ -1,6 +1,7 @@
 const { MessageFlags, ContainerBuilder, TextDisplayBuilder } = require("discord.js");
 const { slashMeta, getT } = require("../i18n");
 const { requirePlayerControl } = require("../utils/playerControls");
+const { PLAYER_ACTIONS } = require("../utils/permissions");
 const { refreshPlayerMessage } = require("../handlers/playerHandler");
 
 module.exports = {
@@ -8,7 +9,10 @@ module.exports = {
 
     async execute(interaction, client) {
         const t = getT(interaction, client);
-        const ctx = await requirePlayerControl(interaction, client, t, { requireCurrent: true });
+        const ctx = await requirePlayerControl(interaction, client, t, {
+            action: PLAYER_ACTIONS.CONTROL,
+            requireCurrent: true,
+        });
         if (!ctx) return;
 
         const { player } = ctx;

@@ -17,17 +17,73 @@ const {
     getPlaylistDisplayName,
     queueResolvedTracks,
 } = require("../utils/resolveResult");
-const { getTrackQueuePosition, getDuplicateTrackError } = require("../utils/queueUtils");
+const { getTrackQueuePosition, getDuplicateTrackError, getRemainingQueueSlots, getQueueLimitError } = require("../utils/queueUtils");
 const { showChatPlayLoading, refreshChatPlayPlayer } = require("./chatPlayPlayer");
 const { abandonFailedPlayConnection } = require("./sessionManager");
+const { isYouTubeQuery } = require("../utils/playAutocomplete");
 
-const YOUTUBE_PATTERN = /(?:youtube\.com|youtu\.be)/i;
+async function queueSingleTrack(player, member, track, t, guildId) {
+    const remaining = getRemainingQueueSlots(member, player, guildId);
+    if (remaining < 1) {
+        return {
+            ok: false,
+            type: "queue_limit",
+            error: getQueueLimitError(guildId),
+            title: track.info.title,
+        };
+    }
 
-function isYouTubeQuery(query) {
-    return YOUTUBE_PATTERN.test(query);
+    const duplicatePosition = getTrackQueuePosition(player, track.info.uri);
+    if (duplicatePosition) {
+        return {
+            ok: false,
+            type: "duplicate",
+            error: getDuplicateTrackError(track.info.title, duplicatePosition, t),
+            title: track.info.title,
+        };
+    }
+
+    const wasIdle = !player.current && !player.playing && !player.paused;
+    track.info.requester = member.user;
+    player.queue.add(track);
+
+    if (wasIdle) {
+        const playResult = await safePlayerPlay(player, player.guildId);
+        if (!playResult.ok) {
+            if (player.queue.length > 0) {
+                player.queue.remove(player.queue.length - 1);
+            }
+            return {
+                ok: false,
+                type: "playback_failed",
+                error: { key: "errors.unexpected" },
+            };
+        }
+
+        return {
+            ok: true,
+            type: "track",
+            title: track.info.title,
+            author: track.info.author,
+            queuePosition: null,
+            startedPlayback: true,
+        };
+    }
+
+    return {
+        ok: true,
+        type: "track",
+        title: track.info.title,
+        author: track.info.author,
+        queuePosition: player.queue.length,
+        startedPlayback: false,
+    };
 }
 
-async function playQuery(client, { guild, member, query, textChannelId, source, t }) {
+async function playQuery(
+    client,
+    { guild, member, query, resolvedTrack = null, textChannelId, source, t }
+) {
     const guildId = guild.id;
     const guildData = getGuildData(guildId);
     const isChatPlay = source === "chatplay";
@@ -114,6 +170,11 @@ async function playQuery(client, { guild, member, query, textChannelId, source, 
 
     let result;
     try {
+        if (resolvedTrack) {
+            result = await queueSingleTrack(player, member, resolvedTrack, t, guildId);
+            return result;
+        }
+
         const resolveResult = await limitedResolve(client, {
             query,
             requester: member.user,
@@ -133,12 +194,36 @@ async function playQuery(client, { guild, member, query, textChannelId, source, 
         }
 
         if (classified.mode === "playlist") {
+            const remaining = getRemainingQueueSlots(member, player, guildId);
+            if (remaining < 1) {
+                result = {
+                    ok: false,
+                    type: "queue_limit",
+                    error: getQueueLimitError(guildId),
+                };
+                return result;
+            }
+
+            const tracksToQueue =
+                remaining === Infinity
+                    ? classified.tracks
+                    : classified.tracks.slice(0, remaining);
+
             const { duplicates, addedTracks } = queueResolvedTracks(
                 player,
-                classified.tracks,
+                tracksToQueue,
                 member.user,
                 t
             );
+
+            if (!addedTracks.length && !duplicates.length) {
+                result = {
+                    ok: false,
+                    type: "queue_limit",
+                    error: getQueueLimitError(guildId),
+                };
+                return result;
+            }
 
             if (!player.playing && !player.paused && !player.current) {
                 const playResult = await safePlayerPlay(player, guildId);
@@ -159,6 +244,10 @@ async function playQuery(client, { guild, member, query, textChannelId, source, 
                 addedCount: addedTracks.length,
                 totalCount: classified.tracks.length,
                 duplicates,
+                queueLimitSkipped:
+                    remaining !== Infinity && classified.tracks.length > tracksToQueue.length
+                        ? classified.tracks.length - tracksToQueue.length
+                        : 0,
             };
             return result;
         }
@@ -173,53 +262,7 @@ async function playQuery(client, { guild, member, query, textChannelId, source, 
             return result;
         }
 
-        const duplicatePosition = getTrackQueuePosition(player, track.info.uri);
-        if (duplicatePosition) {
-            result = {
-                ok: false,
-                type: "duplicate",
-                error: getDuplicateTrackError(track.info.title, duplicatePosition, t),
-                title: track.info.title,
-            };
-            return result;
-        }
-
-        const wasIdle = !player.current && !player.playing && !player.paused;
-        track.info.requester = member.user;
-        player.queue.add(track);
-
-        if (wasIdle) {
-            const playResult = await safePlayerPlay(player, guildId);
-            if (!playResult.ok) {
-                if (player.queue.length > 0) {
-                    player.queue.remove(player.queue.length - 1);
-                }
-                result = {
-                    ok: false,
-                    type: "playback_failed",
-                    error: { key: "errors.unexpected" },
-                };
-                return result;
-            }
-
-            result = {
-                ok: true,
-                type: "track",
-                title: track.info.title,
-                author: track.info.author,
-                queuePosition: null,
-                startedPlayback: true,
-            };
-        } else {
-            result = {
-                ok: true,
-                type: "track",
-                title: track.info.title,
-                author: track.info.author,
-                queuePosition: player.queue.length,
-                startedPlayback: false,
-            };
-        }
+        result = await queueSingleTrack(player, member, track, t, guildId);
         return result;
     } catch (error) {
         if (error instanceof ResolveRateLimitError) {
@@ -246,12 +289,12 @@ async function playQuery(client, { guild, member, query, textChannelId, source, 
         }
 
         if (isChatPlay) {
-            const player = client.riffy?.players.get(guildId);
+            const currentPlayer = client.riffy?.players.get(guildId);
             const shouldRefresh =
                 !result?.ok ||
                 result?.type === "track" ||
                 result?.type === "playlist" ||
-                Boolean(player?.current && (player.playing || player.paused));
+                Boolean(currentPlayer?.current && (currentPlayer.playing || currentPlayer.paused));
             if (shouldRefresh) {
                 await refreshChatPlayPlayer(client, guildId);
             }
@@ -261,5 +304,5 @@ async function playQuery(client, { guild, member, query, textChannelId, source, 
 
 module.exports = {
     playQuery,
-    isYouTubeQuery,
+    queueSingleTrack,
 };

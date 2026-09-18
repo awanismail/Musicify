@@ -1,7 +1,7 @@
 const { ContainerBuilder, TextDisplayBuilder, MessageFlags } = require("discord.js");
 const { getGuildData, listGuildData } = require("../utils/playerStore");
-const { isLavalinkAvailable, getStatusCommandRef, createPreferredConnection } = require("../utils/lavalink");
-const { safePlayerPlay } = require("../utils/playerConnection");
+const { isLavalinkAvailable, getStatusCommandRef } = require("../utils/lavalink");
+const { safePlayerPlay, recreateHealthyPlayer } = require("../utils/playerConnection");
 const { getT } = require("../i18n");
 
 const pendingSnapshots = new Map();
@@ -182,17 +182,10 @@ async function resumeSnapshot(client, snapshot) {
         return;
     }
 
-    let player = client.riffy.players.get(guildId);
-    if (player) {
-        try {
-            player.destroy();
-        } catch {
-            // stale player
-        }
-    }
+    let player;
 
     try {
-        player = createPreferredConnection(client, {
+        player = await recreateHealthyPlayer(client, {
             guildId,
             voiceChannel: snapshot.voiceChannelId,
             textChannel: snapshot.textChannelId,

@@ -96,6 +96,35 @@ function getRest(client) {
     return new REST({ version: "10" }).setToken(client.token);
 }
 
+const GLOBAL_BIO_CACHE_TTL_MS = 5 * 60 * 1000;
+/** @type {{ value: string, fetchedAt: number } | null} */
+let globalBioCache = null;
+
+async function fetchGlobalBotBio(client) {
+    if (
+        globalBioCache &&
+        Date.now() - globalBioCache.fetchedAt < GLOBAL_BIO_CACHE_TTL_MS
+    ) {
+        return globalBioCache.value;
+    }
+
+    const rest = getRest(client);
+
+    try {
+        const user = await rest.get(Routes.user("@me"));
+        const bio = typeof user.bio === "string" ? user.bio : "";
+        globalBioCache = { value: bio, fetchedAt: Date.now() };
+        return bio;
+    } catch (error) {
+        console.warn("[Musicify] Failed to fetch global bot bio:", error.message);
+        return globalBioCache?.value ?? "";
+    }
+}
+
+function invalidateGlobalBioCache() {
+    globalBioCache = null;
+}
+
 async function fetchGuildMemberProfile(client, guildId, applicationId) {
     const rest = getRest(client);
 
@@ -150,6 +179,7 @@ function formatProfileStatus(value, t, customKey, defaultKey) {
 }
 
 function buildProfileSummary(member, guildId, t) {
+    const { hasCustomServerBio } = require("./guildBio");
     const displayName = getMemberDisplayName(member);
 
     return (
@@ -170,6 +200,14 @@ function buildProfileSummary(member, guildId, t) {
                 "commands.profile.statusCustom",
                 "commands.profile.statusDefault"
             ),
+        })}\n` +
+        `${t("commands.profile.viewAboutMe", {
+            status: formatProfileStatus(
+                hasCustomServerBio(member.bio),
+                t,
+                "commands.profile.statusCustom",
+                "commands.profile.statusDefault"
+            ),
         })}\n\n` +
         t("commands.profile.viewFooter")
     );
@@ -179,6 +217,8 @@ module.exports = {
     ProfileError,
     fetchAttachmentDataUri,
     fetchGuildMemberProfile,
+    fetchGlobalBotBio,
+    invalidateGlobalBioCache,
     updateGuildMemberProfile,
     getMemberDisplayName,
     resolveMemberAvatarUrl,

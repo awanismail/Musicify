@@ -4,11 +4,19 @@ const {
     ContainerBuilder,
     TextDisplayBuilder,
     SectionBuilder,
+    SeparatorBuilder,
     ThumbnailBuilder,
+    ActionRowBuilder,
+    ButtonBuilder,
+    ButtonStyle,
+    ModalBuilder,
+    TextInputBuilder,
+    TextInputStyle,
 } = require("discord.js");
 const { slashMeta, getT, applySlashOption, buildSlashChoice, tEn } = require("../i18n");
 const {
     buildErrorContainer,
+    buildFeedbackContainer,
     buildSuccessContainer,
     ephemeralV2,
     replyError,
@@ -17,14 +25,25 @@ const {
     ProfileError,
     fetchAttachmentDataUri,
     fetchGuildMemberProfile,
+    fetchGlobalBotBio,
     updateGuildMemberProfile,
     buildProfileSummary,
     resolveMemberAvatarUrl,
 } = require("../utils/guildProfile");
+const {
+    validateGuildMemberBio,
+    storeBioEditSession,
+    consumeBioEditSession,
+    resolveBioModalPrefill,
+    MAX_BIO_LENGTH,
+} = require("../utils/guildBio");
 const { refreshChatPlayPlayer } = require("../services/chatPlayPlayer");
 const { maybeAppendBrandWatermark } = require("../utils/guildBranding");
 
 const COMMAND = "profile";
+const PROFILE_EDIT_BIO = "profile_edit_bio";
+const PROFILE_BIO_MODAL = "profile_bio_modal";
+const PROFILE_BIO_INPUT = "profile_bio_input";
 
 function buildProfileContainer(member, guildId, t, guild = null, client = null) {
     const container = new ContainerBuilder();
@@ -37,8 +56,37 @@ function buildProfileContainer(member, guildId, t, guild = null, client = null) 
                 new ThumbnailBuilder().setURL(resolveMemberAvatarUrl(member, guildId))
             )
     );
+    container.addSeparatorComponents(new SeparatorBuilder().setDivider(false));
+    container.addActionRowComponents(
+        new ActionRowBuilder().addComponents(
+            new ButtonBuilder()
+                .setCustomId(PROFILE_EDIT_BIO)
+                .setLabel(t("commands.profile.aboutMeButton"))
+                .setStyle(ButtonStyle.Primary)
+        )
+    );
     maybeAppendBrandWatermark(container, t, guild, client);
     return container;
+}
+
+function buildBioModal(t, prefill) {
+    const safePrefill = prefill.slice(0, MAX_BIO_LENGTH);
+
+    return new ModalBuilder()
+        .setCustomId(PROFILE_BIO_MODAL)
+        .setTitle(t("commands.profile.bioModalTitle"))
+        .addComponents(
+            new ActionRowBuilder().addComponents(
+                new TextInputBuilder()
+                    .setCustomId(PROFILE_BIO_INPUT)
+                    .setLabel(t("commands.profile.bioModalLabel"))
+                    .setPlaceholder(t("commands.profile.bioModalPlaceholder"))
+                    .setStyle(TextInputStyle.Paragraph)
+                    .setRequired(false)
+                    .setMaxLength(MAX_BIO_LENGTH)
+                    .setValue(safePrefill)
+            )
+        );
 }
 
 function buildProfileCommandData() {
@@ -69,7 +117,8 @@ function buildProfileCommandData() {
                             .addChoices(
                                 buildSlashChoice(COMMAND, "value", "name", "name"),
                                 buildSlashChoice(COMMAND, "value", "avatar", "avatar"),
-                                buildSlashChoice(COMMAND, "value", "banner", "banner")
+                                buildSlashChoice(COMMAND, "value", "banner", "banner"),
+                                buildSlashChoice(COMMAND, "value", "bio", "bio")
                             ),
                         COMMAND,
                         "value"
@@ -96,6 +145,35 @@ async function getBotMember(guild) {
     return guild.members.me ?? (await guild.members.fetchMe().catch(() => null));
 }
 
+function ensureManageNicknames(interaction, t) {
+    if (interaction.memberPermissions?.has(PermissionFlagsBits.ManageNicknames)) {
+        return true;
+    }
+
+    interaction.reply(
+        ephemeralV2(buildErrorContainer(t("commands.profile.permissionDenied"), t))
+    );
+    return false;
+}
+
+async function replyWithProfileView(interaction, client, t, member) {
+    const container = buildProfileContainer(
+        member,
+        interaction.guild.id,
+        t,
+        interaction.guild,
+        client
+    );
+
+    const payload = ephemeralV2(container);
+
+    if (interaction.deferred || interaction.replied) {
+        await interaction.editReply(payload);
+    } else {
+        await interaction.reply(payload);
+    }
+}
+
 async function handleProfileSet(interaction, client, t) {
     const guild = interaction.guild;
     const name = interaction.options.getString("name")?.trim() || null;
@@ -104,9 +182,7 @@ async function handleProfileSet(interaction, client, t) {
 
     if (!name && !avatarAttachment && !bannerAttachment) {
         const member = await fetchGuildMemberProfile(client, guild.id, client.user.id);
-        return interaction.reply(
-            ephemeralV2(buildProfileContainer(member, guild.id, t, guild, client))
-        );
+        return replyWithProfileView(interaction, client, t, member);
     }
 
     if (name) {
@@ -132,9 +208,7 @@ async function handleProfileSet(interaction, client, t) {
     await refreshBotMemberCache(guild, client);
     refreshGuildBranding(client, guild.id);
 
-    await interaction.editReply(
-        ephemeralV2(buildProfileContainer(member, guild.id, t, guild, client))
-    );
+    await replyWithProfileView(interaction, client, t, member);
 }
 
 async function handleProfileClear(interaction, client, t) {
@@ -162,22 +236,107 @@ async function handleProfileClear(interaction, client, t) {
         body.avatar = null;
     } else if (value === "banner") {
         body.banner = null;
+    } else if (value === "bio") {
+        body.bio = null;
     } else {
         body.nick = null;
         body.avatar = null;
         body.banner = null;
+        body.bio = null;
     }
 
     const reason = `${interaction.user.tag} (${interaction.user.id}) via /profile clear`;
-    await updateGuildMemberProfile(client, guild.id, body, reason);
+    const member = await updateGuildMemberProfile(client, guild.id, body, reason);
     await refreshBotMemberCache(guild, client);
     refreshGuildBranding(client, guild.id);
+
+    if (value === "bio") {
+        return replyWithProfileView(interaction, client, t, member);
+    }
 
     const messageKey = value
         ? `commands.profile.clearFieldSuccess.${value}`
         : "commands.profile.clearAllSuccess";
 
     await interaction.editReply(ephemeralV2(buildSuccessContainer(t(messageKey))));
+}
+
+function isProfileInteraction(interaction) {
+    return interaction.isButton() && interaction.customId === PROFILE_EDIT_BIO;
+}
+
+function isProfileBioModal(interaction) {
+    return interaction.isModalSubmit() && interaction.customId === PROFILE_BIO_MODAL;
+}
+
+async function handleProfileInteraction(client, interaction) {
+    const t = getT(interaction, client);
+
+    if (!ensureManageNicknames(interaction, t)) {
+        return;
+    }
+
+    const member = await fetchGuildMemberProfile(client, interaction.guild.id, client.user.id);
+    const globalBio = await fetchGlobalBotBio(client);
+    const prefill = resolveBioModalPrefill(member.bio, globalBio);
+
+    storeBioEditSession(interaction.guild.id, interaction.user.id, {
+        prefill,
+        serverBio: member.bio?.trim() || null,
+    });
+
+    return interaction.showModal(buildBioModal(t, prefill));
+}
+
+async function handleProfileBioModal(client, interaction) {
+    if (!isProfileBioModal(interaction)) {
+        return false;
+    }
+
+    const t = getT(interaction, client);
+
+    if (!interaction.memberPermissions?.has(PermissionFlagsBits.ManageNicknames)) {
+        await interaction.reply(
+            ephemeralV2(buildErrorContainer(t("commands.profile.permissionDenied"), t))
+        );
+        return true;
+    }
+
+    const submitted = interaction.fields.getTextInputValue(PROFILE_BIO_INPUT);
+    const session = consumeBioEditSession(interaction.guild.id, interaction.user.id);
+    const globalBio = await fetchGlobalBotBio(client);
+
+    if (session && submitted === session.prefill) {
+        await interaction.reply(
+            ephemeralV2(buildFeedbackContainer(t("commands.profile.bioUnchanged")))
+        );
+        return true;
+    }
+
+    const validation = validateGuildMemberBio(submitted);
+    if (!validation.ok) {
+        await interaction.reply(
+            ephemeralV2(buildErrorContainer(t(validation.key, validation.params), t))
+        );
+        return true;
+    }
+
+    let bio = validation.value;
+    if (bio && bio === globalBio.trim()) {
+        bio = null;
+    }
+
+    await interaction.deferReply({
+        flags: MessageFlags.Ephemeral | MessageFlags.IsComponentsV2,
+    });
+
+    const reason = `${interaction.user.tag} (${interaction.user.id}) via /profile bio modal`;
+    const member = await updateGuildMemberProfile(client, interaction.guild.id, { bio }, reason);
+    await refreshBotMemberCache(interaction.guild, client);
+    refreshGuildBranding(client, interaction.guild.id);
+
+    await replyWithProfileView(interaction, client, t, member);
+    return true;
 }
 
 module.exports = {
@@ -210,4 +369,9 @@ module.exports = {
             throw error;
         }
     },
+
+    isProfileInteraction,
+    isProfileBioModal,
+    handleProfileInteraction,
+    handleProfileBioModal,
 };

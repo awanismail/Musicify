@@ -8,6 +8,7 @@ const { createPreferredConnection } = require("../utils/lavalink");
 const {
     isPlayerConnectionHealthy,
     destroyPlayerSafe,
+    recreateHealthyPlayer,
     getAllPlayers,
     safePlayerPlay,
 } = require("../utils/playerConnection");
@@ -341,19 +342,15 @@ async function reconnectTwentyFourSeven(client, guildId) {
         return;
     }
 
-    if (player) {
-        destroyPlayerSafe(client, guildId);
-    }
-
     const textChannelId = guildData.chatPlayChannelId || guildData.playerChannelId;
     if (!textChannelId) return;
 
-    await ensureVoiceConnection(
-        client,
+    await recreateHealthyPlayer(client, {
         guildId,
-        guildData.boundVoiceChannelId,
-        textChannelId
-    );
+        voiceChannel: guildData.boundVoiceChannelId,
+        textChannel: textChannelId,
+        deaf: true,
+    });
 }
 
 function clearPending247Snapshot(guildId) {

@@ -55,10 +55,15 @@ async function resolveCommandMentions(client, names) {
 
     try {
         const commands = await client.application.commands.fetch();
+        const subcommands = { profile: "set" };
+
         for (const name of names) {
             const command = commands.find((entry) => entry.name === name);
             if (command) {
-                mentions[name] = `</${name}:${command.id}>`;
+                const sub = subcommands[name];
+                mentions[name] = sub
+                    ? `</${name} ${sub}:${command.id}>`
+                    : `</${name}:${command.id}>`;
             }
         }
     } catch (err) {

@@ -51,7 +51,7 @@ function buildCmdParams(getCmd) {
         cmdStatus: getCmd("status"),
         cmdHelp: getCmd("help"),
         cmdLanguage: getCmd("language"),
-        cmdProfile: getCmd("profile"),
+        cmdProfile: getCmd("profile", "set"),
     };
 }
 

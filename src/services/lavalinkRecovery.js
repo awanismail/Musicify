@@ -3,7 +3,7 @@ const { getGuildData, listGuildData } = require("../utils/playerStore");
 const { isLavalinkAvailable, getStatusCommandRef } = require("../utils/lavalink");
 const { safePlayerPlay, recreateHealthyPlayer } = require("../utils/playerConnection");
 const { getT } = require("../i18n");
-const { resolvePlayerTextChannelId } = require("../utils/playerChannel");
+const { resolvePlayerTextChannelId, resolveLavalinkNotifyChannelId } = require("../utils/playerChannel");
 
 const pendingSnapshots = new Map();
 let lavalinkOutageActive = false;
@@ -39,10 +39,7 @@ function snapshotHasPlayback(snapshot) {
 }
 
 function resolveNotifyChannelId(client, guild, guildData, player) {
-    return resolvePlayerTextChannelId(client, guild, guildData, player, {
-        voiceChannelId: player?.voiceChannel,
-        fallbackChannelId: player?.textChannel,
-    });
+    return resolveLavalinkNotifyChannelId(client, guild, guildData, player);
 }
 
 function isLavalinkSuspended(guildId) {
@@ -94,16 +91,29 @@ async function buildDisconnectNoticeContainer(client, guildId) {
 async function sendDisconnectNotice(client, snapshot) {
     if (!snapshot.notifyChannelId) return;
 
-    const channel = client.channels.cache.get(snapshot.notifyChannelId);
+    const guildData = getGuildData(snapshot.guildId);
+
+    let channel =
+        client.channels.cache.get(snapshot.notifyChannelId) ??
+        (await client.channels.fetch(snapshot.notifyChannelId).catch(() => null));
     if (!channel) return;
 
     try {
+        if (guildData.lavalinkNotifyMessageId && guildData.lavalinkNotifyChannelId) {
+            await clearDisconnectNotice(client, guildData, {
+                channelId: guildData.lavalinkNotifyChannelId,
+                messageId: guildData.lavalinkNotifyMessageId,
+            });
+        }
+
         const container = await buildDisconnectNoticeContainer(client, snapshot.guildId);
         const message = await channel.send({
             components: [container],
             flags: MessageFlags.IsComponentsV2,
         });
         snapshot.notifyMessageId = message.id;
+        guildData.lavalinkNotifyMessageId = message.id;
+        guildData.lavalinkNotifyChannelId = snapshot.notifyChannelId;
     } catch (err) {
         console.error(
             `[Musicify] Failed to send Lavalink disconnect notice for guild ${snapshot.guildId}:`,
@@ -115,21 +125,35 @@ async function sendDisconnectNotice(client, snapshot) {
 async function clearDisconnectNotice(client, guildData, overrides = {}) {
     const channelId = overrides.channelId ?? guildData?.lavalinkNotifyChannelId;
     const messageId = overrides.messageId ?? guildData?.lavalinkNotifyMessageId;
-    if (!channelId || !messageId) return;
+    if (!channelId || !messageId) return false;
+
+    let cleared = false;
 
     try {
-        const channel = client.channels.cache.get(channelId);
-        if (!channel) return;
-        const message = await channel.messages.fetch(messageId);
-        await message.delete();
-    } catch {
-        // message already gone
-    } finally {
-        if (guildData) {
-            guildData.lavalinkNotifyMessageId = null;
-            guildData.lavalinkNotifyChannelId = null;
+        const channel =
+            client.channels.cache.get(channelId) ??
+            (await client.channels.fetch(channelId).catch(() => null));
+        if (!channel) return false;
+
+        const message = await channel.messages.fetch(messageId).catch(() => null);
+        if (message) {
+            await message.delete();
         }
+        cleared = true;
+    } catch (err) {
+        console.warn(
+            `[Musicify] Failed to clear Lavalink disconnect notice in ${channelId}:`,
+            err.message
+        );
+        return false;
     }
+
+    if (cleared && guildData) {
+        guildData.lavalinkNotifyMessageId = null;
+        guildData.lavalinkNotifyChannelId = null;
+    }
+
+    return cleared;
 }
 
 async function suspendPlayersForLavalinkDisconnect(client, disconnectedNode) {
@@ -223,11 +247,6 @@ async function resumeSnapshot(client, snapshot) {
         return true;
     }
 
-    if (snapshot.notifyMessageId && snapshot.notifyChannelId) {
-        guildData.lavalinkNotifyMessageId = snapshot.notifyMessageId;
-        guildData.lavalinkNotifyChannelId = snapshot.notifyChannelId;
-    }
-
     if (snapshot.position > 0) {
         guildData.pendingLavalinkSeek = snapshot.position;
     }
@@ -246,7 +265,12 @@ async function resumeSnapshot(client, snapshot) {
 
     guildData.lavalinkSuspended = false;
     pendingSnapshots.delete(guildId);
-    await clearDisconnectNotice(client, guildData);
+
+    // trackStart usually clears this first; snapshot overrides cover the race either way
+    await clearDisconnectNotice(client, guildData, {
+        channelId: snapshot.notifyChannelId,
+        messageId: snapshot.notifyMessageId,
+    });
 
     console.log(`[Musicify] Resumed playback for guild ${guildId}`);
     return true;
@@ -287,7 +311,12 @@ async function cleanupStaleDisconnectNotices(client) {
         if (guildData.lavalinkSuspended || guildData.lavalinkRecovering) continue;
         if (pendingSnapshots.has(guildId)) continue;
 
-        await clearDisconnectNotice(client, guildData);
+        const cleared = await clearDisconnectNotice(client, guildData);
+        if (!cleared) {
+            console.warn(
+                `[Musicify] Stale Lavalink disconnect notice could not be cleared for guild ${guildId}`
+            );
+        }
     }
 }
 
@@ -342,7 +371,7 @@ function handleRecoveryTrackStart(client, player) {
         }
     }
 
-    if (guildData.lavalinkRecovering) {
+    if (guildData.lavalinkRecovering || guildData.lavalinkNotifyMessageId) {
         guildData.lavalinkRecovering = false;
         void clearDisconnectNotice(client, guildData);
     }

@@ -46,6 +46,21 @@ function resolvePlayerTextChannelId(client, guild, guildData, player, options = 
     return fallbackChannelId || guildData.playerChannelId || player?.textChannel || null;
 }
 
+function resolveLavalinkNotifyChannelId(client, guild, guildData, player) {
+    if (isChatPlayActive(guildData) && guildData.chatPlayChannelId) {
+        return guildData.chatPlayChannelId;
+    }
+
+    if (guildData.playerChannelId && guildData.playerMessageId) {
+        return guildData.playerChannelId;
+    }
+
+    return resolvePlayerTextChannelId(client, guild, guildData, player, {
+        voiceChannelId: player?.voiceChannel || guildData.boundVoiceChannelId,
+        fallbackChannelId: player?.textChannel,
+    });
+}
+
 function isVoiceChannelPlayerChat(guildData, channelId, voiceChannelId) {
     return (
         !isChatPlayActive(guildData) &&
@@ -58,5 +73,6 @@ module.exports = {
     canDeliverPlayerUi,
     isChatPlayActive,
     resolvePlayerTextChannelId,
+    resolveLavalinkNotifyChannelId,
     isVoiceChannelPlayerChat,
 };

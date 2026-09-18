@@ -10,6 +10,7 @@ const {
     ButtonBuilder,
     ButtonStyle,
     ModalBuilder,
+    LabelBuilder,
     TextInputBuilder,
     TextInputStyle,
 } = require("discord.js");
@@ -20,12 +21,14 @@ const {
     buildSuccessContainer,
     ephemeralV2,
     replyError,
+    safeInteractionUpdate,
 } = require("../utils/replies");
 const {
     ProfileError,
     fetchAttachmentDataUri,
     fetchGuildMemberProfile,
-    fetchGlobalBotBio,
+    resolveGlobalBio,
+    buildDefaultGlobalBio,
     updateGuildMemberProfile,
     buildProfileSummary,
     resolveMemberAvatarUrl,
@@ -70,23 +73,27 @@ function buildProfileContainer(member, guildId, t, guild = null, client = null) 
 }
 
 function buildBioModal(t, prefill) {
-    const safePrefill = prefill.slice(0, MAX_BIO_LENGTH);
+    const safePrefill = (prefill?.trim() || buildDefaultGlobalBio("/profile set")).slice(
+        0,
+        MAX_BIO_LENGTH
+    );
+
+    const textInput = new TextInputBuilder()
+        .setCustomId(PROFILE_BIO_INPUT)
+        .setPlaceholder(t("commands.profile.bioModalPlaceholder"))
+        .setStyle(TextInputStyle.Paragraph)
+        .setRequired(false)
+        .setMaxLength(MAX_BIO_LENGTH)
+        .setValue(safePrefill);
+
+    const label = new LabelBuilder()
+        .setLabel(t("commands.profile.bioModalLabel"))
+        .setTextInputComponent(textInput);
 
     return new ModalBuilder()
         .setCustomId(PROFILE_BIO_MODAL)
         .setTitle(t("commands.profile.bioModalTitle"))
-        .addComponents(
-            new ActionRowBuilder().addComponents(
-                new TextInputBuilder()
-                    .setCustomId(PROFILE_BIO_INPUT)
-                    .setLabel(t("commands.profile.bioModalLabel"))
-                    .setPlaceholder(t("commands.profile.bioModalPlaceholder"))
-                    .setStyle(TextInputStyle.Paragraph)
-                    .setRequired(false)
-                    .setMaxLength(MAX_BIO_LENGTH)
-                    .setValue(safePrefill)
-            )
-        );
+        .addLabelComponents(label);
 }
 
 function buildProfileCommandData() {
@@ -277,7 +284,7 @@ async function handleProfileInteraction(client, interaction) {
     }
 
     const member = await fetchGuildMemberProfile(client, interaction.guild.id, client.user.id);
-    const globalBio = await fetchGlobalBotBio(client);
+    const globalBio = await resolveGlobalBio(client);
     const prefill = resolveBioModalPrefill(member.bio, globalBio);
 
     storeBioEditSession(interaction.guild.id, interaction.user.id, {
@@ -304,7 +311,7 @@ async function handleProfileBioModal(client, interaction) {
 
     const submitted = interaction.fields.getTextInputValue(PROFILE_BIO_INPUT);
     const session = consumeBioEditSession(interaction.guild.id, interaction.user.id);
-    const globalBio = await fetchGlobalBotBio(client);
+    const globalBio = await resolveGlobalBio(client);
 
     if (session && submitted === session.prefill) {
         await interaction.reply(
@@ -322,20 +329,36 @@ async function handleProfileBioModal(client, interaction) {
     }
 
     let bio = validation.value;
-    if (bio && bio === globalBio.trim()) {
+    if (bio && bio.trim() === globalBio.trim()) {
         bio = null;
     }
-
-    await interaction.deferReply({
-        flags: MessageFlags.Ephemeral | MessageFlags.IsComponentsV2,
-    });
 
     const reason = `${interaction.user.tag} (${interaction.user.id}) via /profile bio modal`;
     const member = await updateGuildMemberProfile(client, interaction.guild.id, { bio }, reason);
     await refreshBotMemberCache(interaction.guild, client);
     refreshGuildBranding(client, interaction.guild.id);
 
-    await replyWithProfileView(interaction, client, t, member);
+    const container = buildProfileContainer(
+        member,
+        interaction.guild.id,
+        t,
+        interaction.guild,
+        client
+    );
+
+    if (interaction.message) {
+        await safeInteractionUpdate(
+            interaction,
+            {
+                components: [container],
+                flags: MessageFlags.Ephemeral | MessageFlags.IsComponentsV2,
+            },
+            t
+        );
+    } else {
+        await replyWithProfileView(interaction, client, t, member);
+    }
+
     return true;
 }
 

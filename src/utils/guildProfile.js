@@ -97,8 +97,33 @@ function getRest(client) {
 }
 
 const GLOBAL_BIO_CACHE_TTL_MS = 5 * 60 * 1000;
+const MUSICIFY_LOGO_EMOJI = "<:Musicify_Logo:1517828581638541493>";
+const DEFAULT_SUPPORT_URL = "https://discord.gg/MRjEUhDCpZ";
+
 /** @type {{ value: string, fetchedAt: number } | null} */
 let globalBioCache = null;
+
+function buildDefaultGlobalBio(profileMention = "/profile set") {
+    return (
+        `${MUSICIFY_LOGO_EMOJI} The **#1 Custom-Branded** Discord Music Bot\n` +
+        `${profileMention} to make it yours. *FREE*.\n` +
+        `*Support at ${DEFAULT_SUPPORT_URL}*`
+    );
+}
+
+async function resolveProfileCommandMention(client) {
+    try {
+        const commands = await client.application.commands.fetch();
+        const command = commands.find((entry) => entry.name === "profile");
+        if (command) {
+            return `</profile set:${command.id}>`;
+        }
+    } catch (error) {
+        console.warn("[Musicify] Failed to fetch /profile command ID for bio prefill:", error.message);
+    }
+
+    return "/profile set";
+}
 
 async function fetchGlobalBotBio(client) {
     if (
@@ -112,13 +137,23 @@ async function fetchGlobalBotBio(client) {
 
     try {
         const user = await rest.get(Routes.user("@me"));
-        const bio = typeof user.bio === "string" ? user.bio : "";
+        const bio = typeof user.bio === "string" ? user.bio.trim() : "";
         globalBioCache = { value: bio, fetchedAt: Date.now() };
         return bio;
     } catch (error) {
         console.warn("[Musicify] Failed to fetch global bot bio:", error.message);
         return globalBioCache?.value ?? "";
     }
+}
+
+async function resolveGlobalBio(client) {
+    const fromApi = await fetchGlobalBotBio(client);
+    if (fromApi) {
+        return fromApi;
+    }
+
+    const profileMention = await resolveProfileCommandMention(client);
+    return buildDefaultGlobalBio(profileMention);
 }
 
 function invalidateGlobalBioCache() {
@@ -218,6 +253,9 @@ module.exports = {
     fetchAttachmentDataUri,
     fetchGuildMemberProfile,
     fetchGlobalBotBio,
+    resolveGlobalBio,
+    buildDefaultGlobalBio,
+    resolveProfileCommandMention,
     invalidateGlobalBioCache,
     updateGuildMemberProfile,
     getMemberDisplayName,

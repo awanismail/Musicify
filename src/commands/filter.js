@@ -1,8 +1,6 @@
 const { MessageFlags, ContainerBuilder, TextDisplayBuilder } = require("discord.js");
 const { slashMeta, getT, applySlashOption, buildSlashChoice } = require("../i18n");
 const { buildErrorContainer, ephemeralV2 } = require("../utils/replies");
-const { requirePlayerControl } = require("../utils/playerControls");
-const { PLAYER_ACTIONS } = require("../utils/permissions");
 
 const FILTER_PRESETS = {
     bassboost: { emoji: "🔊", apply: (p) => p.filters.setBassboost(true, { value: 4 }) },
@@ -43,13 +41,18 @@ module.exports = {
 
     async execute(interaction, client) {
         const t = getT(interaction, client);
-        const ctx = await requirePlayerControl(interaction, client, t, {
-            action: PLAYER_ACTIONS.CONTROL,
-            requireCurrent: true,
-        });
-        if (!ctx) return;
+        const player = client.riffy.players.get(interaction.guild.id);
+        if (!player || !player.current) {
+            return interaction.reply(
+                ephemeralV2(buildErrorContainer(t("errors.nothingPlaying"), t))
+            );
+        }
+        if (!interaction.member.voice?.channel) {
+            return interaction.reply(
+                ephemeralV2(buildErrorContainer(t("errors.voiceChannelRequired"), t))
+            );
+        }
 
-        const { player } = ctx;
         const preset = interaction.options.getString("preset");
 
         if (preset === "reset") {

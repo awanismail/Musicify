@@ -2,8 +2,6 @@ const { MessageFlags, ContainerBuilder, TextDisplayBuilder } = require("discord.
 const { formatDuration } = require("../utils/components");
 const { slashMeta, getT, applySlashOption } = require("../i18n");
 const { buildErrorContainer, ephemeralV2 } = require("../utils/replies");
-const { requirePlayerControl } = require("../utils/playerControls");
-const { PLAYER_ACTIONS } = require("../utils/permissions");
 
 module.exports = {
     data: slashMeta("seek").addStringOption((opt) =>
@@ -12,13 +10,19 @@ module.exports = {
 
     async execute(interaction, client) {
         const t = getT(interaction, client);
-        const ctx = await requirePlayerControl(interaction, client, t, {
-            action: PLAYER_ACTIONS.CONTROL,
-            requireCurrent: true,
-        });
-        if (!ctx) return;
+        const player = client.riffy.players.get(interaction.guild.id);
+        if (!player || !player.current) {
+            return interaction.reply(
+                ephemeralV2(buildErrorContainer(t("errors.nothingPlaying"), t))
+            );
+        }
 
-        const { player } = ctx;
+        if (!interaction.member.voice?.channel) {
+            return interaction.reply(
+                ephemeralV2(buildErrorContainer(t("errors.voiceChannelRequired"), t))
+            );
+        }
+
         const timeStr = interaction.options.getString("time");
         let ms = 0;
 

@@ -65,11 +65,11 @@ module.exports = {
         });
 
         if (!result.ok) {
-            if (result.type === "duplicate" || result.type === "queue_limit") {
+            if (result.type === "duplicate") {
                 return interaction.editReply(
                     ephemeralV2(
                         buildFeedbackContainer(
-                            `${result.type === "duplicate" ? t("duplicate.heading") : t("errors.queueLimitHeading")}\n\n-# ${translateError(t, result.error)}`
+                            `${t("duplicate.heading")}\n\n-# ${translateError(t, result.error)}`
                         )
                     )
                 );
@@ -96,12 +96,6 @@ module.exports = {
             if (result.duplicates.length > 0) {
                 content += `\n\n${t("commands.play.duplicatesSkipped", {
                     count: result.duplicates.length,
-                })}`;
-            }
-
-            if (result.queueLimitSkipped) {
-                content += `\n\n${t("commands.play.queueLimitSkipped", {
-                    count: result.queueLimitSkipped,
                 })}`;
             }
 

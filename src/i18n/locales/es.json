@@ -169,8 +169,7 @@
       "message": "⏳ **Ve más despacio**, estás enviando solicitudes demasiado rápido.\n-# Espera unos segundos entre canciones. También puede aplicarse el modo lento del canal."
     },
     "permissions": {
-      "voiceChannelDenial": "❌ Tienes que estar en el mismo canal de voz que el bot para usar estos controles.",
-      "djDenial": "❌ Solo los DJs o administradores del servidor pueden usar este control."
+      "voiceChannelDenial": "❌ Tienes que estar en el mismo canal de voz que el bot para usar estos controles."
     }
   },
   "duplicate": {

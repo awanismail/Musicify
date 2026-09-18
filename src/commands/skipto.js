@@ -1,8 +1,6 @@
 const { MessageFlags, ContainerBuilder, TextDisplayBuilder } = require("discord.js");
 const { slashMeta, getT, applySlashOption } = require("../i18n");
-const { buildErrorContainer, ephemeralV2 } = require("../utils/replies");
-const { requirePlayerControl } = require("../utils/playerControls");
-const { PLAYER_ACTIONS } = require("../utils/permissions");
+const { buildErrorContainer, ephemeralV2, replyError } = require("../utils/replies");
 
 module.exports = {
     data: slashMeta("skipto").addIntegerOption((opt) =>
@@ -15,12 +13,16 @@ module.exports = {
 
     async execute(interaction, client) {
         const t = getT(interaction, client);
-        const ctx = await requirePlayerControl(interaction, client, t, {
-            action: PLAYER_ACTIONS.SKIP,
-        });
-        if (!ctx) return;
+        const player = client.riffy.players.get(interaction.guild.id);
 
-        const { player } = ctx;
+        if (!player) {
+            return replyError(interaction, { key: "errors.noActivePlayer" }, { t });
+        }
+
+        if (!interaction.member.voice?.channel) {
+            return replyError(interaction, { key: "errors.voiceChannelRequired" }, { t });
+        }
+
         const position = interaction.options.getInteger("position");
         const queueLen = player.queue.length;
 

@@ -4,8 +4,7 @@ const { createNowPlayingContainer, createChatPlayNowPlayingContainer, createQueu
 const { resolveGuild } = require("../utils/guildBranding");
 const { generateMusicCard } = require("../utils/musicard");
 const { addNodeDetails } = require("../utils/nodeDetails");
-const { getPlayerPermissionDenial, PLAYER_ACTIONS } = require("../utils/permissions");
-const { handleDjInteraction, isDjInteraction } = require("../commands/dj");
+const { canControlMusic, VOICE_CHANNEL_DENIAL_KEY } = require("../utils/permissions");
 const { handleProfileInteraction, isProfileInteraction } = require("../commands/profile");
 const { handleStop, toggleTwentyFourSeven } = require("../services/sessionManager");
 const { build247ConfirmContainer, build247CancelledContainer } = require("../commands/247");
@@ -33,34 +32,10 @@ const { isPlayerConnectionHealthy, safePlayerPlay } = require("../utils/playerCo
 const { getTrackQueuePosition, getDuplicateTrackError } = require("../utils/queueUtils");
 const { persistGuildPlaybackSettings } = require("../utils/database");
 
-async function denyInteractionPermission(interaction, denial, tUser) {
-    await interaction.reply({
-        content: tUser(denial.key),
-        flags: MessageFlags.Ephemeral,
-    });
-}
-
-async function ensurePlayerPermission(interaction, player, action, options = {}) {
-    const denial = getPlayerPermissionDenial(
-        interaction.member,
-        player,
-        interaction.guild.id,
-        action,
-        options
-    );
-    if (!denial) return true;
-    await denyInteractionPermission(interaction, denial, getT(interaction, interaction.client));
-    return false;
-}
-
 /**
  * Handle all button and select menu interactions from the player container
  */
 async function handleButtonInteraction(client, interaction) {
-    if (isDjInteraction(interaction)) {
-        return handleDjInteraction(client, interaction);
-    }
-
     if (isProfileInteraction(interaction)) {
         return handleProfileInteraction(client, interaction);
     }
@@ -164,8 +139,11 @@ async function handleButtonInteraction(client, interaction) {
                         )
                     );
                 }
-                if (!(await ensurePlayerPermission(interaction, player, PLAYER_ACTIONS.STOP))) {
-                    return;
+                if (!canControlMusic(interaction.member, player)) {
+                    return interaction.reply({
+                        content: tUser(VOICE_CHANNEL_DENIAL_KEY),
+                        flags: MessageFlags.Ephemeral,
+                    });
                 }
                 if (guildData.stopConfirmPending !== interaction.user.id) {
                     return interaction.reply(
@@ -283,8 +261,11 @@ async function handleButtonInteraction(client, interaction) {
                 flags: MessageFlags.Ephemeral,
             });
         }
-        if (!(await ensurePlayerPermission(interaction, player, PLAYER_ACTIONS.PLAY))) {
-            return;
+        if (!canControlMusic(interaction.member, player)) {
+            return interaction.reply({
+                content: tUser(VOICE_CHANNEL_DENIAL_KEY),
+                flags: MessageFlags.Ephemeral,
+            });
         }
 
         const index = Number.parseInt(interaction.values[0], 10);
@@ -352,8 +333,11 @@ async function handleButtonInteraction(client, interaction) {
                 flags: MessageFlags.Ephemeral,
             });
         }
-        if (!(await ensurePlayerPermission(interaction, player, PLAYER_ACTIONS.VIEW_QUEUE))) {
-            return;
+        if (!canControlMusic(interaction.member, player)) {
+            return interaction.reply({
+                content: tUser(VOICE_CHANNEL_DENIAL_KEY),
+                flags: MessageFlags.Ephemeral,
+            });
         }
         if (!guildData.queuePages) guildData.queuePages = new Map();
         guildData.queuePages.set(interaction.user.id, 0);
@@ -379,8 +363,11 @@ async function handleButtonInteraction(client, interaction) {
                 flags: MessageFlags.Ephemeral,
             });
         }
-        if (!(await ensurePlayerPermission(interaction, player, PLAYER_ACTIONS.VIEW_QUEUE))) {
-            return;
+        if (!canControlMusic(interaction.member, player)) {
+            return interaction.reply({
+                content: tUser(VOICE_CHANNEL_DENIAL_KEY),
+                flags: MessageFlags.Ephemeral,
+            });
         }
 
         await interaction.deferUpdate();
@@ -441,13 +428,11 @@ async function handleButtonInteraction(client, interaction) {
         });
     }
 
-    if (needsPlayer.includes(customId)) {
-        let action = PLAYER_ACTIONS.CONTROL;
-        if (customId === "skip") action = PLAYER_ACTIONS.SKIP;
-        if (customId === "stop") action = PLAYER_ACTIONS.STOP;
-        if (!(await ensurePlayerPermission(interaction, player, action))) {
-            return;
-        }
+    if (needsPlayer.includes(customId) && !canControlMusic(interaction.member, player)) {
+        return interaction.reply({
+            content: tUser(VOICE_CHANNEL_DENIAL_KEY),
+            flags: MessageFlags.Ephemeral,
+        });
     }
 
     // Defer immediately to avoid 3s timeout

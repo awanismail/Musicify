@@ -17,22 +17,12 @@ const {
     getPlaylistDisplayName,
     queueResolvedTracks,
 } = require("../utils/resolveResult");
-const { getTrackQueuePosition, getDuplicateTrackError, getRemainingQueueSlots, getQueueLimitError } = require("../utils/queueUtils");
+const { getTrackQueuePosition, getDuplicateTrackError } = require("../utils/queueUtils");
 const { showChatPlayLoading, refreshChatPlayPlayer } = require("./chatPlayPlayer");
 const { abandonFailedPlayConnection } = require("./sessionManager");
 const { isYouTubeQuery } = require("../utils/playAutocomplete");
 
-async function queueSingleTrack(player, member, track, t, guildId) {
-    const remaining = getRemainingQueueSlots(member, player, guildId);
-    if (remaining < 1) {
-        return {
-            ok: false,
-            type: "queue_limit",
-            error: getQueueLimitError(guildId),
-            title: track.info.title,
-        };
-    }
-
+async function queueSingleTrack(player, member, track, t) {
     const duplicatePosition = getTrackQueuePosition(player, track.info.uri);
     if (duplicatePosition) {
         return {
@@ -171,7 +161,7 @@ async function playQuery(
     let result;
     try {
         if (resolvedTrack) {
-            result = await queueSingleTrack(player, member, resolvedTrack, t, guildId);
+            result = await queueSingleTrack(player, member, resolvedTrack, t);
             return result;
         }
 
@@ -194,36 +184,12 @@ async function playQuery(
         }
 
         if (classified.mode === "playlist") {
-            const remaining = getRemainingQueueSlots(member, player, guildId);
-            if (remaining < 1) {
-                result = {
-                    ok: false,
-                    type: "queue_limit",
-                    error: getQueueLimitError(guildId),
-                };
-                return result;
-            }
-
-            const tracksToQueue =
-                remaining === Infinity
-                    ? classified.tracks
-                    : classified.tracks.slice(0, remaining);
-
             const { duplicates, addedTracks } = queueResolvedTracks(
                 player,
-                tracksToQueue,
+                classified.tracks,
                 member.user,
                 t
             );
-
-            if (!addedTracks.length && !duplicates.length) {
-                result = {
-                    ok: false,
-                    type: "queue_limit",
-                    error: getQueueLimitError(guildId),
-                };
-                return result;
-            }
 
             if (!player.playing && !player.paused && !player.current) {
                 const playResult = await safePlayerPlay(player, guildId);
@@ -244,10 +210,6 @@ async function playQuery(
                 addedCount: addedTracks.length,
                 totalCount: classified.tracks.length,
                 duplicates,
-                queueLimitSkipped:
-                    remaining !== Infinity && classified.tracks.length > tracksToQueue.length
-                        ? classified.tracks.length - tracksToQueue.length
-                        : 0,
             };
             return result;
         }
@@ -262,7 +224,7 @@ async function playQuery(
             return result;
         }
 
-        result = await queueSingleTrack(player, member, track, t, guildId);
+        result = await queueSingleTrack(player, member, track, t);
         return result;
     } catch (error) {
         if (error instanceof ResolveRateLimitError) {

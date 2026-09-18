@@ -1,7 +1,7 @@
 const { MessageFlags, ContainerBuilder, TextDisplayBuilder } = require("discord.js");
 const { slashMeta, applySlashOption, getT } = require("../i18n");
-const { requirePlayerControl } = require("../utils/playerControls");
-const { PLAYER_ACTIONS } = require("../utils/permissions");
+const { replyError } = require("../utils/replies");
+const { getGuildData } = require("../utils/playerStore");
 const { persistGuildPlaybackSettings } = require("../utils/database");
 
 module.exports = {
@@ -15,14 +15,19 @@ module.exports = {
 
     async execute(interaction, client) {
         const t = getT(interaction, client);
-        const ctx = await requirePlayerControl(interaction, client, t, {
-            action: PLAYER_ACTIONS.CONTROL,
-        });
-        if (!ctx) return;
+        const player = client.riffy.players.get(interaction.guild.id);
 
-        const { player, guildData } = ctx;
+        if (!player) {
+            return replyError(interaction, { key: "errors.noActivePlayer" }, { t });
+        }
+
+        if (!interaction.member.voice?.channel) {
+            return replyError(interaction, { key: "errors.voiceChannelRequired" }, { t });
+        }
+
         const level = Math.min(100, Math.max(0, interaction.options.getInteger("level")));
 
+        const guildData = getGuildData(interaction.guild.id);
         guildData.volume = level;
         player.setVolume(level);
         persistGuildPlaybackSettings(interaction.guild.id, guildData);

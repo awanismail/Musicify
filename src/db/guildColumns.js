@@ -11,14 +11,7 @@ const GUILD_COLUMN_MAP = {
     defaultVolume: "default_volume",
     defaultAutoplay: "default_autoplay",
     locale: "locale",
-    djRoleIds: "dj_role_ids",
-    djMode: "dj_mode",
-    djQueueLimit: "dj_queue_limit",
 };
-
-const JSON_ARRAY_KEYS = new Set(["djRoleIds"]);
-
-const INTEGER_KEYS = new Set(["djQueueLimit"]);
 
 const BOOLEAN_KEYS = new Set([
     "chatPlayEnabled",
@@ -45,13 +38,6 @@ function serializeValue(key, value) {
     if (BOOLEAN_KEYS.has(key)) {
         return value ? 1 : 0;
     }
-    if (JSON_ARRAY_KEYS.has(key)) {
-        return JSON.stringify(Array.isArray(value) ? value : []);
-    }
-    if (INTEGER_KEYS.has(key)) {
-        const parsed = Number.parseInt(value, 10);
-        return Number.isFinite(parsed) ? parsed : 0;
-    }
     return value;
 }
 
@@ -65,16 +51,6 @@ function rowToSettings(row) {
 
         if (BOOLEAN_KEYS.has(camelKey)) {
             settings[camelKey] = value === 1;
-        } else if (JSON_ARRAY_KEYS.has(camelKey)) {
-            try {
-                const parsed = JSON.parse(value);
-                settings[camelKey] = Array.isArray(parsed) ? parsed : [];
-            } catch {
-                settings[camelKey] = [];
-            }
-        } else if (INTEGER_KEYS.has(camelKey)) {
-            const parsed = Number.parseInt(value, 10);
-            settings[camelKey] = Number.isFinite(parsed) ? parsed : 0;
         } else {
             settings[camelKey] = value;
         }

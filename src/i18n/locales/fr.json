@@ -169,8 +169,7 @@
       "message": "⏳ **Ralentissez**, vous envoyez des requêtes trop rapidement.\n-# Attendez quelques secondes entre chaque morceau. Un mode lent du salon peut aussi s'appliquer."
     },
     "permissions": {
-      "voiceChannelDenial": "❌ Vous devez être dans le même salon vocal que le bot pour utiliser ces contrôles.",
-      "djDenial": "❌ Seuls les DJs ou les gestionnaires du serveur peuvent utiliser ce contrôle."
+      "voiceChannelDenial": "❌ Vous devez être dans le même salon vocal que le bot pour utiliser ces contrôles."
     }
   },
   "duplicate": {

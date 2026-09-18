@@ -1,28 +1,9 @@
 const { MessageFlags } = require("discord.js");
 const { getGuildData } = require("./playerStore");
-const {
-    getPlayerPermissionDenial,
-    PLAYER_ACTIONS,
-    DJ_DENIAL_KEY,
-    VOICE_CHANNEL_DENIAL_KEY,
-} = require("./permissions");
+const { canControlMusic, VOICE_CHANNEL_DENIAL_KEY } = require("./permissions");
 const { buildErrorContainer, ephemeralV2 } = require("./replies");
 
-async function replyPermissionDenial(interaction, denial, t) {
-    const message = t(denial.key);
-    if (denial.key === DJ_DENIAL_KEY || denial.key === VOICE_CHANNEL_DENIAL_KEY) {
-        await interaction.reply({ content: message, flags: MessageFlags.Ephemeral });
-        return;
-    }
-    await interaction.reply(ephemeralV2(buildErrorContainer(message, t)));
-}
-
-async function requirePlayerControl(
-    interaction,
-    client,
-    t,
-    { requireCurrent = false, action = PLAYER_ACTIONS.CONTROL, track = null } = {}
-) {
+async function requirePlayerControl(interaction, client, t, { requireCurrent = false } = {}) {
     const player = client.riffy.players.get(interaction.guild.id);
 
     if (!player || (requireCurrent && !player.current)) {
@@ -37,15 +18,18 @@ async function requirePlayerControl(
         return null;
     }
 
-    const denial = getPlayerPermissionDenial(
-        interaction.member,
-        player,
-        interaction.guild.id,
-        action,
-        { track }
-    );
-    if (denial) {
-        await replyPermissionDenial(interaction, denial, t);
+    if (!interaction.member.voice?.channel) {
+        await interaction.reply(
+            ephemeralV2(buildErrorContainer(t("errors.voiceChannelRequired"), t))
+        );
+        return null;
+    }
+
+    if (!canControlMusic(interaction.member, player)) {
+        await interaction.reply({
+            content: t(VOICE_CHANNEL_DENIAL_KEY),
+            flags: MessageFlags.Ephemeral,
+        });
         return null;
     }
 
@@ -71,6 +55,5 @@ function cycleLoopMode(current) {
 module.exports = {
     requirePlayerControl,
     requireVoiceForPlay,
-    replyPermissionDenial,
     cycleLoopMode,
 };

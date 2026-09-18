@@ -71,9 +71,6 @@
     "status": { "description": "Check the current status of Musicify's systems" },
     "stats": { "description": "Show Musicify's statistics" },
     "language": { "description": "Set the bot language for this server" },
-    "dj": {
-      "description": "Configure DJ roles and playback control permissions"
-    },
     "profile": {
       "description": "Customize Musicify's name, avatar, banner, and About Me in this server",
       "subcommands": {
@@ -172,8 +169,7 @@
       "message": "⏳ **Slow down** you're sending requests too quickly.\n-# Wait a few seconds between songs. Channel slowmode may also apply."
     },
     "permissions": {
-      "voiceChannelDenial": "❌ You need to be in the same voice channel as the bot to use these controls.",
-      "djDenial": "❌ Only DJs or server managers can use this control."
+      "voiceChannelDenial": "❌ You need to be in the same voice channel as the bot to use these controls."
     }
   },
   "duplicate": {
@@ -356,34 +352,6 @@
       "resetSuccess": "### ✅ Language Updated\n\n-# Server language reset to **Auto** ({{language}}).",
       "permissionDenied": "**Permission required**\n-# You need **Administrator** to change the server language.",
       "buttons": { "auto": "Auto" }
-    },
-    "dj": {
-      "heading": "### 🎧 DJ Settings",
-      "description": "-# Who can skip, stop, change volume, and use player buttons.",
-      "modeLine": "**Mode:** {{mode}}",
-      "modeExplain": {
-        "everyone": "Anyone in the voice channel can control playback.",
-        "dj_only": "Only DJ roles and server managers can control playback.",
-        "dj_and_requester": "DJs control everything. Requesters can skip or remove their own tracks."
-      },
-      "noRolesEveryone": "**DJ roles:** None\n-# Optional — add roles if you switch to a locked mode later.",
-      "noRolesLocked": "**DJ roles:** None\n-# Add a DJ role so non-admins can control playback.",
-      "rolesLine": "**DJ roles:** {{roles}}",
-      "adminBypassNote": "-# **Manage Server** and **Administrator** always have full control.",
-      "settingsHint": "-# Use **Edit settings** to change control mode and DJ roles.",
-      "editSettingsButton": "Edit settings",
-      "modalTitle": "DJ Settings",
-      "modalRolesLabel": "DJ roles",
-      "modalRolesDescription": "Leave empty for admins only when mode is locked. Select multiple roles if needed.",
-      "modalModeLabel": "Control mode",
-      "modalModeDescription": "Choose who can use player controls in this server.",
-      "rolesSelectPlaceholder": "Select DJ roles (optional)…",
-      "permissionDenied": "**Permission required**\n-# You need **Manage Server** to configure DJ settings.",
-      "modes": {
-        "everyone": "Everyone in VC",
-        "dj_only": "DJ only",
-        "dj_and_requester": "DJ + requester"
-      }
     },
     "profile": {
       "guildOnly": "**Server only**\n-# /profile can only be used inside a server.",

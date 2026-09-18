@@ -169,8 +169,7 @@
       "message": "⏳ **Calma aí** você está enviando solicitações rápido demais.\n-# Aguarde alguns segundos entre as músicas. O slowmode do canal também pode se aplicar."
     },
     "permissions": {
-      "voiceChannelDenial": "❌ Você precisa estar no mesmo canal de voz que o bot para usar esses controles.",
-      "djDenial": "❌ Apenas DJs ou gerentes do servidor podem usar este controle."
+      "voiceChannelDenial": "❌ Você precisa estar no mesmo canal de voz que o bot para usar esses controles."
     }
   },
   "duplicate": {

@@ -77,9 +77,6 @@ module.exports = {
             const t = getT(interaction, client);
 
             try {
-                const { handleDjModal } = require("../commands/dj");
-                if (await handleDjModal(client, interaction)) return;
-
                 const { handleProfileBioModal } = require("../commands/profile");
                 if (await handleProfileBioModal(client, interaction)) return;
 

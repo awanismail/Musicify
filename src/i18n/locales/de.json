@@ -169,8 +169,7 @@
       "message": "⏳ **Langsamer** — du sendest Anfragen zu schnell.\n-# Warte ein paar Sekunden zwischen Songs. Kanal-Slowmode kann ebenfalls gelten."
     },
     "permissions": {
-      "voiceChannelDenial": "❌ Du musst im selben Sprachkanal wie der Bot sein, um diese Steuerung zu nutzen.",
-      "djDenial": "❌ Nur DJs oder Server-Manager können diese Steuerung nutzen."
+      "voiceChannelDenial": "❌ Du musst im selben Sprachkanal wie der Bot sein, um diese Steuerung zu nutzen."
     }
   },
   "duplicate": {

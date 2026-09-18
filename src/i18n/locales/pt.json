@@ -12,6 +12,7 @@
     },
     "nowplaying": { "description": "Mostrar a faixa que está tocando" },
     "skip": { "description": "Pular a faixa atual" },
+    "previous": { "description": "Voltar para a faixa tocada anteriormente" },
     "skipto": {
       "description": "Pular para uma faixa na fila",
       "options": { "position": "Posição na fila (a partir de 1, igual ao /queue)" }
@@ -237,6 +238,11 @@
       "emptyStatus": "**Status**\n-# Nada está tocando no momento."
     },
     "skip": { "successHeading": "### ⏭ Pulado" },
+    "previous": {
+      "successHeading": "### ⏮ Faixa anterior",
+      "trackLine": "-# {{title}}",
+      "emptyHistory": "❌ Não há faixas anteriores para voltar."
+    },
     "skipto": {
       "invalidPosition": "❌ Posição inválida. A fila tem **{{count}}** faixa(s).",
       "successHeading": "### ⏭ Pulado para",
@@ -427,7 +433,7 @@
     },
     "controls": {
       "heading": "### 🎮 Controles do player\n-# Use os botões interativos da mensagem do player ou os comandos slash abaixo.",
-      "row1": "**Linha 1 — Reprodução**\n\n**🔀 Embaralhar**\n-# Embaralha a ordem da fila · ou {{cmdShuffle}}\n\n**⏮️ Anterior**\n-# Volta para a última faixa tocada\n\n**⏸️ Pausar / Tocar**\n-# Alterna a reprodução · ou {{cmdPause}}\n\n**⏭️ Pular**\n-# Pula para a próxima faixa · ou {{cmdSkip}}\n\n**🔁 Repetição**\n-# Ciclo: Desligado → Faixa → Fila · ou {{cmdLoop}}",
+      "row1": "**Linha 1 — Reprodução**\n\n**🔀 Embaralhar**\n-# Embaralha a ordem da fila · ou {{cmdShuffle}}\n\n**⏮️ Anterior**\n-# Volta para a última faixa tocada · ou {{cmdPrevious}}\n\n**⏸️ Pausar / Tocar**\n-# Alterna a reprodução · ou {{cmdPause}}\n\n**⏭️ Pular**\n-# Pula para a próxima faixa · ou {{cmdSkip}}\n\n**🔁 Repetição**\n-# Ciclo: Desligado → Faixa → Fila · ou {{cmdLoop}}",
       "row2": "**Linha 2 — Extras**\n\n**📻 Autoplay**\n-# Adiciona músicas parecidas automaticamente · ou {{cmdAutoplay}}\n\n**🔉 Vol↓  ·  🔊 Vol↑**\n-# Ajusta o volume em ±10% · ou {{cmdVolume}}\n\n**⏹️ Parar**\n-# Para a reprodução e desconecta · ou {{cmdStop}}\n\n**📜 Fila**\n-# Abre o visualizador da fila · ou {{cmdQueue}}",
       "slashExtras": "**Somente como comando slash**\n\n{{cmdReplay}} — Reinicia a faixa atual do início\n\n{{cmdSkipto}} — Pula para uma posição específica na fila\n\n{{cmdSeek}} — Avança para um momento específico da faixa atual",
       "suggestions": "**🎵 Sugestões de Músicas**\n-# Um menu com até **10 faixas parecidas** aparece abaixo dos botões.\n-# Selecione uma para adicioná-la à fila na hora!"

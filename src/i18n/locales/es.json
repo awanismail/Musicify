@@ -12,6 +12,7 @@
     },
     "nowplaying": { "description": "Muestra la pista que se está reproduciendo" },
     "skip": { "description": "Salta la pista actual" },
+    "previous": { "description": "Volver a la pista reproducida anteriormente" },
     "skipto": {
       "description": "Salta a una pista de la cola",
       "options": { "position": "Posición en la cola (desde 1, igual que /queue)" }
@@ -237,6 +238,11 @@
       "emptyStatus": "**Estado**\n-# No se está reproduciendo nada en este momento."
     },
     "skip": { "successHeading": "### ⏭ Saltada" },
+    "previous": {
+      "successHeading": "### ⏮ Pista anterior",
+      "trackLine": "-# {{title}}",
+      "emptyHistory": "❌ No hay pistas anteriores a las que volver."
+    },
     "skipto": {
       "invalidPosition": "❌ Posición no válida. La cola tiene **{{count}}** pista(s).",
       "successHeading": "### ⏭ Saltado a",
@@ -427,7 +433,7 @@
     },
     "controls": {
       "heading": "### 🎮 Controles del reproductor\n-# Usa los botones interactivos del mensaje del reproductor o los comandos slash que aparecen abajo.",
-      "row1": "**Fila 1 — Reproducción**\n\n**🔀 Mezclar**\n-# Aleatoriza el orden de la cola · o {{cmdShuffle}}\n\n**⏮️ Anterior**\n-# Vuelve a la última pista reproducida\n\n**⏸️ Pausa / Reproducir**\n-# Alterna la reproducción · o {{cmdPause}}\n\n**⏭️ Saltar**\n-# Salta a la siguiente pista · o {{cmdSkip}}\n\n**🔁 Repetir**\n-# Ciclo: Desactivado → Pista → Cola · o {{cmdLoop}}",
+      "row1": "**Fila 1 — Reproducción**\n\n**🔀 Mezclar**\n-# Aleatoriza el orden de la cola · o {{cmdShuffle}}\n\n**⏮️ Anterior**\n-# Vuelve a la última pista reproducida · o {{cmdPrevious}}\n\n**⏸️ Pausa / Reproducir**\n-# Alterna la reproducción · o {{cmdPause}}\n\n**⏭️ Saltar**\n-# Salta a la siguiente pista · o {{cmdSkip}}\n\n**🔁 Repetir**\n-# Ciclo: Desactivado → Pista → Cola · o {{cmdLoop}}",
       "row2": "**Fila 2 — Extras**\n\n**📻 Reproducción automática**\n-# Encola canciones similares automáticamente · o {{cmdAutoplay}}\n\n**🔉 Vol↓  ·  🔊 Vol↑**\n-# Ajusta el volumen ±10% · o {{cmdVolume}}\n\n**⏹️ Detener**\n-# Detiene la reproducción y se desconecta · o {{cmdStop}}\n\n**📜 Cola**\n-# Abre el visor de cola · o {{cmdQueue}}",
       "slashExtras": "**Solo como comando slash**\n\n{{cmdReplay}} — Reinicia la pista actual desde el principio\n\n{{cmdSkipto}} — Salta a una posición específica en la cola\n\n{{cmdSeek}} — Salta a un momento concreto de la pista actual",
       "suggestions": "**🎵 Sugerencias de canciones**\n-# Aparece un menú desplegable con hasta **10 pistas similares** debajo de los botones.\n-# ¡Selecciona una para añadirla a la cola al instante!"

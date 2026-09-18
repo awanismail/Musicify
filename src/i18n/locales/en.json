@@ -12,6 +12,7 @@
     },
     "nowplaying": { "description": "Show the currently playing track" },
     "skip": { "description": "Skip the current track" },
+    "previous": { "description": "Go back to the previously played track" },
     "skipto": {
       "description": "Skip to a track in the queue",
       "options": { "position": "Queue position to skip to (1-based, same as /queue)" }
@@ -237,6 +238,11 @@
       "emptyStatus": "**Status**\n-# Nothing is playing right now."
     },
     "skip": { "successHeading": "### ⏭ Skipped" },
+    "previous": {
+      "successHeading": "### ⏮ Previous Track",
+      "trackLine": "-# {{title}}",
+      "emptyHistory": "❌ No previous tracks to go back to."
+    },
     "skipto": {
       "invalidPosition": "❌ Invalid position. Queue has **{{count}}** track(s).",
       "successHeading": "### ⏭ Skipped To",
@@ -427,7 +433,7 @@
     },
     "controls": {
       "heading": "### 🎮 Player Controls\n-# Use the interactive buttons on the player message, or the slash commands shown below.",
-      "row1": "**Row 1 — Playback**\n\n**🔀 Shuffle**\n-# Randomize the queue order · or {{cmdShuffle}}\n\n**⏮️ Previous**\n-# Go back to the last played track\n\n**⏸️ Pause / Play**\n-# Toggle playback · or {{cmdPause}}\n\n**⏭️ Skip**\n-# Skip to the next track · or {{cmdSkip}}\n\n**🔁 Loop**\n-# Cycle: Off → Track → Queue · or {{cmdLoop}}",
+      "row1": "**Row 1 — Playback**\n\n**🔀 Shuffle**\n-# Randomize the queue order · or {{cmdShuffle}}\n\n**⏮️ Previous**\n-# Go back to the last played track · or {{cmdPrevious}}\n\n**⏸️ Pause / Play**\n-# Toggle playback · or {{cmdPause}}\n\n**⏭️ Skip**\n-# Skip to the next track · or {{cmdSkip}}\n\n**🔁 Loop**\n-# Cycle: Off → Track → Queue · or {{cmdLoop}}",
       "row2": "**Row 2 — Extras**\n\n**📻 Autoplay**\n-# Auto-queue similar songs when queue ends · or {{cmdAutoplay}}\n\n**🔉 Vol↓  ·  🔊 Vol↑**\n-# Adjust volume by ±10% · or {{cmdVolume}}\n\n**⏹️ Stop**\n-# Stop playback and disconnect · or {{cmdStop}}\n\n**📜 Queue**\n-# Open the queue viewer · or {{cmdQueue}}",
       "slashExtras": "**Slash-only extras**\n\n{{cmdReplay}} — Restart the current track from the beginning\n\n{{cmdSkipto}} — Jump to a specific position in the queue\n\n{{cmdSeek}} — Seek to a timestamp in the current track",
       "suggestions": "**🎵 Song Suggestions**\n-# A dropdown with up to **10 similar tracks** appears below the buttons.\n-# Select one to instantly add it to the queue!"

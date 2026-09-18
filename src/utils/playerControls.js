@@ -52,8 +52,27 @@ function cycleLoopMode(current) {
     return "track";
 }
 
+function playPreviousTrack(player, guildData) {
+    if (!guildData.previousTracks.length) {
+        return { ok: false, reason: "empty" };
+    }
+
+    const prevTrack = guildData.previousTracks.pop();
+    if (player.current) {
+        player.queue.unshift(player.current);
+    }
+    player.queue.unshift(prevTrack);
+    player.stop();
+
+    return {
+        ok: true,
+        title: prevTrack.info?.title || null,
+    };
+}
+
 module.exports = {
     requirePlayerControl,
     requireVoiceForPlay,
     cycleLoopMode,
+    playPreviousTrack,
 };

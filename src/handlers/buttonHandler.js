@@ -5,6 +5,7 @@ const { resolveGuild } = require("../utils/guildBranding");
 const { generateMusicCard } = require("../utils/musicard");
 const { addNodeDetails } = require("../utils/nodeDetails");
 const { canControlMusic, VOICE_CHANNEL_DENIAL_KEY } = require("../utils/permissions");
+const { playPreviousTrack } = require("../utils/playerControls");
 const { handleProfileInteraction, isProfileInteraction } = require("../commands/profile");
 const { handleStop, toggleTwentyFourSeven } = require("../services/sessionManager");
 const { build247ConfirmContainer, build247CancelledContainer } = require("../commands/247");
@@ -493,14 +494,7 @@ async function handleButtonInteraction(client, interaction) {
         }
 
         case "previous": {
-            if (guildData.previousTracks.length > 0) {
-                const prevTrack = guildData.previousTracks.pop();
-                if (player.current) {
-                    player.queue.unshift(player.current);
-                }
-                player.queue.unshift(prevTrack);
-                player.stop();
-            }
+            playPreviousTrack(player, guildData);
             break;
         }
 

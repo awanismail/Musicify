@@ -30,6 +30,7 @@ function buildCmdParams(getCmd) {
     return {
         cmdPlay: getCmd("play"),
         cmdSkip: getCmd("skip"),
+        cmdPrevious: getCmd("previous"),
         cmdSkipto: getCmd("skipto"),
         cmdPause: getCmd("pause"),
         cmdReplay: getCmd("replay"),

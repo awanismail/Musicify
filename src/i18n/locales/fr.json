@@ -12,6 +12,7 @@
     },
     "nowplaying": { "description": "Afficher le morceau en cours de lecture" },
     "skip": { "description": "Passer le morceau en cours" },
+    "previous": { "description": "Revenir au morceau précédemment joué" },
     "skipto": {
       "description": "Passer à un morceau dans la file d'attente",
       "options": { "position": "Position dans la file (à partir de 1, comme /queue)" }
@@ -237,6 +238,11 @@
       "emptyStatus": "**Statut**\n-# Rien n'est en cours de lecture pour le moment."
     },
     "skip": { "successHeading": "### ⏭ Morceau passé" },
+    "previous": {
+      "successHeading": "### ⏮ Morceau précédent",
+      "trackLine": "-# {{title}}",
+      "emptyHistory": "❌ Aucun morceau précédent disponible."
+    },
     "skipto": {
       "invalidPosition": "❌ Position invalide. La file d'attente contient **{{count}}** morceau(x).",
       "successHeading": "### ⏭ Passé à",
@@ -427,7 +433,7 @@
     },
     "controls": {
       "heading": "### 🎮 Contrôles du lecteur\n-# Utilisez les boutons interactifs du message du lecteur ou les commandes slash ci-dessous.",
-      "row1": "**Ligne 1 — Lecture**\n\n**🔀 Mélanger**\n-# Mélanger aléatoirement la file d'attente · ou {{cmdShuffle}}\n\n**⏮️ Précédent**\n-# Revenir au dernier morceau joué\n\n**⏸️ Pause / Lecture**\n-# Mettre en pause ou reprendre · ou {{cmdPause}}\n\n**⏭️ Passer**\n-# Passer au morceau suivant · ou {{cmdSkip}}\n\n**🔁 Boucle**\n-# Cycle : Désactivé → Morceau → File d'attente · ou {{cmdLoop}}",
+      "row1": "**Ligne 1 — Lecture**\n\n**🔀 Mélanger**\n-# Mélanger aléatoirement la file d'attente · ou {{cmdShuffle}}\n\n**⏮️ Précédent**\n-# Revenir au dernier morceau joué · ou {{cmdPrevious}}\n\n**⏸️ Pause / Lecture**\n-# Mettre en pause ou reprendre · ou {{cmdPause}}\n\n**⏭️ Passer**\n-# Passer au morceau suivant · ou {{cmdSkip}}\n\n**🔁 Boucle**\n-# Cycle : Désactivé → Morceau → File d'attente · ou {{cmdLoop}}",
       "row2": "**Ligne 2 — Extras**\n\n**📻 Lecture auto**\n-# Ajouter automatiquement des morceaux similaires · ou {{cmdAutoplay}}\n\n**🔉 Vol↓  ·  🔊 Vol↑**\n-# Ajuster le volume de ±10 % · ou {{cmdVolume}}\n\n**⏹️ Stop**\n-# Arrêter la lecture et se déconnecter · ou {{cmdStop}}\n\n**📜 File d'attente**\n-# Ouvrir la vue de la file d'attente · ou {{cmdQueue}}",
       "slashExtras": "**Uniquement en commande slash**\n\n{{cmdReplay}} — Recommencer le morceau en cours depuis le début\n\n{{cmdSkipto}} — Passer à une position précise dans la file d'attente\n\n{{cmdSeek}} — Avancer à un moment précis du morceau en cours",
       "suggestions": "**🎵 Suggestions de morceaux**\n-# Un menu déroulant avec jusqu'à **10 morceaux similaires** apparaît sous les boutons.\n-# Sélectionnez-en un pour l'ajouter instantanément à la file d'attente !"

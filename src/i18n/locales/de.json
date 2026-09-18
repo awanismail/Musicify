@@ -12,6 +12,7 @@
     },
     "nowplaying": { "description": "Zeige den aktuell abgespielten Track" },
     "skip": { "description": "Überspringe den aktuellen Track" },
+    "previous": { "description": "Zum zuletzt gespielten Track zurückgehen" },
     "skipto": {
       "description": "Springe zu einem Track in der Warteschlange",
       "options": { "position": "Warteschlangenposition (1-basiert, wie bei /queue)" }
@@ -237,6 +238,11 @@
       "emptyStatus": "**Status**\n-# Es wird gerade nichts abgespielt."
     },
     "skip": { "successHeading": "### ⏭ Übersprungen" },
+    "previous": {
+      "successHeading": "### ⏮ Vorheriger Track",
+      "trackLine": "-# {{title}}",
+      "emptyHistory": "❌ Keine vorherigen Tracks zum Zurückgehen."
+    },
     "skipto": {
       "invalidPosition": "❌ Ungültige Position. Die Warteschlange hat **{{count}}** Track(s).",
       "successHeading": "### ⏭ Gesprungen zu",
@@ -427,7 +433,7 @@
     },
     "controls": {
       "heading": "### 🎮 Player-Steuerung\n-# Nutze die interaktiven Buttons auf der Player-Nachricht oder die Slash-Befehle unten.",
-      "row1": "**Zeile 1 — Wiedergabe**\n\n**🔀 Shuffle**\n-# Warteschlange zufällig anordnen · oder {{cmdShuffle}}\n\n**⏮️ Zurück**\n-# Zum zuletzt gespielten Track zurück\n\n**⏸️ Pause / Play**\n-# Wiedergabe umschalten · oder {{cmdPause}}\n\n**⏭️ Überspringen**\n-# Zum nächsten Track springen · oder {{cmdSkip}}\n\n**🔁 Wiederholen**\n-# Durchlauf: Aus → Track → Warteschlange · oder {{cmdLoop}}",
+      "row1": "**Zeile 1 — Wiedergabe**\n\n**🔀 Shuffle**\n-# Warteschlange zufällig anordnen · oder {{cmdShuffle}}\n\n**⏮️ Zurück**\n-# Zum zuletzt gespielten Track zurück · oder {{cmdPrevious}}\n\n**⏸️ Pause / Play**\n-# Wiedergabe umschalten · oder {{cmdPause}}\n\n**⏭️ Überspringen**\n-# Zum nächsten Track springen · oder {{cmdSkip}}\n\n**🔁 Wiederholen**\n-# Durchlauf: Aus → Track → Warteschlange · oder {{cmdLoop}}",
       "row2": "**Zeile 2 — Extras**\n\n**📻 Autoplay**\n-# Ähnliche Songs automatisch einreihen · oder {{cmdAutoplay}}\n\n**🔉 Vol↓  ·  🔊 Vol↑**\n-# Lautstärke um ±10 % anpassen · oder {{cmdVolume}}\n\n**⏹️ Stop**\n-# Wiedergabe stoppen und trennen · oder {{cmdStop}}\n\n**📜 Warteschlange**\n-# Warteschlangen-Ansicht öffnen · oder {{cmdQueue}}",
       "slashExtras": "**Nur als Slash-Befehl**\n\n{{cmdReplay}} — Aktuellen Track von vorne neu starten\n\n{{cmdSkipto}} — Zu einer bestimmten Position in der Warteschlange springen\n\n{{cmdSeek}} — Zu einem Zeitpunkt im aktuellen Track springen",
       "suggestions": "**🎵 Song-Vorschläge**\n-# Ein Dropdown mit bis zu **10 ähnlichen Tracks** erscheint unter den Buttons.\n-# Wähle einen aus, um ihn sofort zur Warteschlange hinzuzufügen!"

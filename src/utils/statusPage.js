@@ -105,7 +105,6 @@ function buildStatusContainer(client, { interactive = true, showSupportButton = 
                   .setStyle(ButtonStyle.Link),
               new ButtonBuilder()
                   .setLabel(translate("common.vote"))
-                  .setEmoji("⭐")
                   .setURL(config.vote.url)
                   .setStyle(ButtonStyle.Link),
               new ButtonBuilder()

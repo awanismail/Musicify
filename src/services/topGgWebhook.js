@@ -47,32 +47,89 @@ function verifyLegacyAuth(authHeader, secret) {
     return authHeader === secret;
 }
 
+function normalizeUserId(value) {
+    if (value == null) return null;
+
+    if (typeof value === "string" || typeof value === "number") {
+        const id = String(value).trim();
+        return /^\d{5,}$/.test(id) ? id : null;
+    }
+
+    if (typeof value === "object") {
+        const candidates = [
+            value.platform_id,
+            value.platformId,
+            value.discord_id,
+            value.discordId,
+            value.id,
+            value.userId,
+            value.user_id,
+        ];
+
+        for (const candidate of candidates) {
+            const normalized = normalizeUserId(candidate);
+            if (normalized) return normalized;
+        }
+    }
+
+    return null;
+}
+
+function normalizeVoteQuery(query) {
+    if (query == null || query === "") return null;
+
+    if (typeof query === "string") {
+        const trimmed = query.trim();
+        if (!trimmed) return null;
+        return trimmed.startsWith("?") ? trimmed : `?${trimmed.replace(/^\?/, "")}`;
+    }
+
+    if (typeof query === "object") {
+        const params = new URLSearchParams();
+        for (const [key, value] of Object.entries(query)) {
+            if (value != null && value !== "") {
+                params.set(key, String(value));
+            }
+        }
+        const serialized = params.toString();
+        return serialized ? `?${serialized}` : null;
+    }
+
+    return null;
+}
+
 function extractVotePayload(body) {
     if (!body) return null;
 
-    const userId =
-        body.user ??
-        body.userId ??
-        body.user_id ??
-        body.data?.user ??
-        body.data?.userId ??
-        body.data?.user_id;
+    const payload = body.data && typeof body.data === "object" ? body.data : body;
+
+    const userId = normalizeUserId(
+        payload.user ??
+            payload.userId ??
+            payload.user_id ??
+            body.user ??
+            body.userId ??
+            body.user_id
+    );
 
     if (!userId) return null;
 
-    const type = body.type ?? body.event ?? body.data?.type;
+    const type = body.type ?? body.event ?? payload.type ?? body.data?.type;
     if (type && type !== "upvote" && type !== "vote.create" && type !== "test" && type !== "webhook.test") {
         return null;
     }
 
-    let query = body.query ?? body.data?.query ?? body.metadata?.query ?? null;
-    if (!query && typeof body.data?.metadata?.query === "string") {
-        query = body.data.metadata.query;
-    }
+    const query = normalizeVoteQuery(
+        payload.query ??
+            body.query ??
+            body.data?.query ??
+            body.metadata?.query ??
+            body.data?.metadata?.query
+    );
 
     return {
-        userId: String(userId),
-        query: query ? String(query) : null,
+        userId,
+        query,
         isTest: type === "test" || type === "webhook.test",
     };
 }

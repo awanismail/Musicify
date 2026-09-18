@@ -57,23 +57,36 @@ async function sendThankYouInGuild(client, guildId, userId, t) {
     const channel =
         guild.channels.cache.get(channelId) ??
         (await guild.channels.fetch(channelId).catch(() => null));
-    if (!channel?.isTextBased?.()) return false;
+    if (!channel || (typeof channel.isSendable === "function" && !channel.isSendable())) {
+        return false;
+    }
 
     const me = guild.members.me ?? (await guild.members.fetchMe().catch(() => null));
     const perms = channel.permissionsFor(me);
     if (!perms?.has("ViewChannel") || !perms?.has("SendMessages")) return false;
 
-    const message = await channel.send({
-        components: [buildThankYouContainer(t, userId)],
-        flags: MessageFlags.IsComponentsV2,
-    });
+    try {
+        const message = await channel.send({
+            components: [buildThankYouContainer(t, userId)],
+            flags: MessageFlags.IsComponentsV2,
+        });
 
-    setTimeout(() => message.delete().catch(() => {}), 15_000);
-    return true;
+        setTimeout(() => message.delete().catch(() => {}), 15_000);
+        return true;
+    } catch (err) {
+        console.warn(
+            `[Musicify] Failed to send vote thank-you in guild ${guildId} channel ${channelId}:`,
+            err.message
+        );
+        return false;
+    }
 }
 
 async function handleVoteReceived(client, { userId, query }) {
-    if (!userId) return;
+    if (!userId || typeof userId !== "string" || !/^\d{5,}$/.test(userId)) {
+        console.warn("[Musicify] Ignoring vote with invalid userId:", userId);
+        return;
+    }
 
     const guildId = parseGuildIdFromQuery(query);
 
@@ -87,7 +100,14 @@ async function handleVoteReceived(client, { userId, query }) {
 
     const dmSent = await sendThankYouDm(client, userId, t);
     if (!dmSent && guildId) {
-        await sendThankYouInGuild(client, guildId, userId, t);
+        const guildSent = await sendThankYouInGuild(client, guildId, userId, t);
+        if (!guildSent) {
+            console.warn(
+                `[Musicify] Vote thank-you could not be delivered to user ${userId}${guildId ? ` in guild ${guildId}` : ""} (DM closed or no usable channel).`
+            );
+        }
+    } else if (!dmSent) {
+        console.warn(`[Musicify] Vote thank-you DM could not be delivered to user ${userId}.`);
     }
 
     console.log(`[Musicify] Thanked user ${userId} for voting${guildId ? ` (guild ${guildId})` : ""}`);

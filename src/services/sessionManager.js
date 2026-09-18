@@ -18,6 +18,11 @@ const {
     shouldSnapshotPlayer,
 } = require("./lavalinkRecovery");
 const { maybePromptOnQueueEnd } = require("../utils/votePrompt");
+const {
+    clearVoiceChannelStatusForGuild,
+    clearVoiceChannelStatusForPlayer,
+} = require("../utils/voiceChannelStatus");
+const { resolvePlayerTextChannelId, isChatPlayActive } = require("../utils/playerChannel");
 
 const IDLE_LEAVE_MS = 30 * 1000;
 const ALONE_LEAVE_MS = 15 * 1000; // leave sooner when the voice channel has no users
@@ -171,10 +176,17 @@ async function transitionToIdle(client, guildId, { scheduleLeave = true } = {}) 
     clearUpdateInterval(guildData);
     guildData.suggestions = [];
 
-    if (guildData.chatPlayChannelId && guildData.chatPlayMessageId) {
+    if (isChatPlayActive(guildData) && guildData.chatPlayMessageId) {
         await resetChatPlayToIdle(client, guildId);
     } else {
         await clearRegularPlayerMessage(client, guildData);
+    }
+
+    const player = client.riffy?.players.get(guildId);
+    if (player) {
+        await clearVoiceChannelStatusForPlayer(client, player);
+    } else {
+        await clearVoiceChannelStatusForGuild(client, guildId);
     }
 
     if (scheduleLeave) {
@@ -244,7 +256,7 @@ async function handlePlayerDisconnect(client, player) {
         }
     }
 
-    if (guildData.chatPlayChannelId && guildData.chatPlayMessageId) {
+    if (isChatPlayActive(guildData) && guildData.chatPlayMessageId) {
         await resetChatPlayToIdle(client, player.guildId);
     } else {
         await clearRegularPlayerMessage(client, guildData);
@@ -252,6 +264,7 @@ async function handlePlayerDisconnect(client, player) {
 
     guildData.suggestions = [];
     guildData.previousTracks = [];
+    await clearVoiceChannelStatusForPlayer(client, player);
 }
 
 async function ensureVoiceConnection(client, guildId, voiceChannelId, textChannelId) {
@@ -293,7 +306,7 @@ async function toggleTwentyFourSeven(client, guildId, { voiceChannelId, textChan
         }
     }
 
-    if (guildData.chatPlayChannelId && guildData.chatPlayMessageId) {
+    if (isChatPlayActive(guildData) && guildData.chatPlayMessageId) {
         const player = client.riffy?.players.get(guildId);
         if (player?.current) {
             const { refreshPlayerMessage } = require("../handlers/playerHandler");
@@ -342,7 +355,9 @@ async function reconnectTwentyFourSeven(client, guildId) {
         return;
     }
 
-    const textChannelId = guildData.chatPlayChannelId || guildData.playerChannelId;
+    const textChannelId = resolvePlayerTextChannelId(client, guild, guildData, player, {
+        voiceChannelId: guildData.boundVoiceChannelId,
+    });
     if (!textChannelId) return;
 
     await recreateHealthyPlayer(client, {
@@ -381,14 +396,18 @@ async function resumeTwentyFourSevenPlayback(client, guildId) {
 
     const guildData = getGuildData(guildId);
     const voiceChannelId = snapshot.voiceChannelId || guildData.boundVoiceChannelId;
-    const textChannelId =
-        snapshot.textChannelId || guildData.chatPlayChannelId || guildData.playerChannelId;
+    const guild = client.guilds.cache.get(guildId);
+    let player = client.riffy?.players.get(guildId);
+    const textChannelId = resolvePlayerTextChannelId(client, guild, guildData, player, {
+        voiceChannelId,
+        fallbackChannelId:
+            snapshot.textChannelId || guildData.chatPlayChannelId || guildData.playerChannelId,
+    });
 
     if (!voiceChannelId || !textChannelId) {
         return false;
     }
 
-    let player = client.riffy.players.get(guildId);
     if (!isPlayerConnectionHealthy(client, guildId, player, voiceChannelId)) {
         destroyPlayerSafe(client, guildId);
         player = null;
@@ -450,7 +469,7 @@ async function finishTwentyFourSevenReconnect(client, guildId) {
     const guildData = getGuildData(guildId);
     const resumed = await resumeTwentyFourSevenPlayback(client, guildId);
 
-    if (!resumed && guildData.chatPlayChannelId && guildData.chatPlayMessageId) {
+    if (!resumed && isChatPlayActive(guildData) && guildData.chatPlayMessageId) {
         await resetChatPlayToIdle(client, guildId);
     }
 }
@@ -480,7 +499,7 @@ async function attemptTwentyFourSevenReconnect(client, guildId, attempt = 1) {
             clearTwentyFourSevenReconnectTimer(guildId);
             if (pending247Snapshots.has(guildId)) {
                 const resumed = await resumeTwentyFourSevenPlayback(client, guildId);
-                if (!resumed && guildData.chatPlayChannelId && guildData.chatPlayMessageId) {
+                if (!resumed && isChatPlayActive(guildData) && guildData.chatPlayMessageId) {
                     await resetChatPlayToIdle(client, guildId);
                 }
             }
@@ -525,7 +544,7 @@ async function attemptTwentyFourSevenReconnect(client, guildId, attempt = 1) {
     try {
         if (pending247Snapshots.has(guildId)) {
             const resumed = await resumeTwentyFourSevenPlayback(client, guildId);
-            if (!resumed && guildData.chatPlayChannelId && guildData.chatPlayMessageId) {
+            if (!resumed && isChatPlayActive(guildData) && guildData.chatPlayMessageId) {
                 await resetChatPlayToIdle(client, guildId);
             }
         } else {
@@ -600,9 +619,15 @@ async function handleStop(client, guildId, { destroyPlayer = null } = {}) {
     const shouldStay = destroyPlayer === false || (destroyPlayer === null && guildData.twentyFourSeven);
 
     if (shouldStay) {
-        await resetChatPlayToIdle(client, guildId);
-        if (!guildData.chatPlayChannelId) {
+        if (isChatPlayActive(guildData) && guildData.chatPlayMessageId) {
+            await resetChatPlayToIdle(client, guildId);
+        } else {
             await clearRegularPlayerMessage(client, guildData);
+        }
+        if (player) {
+            await clearVoiceChannelStatusForPlayer(client, player);
+        } else {
+            await clearVoiceChannelStatusForGuild(client, guildId);
         }
         return { stayed: true };
     }

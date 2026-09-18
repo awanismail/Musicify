@@ -23,6 +23,8 @@ const {
     isChatPlayManageButton,
 } = require("./chatPlaySetupHandler");
 const { notifyPlayerFeedback } = require("./chatPlayHandler");
+const { syncVoiceChannelStatusForPlayer } = require("../utils/voiceChannelStatus");
+const { resolvePlayerTextChannelId, isChatPlayActive } = require("../utils/playerChannel");
 const { dismissWelcomeMessage } = require("../utils/guildWelcome");
 const { dismissVotePrompt, VOTE_PROMPT_DISMISS_ID } = require("../utils/votePrompt");
 const { buildStatusContainer, getNodeDisplayName } = require("../utils/statusPage");
@@ -110,7 +112,16 @@ async function handleButtonInteraction(client, interaction) {
 
                 await toggleTwentyFourSeven(client, interaction.guild.id, {
                     voiceChannelId: interaction.member.voice.channel.id,
-                    textChannelId: guildData.chatPlayChannelId || interaction.channel.id,
+                    textChannelId: resolvePlayerTextChannelId(
+                        client,
+                        interaction.guild,
+                        guildData,
+                        client.riffy?.players.get(interaction.guild.id),
+                        {
+                            voiceChannelId: interaction.member.voice.channel.id,
+                            fallbackChannelId: interaction.channel.id,
+                        }
+                    ),
                     enabled: enabling,
                 });
 
@@ -471,6 +482,7 @@ async function handleButtonInteraction(client, interaction) {
             } else {
                 player.pause(true);
             }
+            syncVoiceChannelStatusForPlayer(client, player).catch(() => {});
             needsVisualUpdate = true;
             break;
         }
@@ -494,7 +506,7 @@ async function handleButtonInteraction(client, interaction) {
 
         case "stop": {
             const queueLength = player.queue?.length || 0;
-            const isChatPlay = guildData.chatPlayChannelId && guildData.chatPlayMessageId;
+            const isChatPlay = isChatPlayActive(guildData) && guildData.chatPlayMessageId;
             if (isChatPlay && queueLength >= 20) {
                 if (guildData.stopConfirmPending === interaction.user.id) {
                     guildData.stopConfirmPending = null;
@@ -592,7 +604,7 @@ async function editPlayerMessageDirectly(client, player, guildData) {
         const t = getT.forGuild(player.guildId, client);
         const musicardBuffer = await generateMusicCard(player.current, player, guildData, t);
         const guild = resolveGuild(client, player.guildId);
-        const container = guildData.chatPlayChannelId && guildData.chatPlayMessageId
+        const container = isChatPlayActive(guildData) && guildData.chatPlayMessageId
             ? createChatPlayNowPlayingContainer(
                   t,
                   player.current,
@@ -617,13 +629,16 @@ async function editPlayerMessageDirectly(client, player, guildData) {
             files.push(new AttachmentBuilder(musicardBuffer, { name: "musicard.png" }));
         }
 
-        if (guildData.chatPlayChannelId && guildData.chatPlayMessageId) {
+        if (isChatPlayActive(guildData) && guildData.chatPlayMessageId) {
             const { editChatPlayMessage } = require("../services/chatPlayPlayer");
             await editChatPlayMessage(client, player.guildId, container, files);
             return;
         }
 
-        const channelId = guildData.chatPlayChannelId || guildData.playerChannelId || player.textChannel;
+        const channelId = resolvePlayerTextChannelId(client, resolveGuild(client, player.guildId), guildData, player, {
+            voiceChannelId: player.voiceChannel,
+            fallbackChannelId: guildData.playerChannelId || player.textChannel,
+        });
         const channel = client.channels.cache.get(channelId);
         if (!channel) {
             guildData.chatPlayMessageId = null;

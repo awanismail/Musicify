@@ -1,5 +1,6 @@
 const { getGuildData } = require("../utils/playerStore");
 const { playQuery } = require("../services/playQuery");
+const { resolvePlayerTextChannelId } = require("../utils/playerChannel");
 const { getT, translateError } = require("../i18n");
 const { isLikelySongRequest } = require("../utils/chatPlayMessageFilter");
 const { maybePromptOnChatPlaySong } = require("../utils/votePrompt");
@@ -32,7 +33,12 @@ async function sendChatPlayFeedback(channel, content, timeoutMs = FEEDBACK_DELET
 
 async function notifyPlayerFeedback(client, guildId, content, timeoutMs = 5000) {
     const guildData = getGuildData(guildId);
-    const channelId = guildData.chatPlayChannelId || guildData.playerChannelId;
+    const guild = client.guilds.cache.get(guildId);
+    const player = client.riffy?.players.get(guildId);
+    const channelId = resolvePlayerTextChannelId(client, guild, guildData, player, {
+        voiceChannelId: player?.voiceChannel,
+        fallbackChannelId: guildData.playerChannelId,
+    });
     if (!channelId) return;
 
     const channel = client.channels.cache.get(channelId);

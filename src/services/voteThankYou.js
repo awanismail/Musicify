@@ -5,6 +5,7 @@ const { DEFAULT_BOT_NAME } = require("../utils/guildBranding");
 const { snoozeVotePrompt } = require("../utils/userPrefs");
 const { markUserAsVoted } = require("./topGg");
 const { clearPendingVotePrompt } = require("../utils/votePrompt");
+const { resolvePlayerTextChannelId } = require("../utils/playerChannel");
 
 function parseGuildIdFromQuery(query) {
     if (!query) return null;
@@ -24,8 +25,11 @@ function buildThankYouContainer(t, userId = null) {
     return container;
 }
 
-function resolveThankYouChannelId(guildData) {
-    return guildData.chatPlayChannelId || guildData.playerChannelId || null;
+function resolveThankYouChannelId(client, guild, guildData, player) {
+    return resolvePlayerTextChannelId(client, guild, guildData, player, {
+        voiceChannelId: player?.voiceChannel,
+        fallbackChannelId: guildData.playerChannelId,
+    });
 }
 
 async function sendThankYouDm(client, userId, t) {
@@ -46,7 +50,8 @@ async function sendThankYouInGuild(client, guildId, userId, t) {
     if (!guild) return false;
 
     const guildData = require("../utils/playerStore").getGuildData(guildId);
-    const channelId = resolveThankYouChannelId(guildData);
+    const player = client.riffy?.players.get(guildId);
+    const channelId = resolveThankYouChannelId(client, guild, guildData, player);
     if (!channelId) return false;
 
     const channel =

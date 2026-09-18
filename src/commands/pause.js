@@ -2,6 +2,7 @@ const { MessageFlags, ContainerBuilder, TextDisplayBuilder } = require("discord.
 const { slashMeta, getT } = require("../i18n");
 const { requirePlayerControl } = require("../utils/playerControls");
 const { refreshPlayerMessage } = require("../handlers/playerHandler");
+const { syncVoiceChannelStatusForPlayer } = require("../utils/voiceChannelStatus");
 
 module.exports = {
     data: slashMeta("pause"),
@@ -21,6 +22,7 @@ module.exports = {
         }
 
         refreshPlayerMessage(client, interaction.guild.id).catch(() => {});
+        syncVoiceChannelStatusForPlayer(client, player).catch(() => {});
 
         const title = player.current?.info?.title || t("common.unknown");
         const container = new ContainerBuilder();

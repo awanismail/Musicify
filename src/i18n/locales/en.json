@@ -133,6 +133,11 @@
       "nowPlaying": "Now playing: your favorite songs"
     }
   },
+  "voiceChannelStatus": {
+    "playing": "Playing: {{author}} - {{title}}",
+    "paused": "Paused: {{author}} - {{title}}",
+    "playingTitleOnly": "Playing: {{title}}"
+  },
   "errors": {
     "unexpected": "**Something went wrong**\n-# An unexpected error occurred. Try again.",
     "interactionFailed": "**Something went wrong**\n-# That interaction failed. Try again.",
@@ -224,7 +229,8 @@
       "playlistHeading": "### ✅ Playlist Added",
       "tracksLine": "**Tracks**\n-# {{addedCount}} of {{totalCount}} songs added to queue",
       "duplicatesSkipped": "**Duplicates Skipped**\n-# {{count}} songs already in queue",
-      "trackHeading": "### ✅ Track Added"
+      "trackHeading": "### ✅ Track Added",
+      "controlsInVoiceChat": "**Controls**\n-# Player controls were sent to {{channel}}."
     },
     "nowplaying": {
       "emptyHeading": "### 🎶 Now Playing",

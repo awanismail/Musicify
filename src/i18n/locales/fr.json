@@ -133,6 +133,11 @@
       "nowPlaying": "En lecture : tes morceaux préférés"
     }
   },
+  "voiceChannelStatus": {
+    "playing": "En lecture : {{author}} - {{title}}",
+    "paused": "En pause : {{author}} - {{title}}",
+    "playingTitleOnly": "En lecture : {{title}}"
+  },
   "errors": {
     "unexpected": "**Une erreur s'est produite**\n-# Une erreur inattendue s'est produite. Réessayez.",
     "interactionFailed": "**Une erreur s'est produite**\n-# Cette interaction a échoué. Réessayez.",
@@ -224,7 +229,8 @@
       "playlistHeading": "### ✅ Playlist ajoutée",
       "tracksLine": "**Morceaux**\n-# {{addedCount}} sur {{totalCount}} morceaux ajoutés à la file d'attente",
       "duplicatesSkipped": "**Doublons ignorés**\n-# {{count}} morceaux déjà dans la file d'attente",
-      "trackHeading": "### ✅ Morceau ajouté"
+      "trackHeading": "### ✅ Morceau ajouté",
+      "controlsInVoiceChat": "**Contrôles**\n-# Les contrôles du lecteur ont été envoyés dans {{channel}}."
     },
     "nowplaying": {
       "emptyHeading": "### 🎶 En cours de lecture",

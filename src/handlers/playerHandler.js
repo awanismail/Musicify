@@ -30,6 +30,8 @@ const {
     handleMessageDeliveryError,
 } = require("../utils/playerMessageDelivery");
 const { isChannelAccessError } = require("../utils/discordErrors");
+const { updateVoiceChannelStatusForPlayer } = require("../utils/voiceChannelStatus");
+const { resolvePlayerTextChannelId, isChatPlayActive } = require("../utils/playerChannel");
 
 const UPDATE_INTERVAL_MS = 15 * 1000; // 15 seconds
 const LAVALINK_RECONNECT_INTERVAL_MS = 30 * 60 * 1000;
@@ -83,7 +85,7 @@ async function editOrSendPlayerMessage(client, guildData, guildId, channelId, co
         return false;
     }
 
-    if (guildData.chatPlayChannelId && channelId === guildData.chatPlayChannelId) {
+    if (isChatPlayActive(guildData) && channelId === guildData.chatPlayChannelId) {
         const channel = client.channels.cache.get(channelId);
         if (!channel) {
             guildData.chatPlayMessageId = null;
@@ -141,7 +143,7 @@ async function editOrSendPlayerMessage(client, guildData, guildId, channelId, co
             flags: MessageFlags.IsComponentsV2,
         });
 
-        if (guildData.chatPlayChannelId) {
+        if (isChatPlayActive(guildData)) {
             guildData.chatPlayMessageId = newMsg.id;
         } else {
             guildData.playerMessageId = newMsg.id;
@@ -178,7 +180,7 @@ async function refreshPlayerMessage(client, guildId) {
 
         const guild = resolveGuild(client, guildId);
         const musicardBuffer = await generateMusicCard(track, player, guildData, t);
-        const container = guildData.chatPlayChannelId
+        const container = isChatPlayActive(guildData)
             ? createChatPlayNowPlayingContainer(
                   t,
                   track,
@@ -203,7 +205,10 @@ async function refreshPlayerMessage(client, guildId) {
             files.push(new AttachmentBuilder(musicardBuffer, { name: "musicard.png" }));
         }
 
-        const channelId = guildData.chatPlayChannelId || guildData.playerChannelId || player.textChannel;
+        const channelId = resolvePlayerTextChannelId(client, guild, guildData, player, {
+            voiceChannelId: player.voiceChannel,
+            fallbackChannelId: guildData.playerChannelId || player.textChannel,
+        });
         await editOrSendPlayerMessage(client, guildData, guildId, channelId, container, files);
     } catch (error) {
         console.error("[Musicify] Auto-update error:", error);
@@ -295,7 +300,7 @@ function setupPlayerHandler(client) {
 
             // Build the container - use ChatPlay version if in ChatPlay channel
             const guild = resolveGuild(client, player.guildId);
-            const container = guildData.chatPlayChannelId
+            const container = isChatPlayActive(guildData)
                 ? createChatPlayNowPlayingContainer(
                       t,
                       track,
@@ -322,7 +327,10 @@ function setupPlayerHandler(client) {
             }
 
             // Get the channel
-            const channelId = guildData.chatPlayChannelId || guildData.playerChannelId || player.textChannel;
+            const channelId = resolvePlayerTextChannelId(client, guild, guildData, player, {
+                voiceChannelId: player.voiceChannel,
+                fallbackChannelId: guildData.playerChannelId || player.textChannel,
+            });
             const delivered = await editOrSendPlayerMessage(
                 client,
                 guildData,
@@ -335,6 +343,10 @@ function setupPlayerHandler(client) {
             if (delivered) {
                 startUpdateInterval(client, player.guildId);
             }
+
+            void updateVoiceChannelStatusForPlayer(client, player, track).catch((err) => {
+                console.warn("[Musicify] Failed to update voice channel status:", err.message);
+            });
 
             // Fetch suggestions for the dropdown
             try {

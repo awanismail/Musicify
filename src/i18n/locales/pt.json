@@ -133,6 +133,11 @@
       "nowPlaying": "Tocando agora: suas músicas favoritas"
     }
   },
+  "voiceChannelStatus": {
+    "playing": "Tocando: {{author}} - {{title}}",
+    "paused": "Pausado: {{author}} - {{title}}",
+    "playingTitleOnly": "Tocando: {{title}}"
+  },
   "errors": {
     "unexpected": "**Algo deu errado**\n-# Ocorreu um erro inesperado. Tente novamente.",
     "interactionFailed": "**Algo deu errado**\n-# Essa interação falhou. Tente novamente.",
@@ -224,7 +229,8 @@
       "playlistHeading": "### ✅ Playlist Adicionada",
       "tracksLine": "**Faixas**\n-# {{addedCount}} de {{totalCount}} músicas adicionadas à fila",
       "duplicatesSkipped": "**Duplicatas Ignoradas**\n-# {{count}} músicas já estavam na fila",
-      "trackHeading": "### ✅ Faixa Adicionada"
+      "trackHeading": "### ✅ Faixa Adicionada",
+      "controlsInVoiceChat": "**Controles**\n-# Os controles do player foram enviados para {{channel}}."
     },
     "nowplaying": {
       "emptyHeading": "### 🎶 Tocando Agora",

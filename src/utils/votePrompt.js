@@ -12,6 +12,7 @@ const { getT } = require("../i18n");
 const { getGuildData } = require("./playerStore");
 const { isVotePromptSnoozed, snoozeVotePrompt } = require("./userPrefs");
 const { hasUserVotedRecently, buildVoteUrl } = require("../services/topGg");
+const { resolvePlayerTextChannelId } = require("./playerChannel");
 
 const PROMPT_TTL_MS = 2 * 60 * 1000;
 const GUILD_COOLDOWN_MS = 45 * 60 * 1000;
@@ -154,13 +155,11 @@ function resetChatPlayCounter(guildId, userId) {
     });
 }
 
-function resolvePromptChannelId(guildData, player) {
-    return (
-        guildData.chatPlayChannelId ||
-        guildData.playerChannelId ||
-        player?.textChannel ||
-        null
-    );
+function resolvePromptChannelId(client, guild, guildData, player) {
+    return resolvePlayerTextChannelId(client, guild, guildData, player, {
+        voiceChannelId: player?.voiceChannel,
+        fallbackChannelId: guildData.playerChannelId,
+    });
 }
 
 async function maybePromptOnQueueEnd(client, guildId, player) {
@@ -168,11 +167,11 @@ async function maybePromptOnQueueEnd(client, guildId, player) {
 
     const guildData = getGuildData(guildId);
     const userId = guildData.lastTrackRequesterId;
-    const channelId = resolvePromptChannelId(guildData, player);
-    if (!userId || !channelId) return;
-
     const guild = client.guilds.cache.get(guildId);
-    if (!guild) return;
+    if (!guild || !userId) return;
+
+    const channelId = resolvePromptChannelId(client, guild, guildData, player);
+    if (!channelId) return;
 
     await sendVotePrompt(client, guild, channelId, userId);
 }

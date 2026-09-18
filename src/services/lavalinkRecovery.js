@@ -3,6 +3,7 @@ const { getGuildData, listGuildData } = require("../utils/playerStore");
 const { isLavalinkAvailable, getStatusCommandRef } = require("../utils/lavalink");
 const { safePlayerPlay, recreateHealthyPlayer } = require("../utils/playerConnection");
 const { getT } = require("../i18n");
+const { resolvePlayerTextChannelId } = require("../utils/playerChannel");
 
 const pendingSnapshots = new Map();
 let lavalinkOutageActive = false;
@@ -37,12 +38,11 @@ function snapshotHasPlayback(snapshot) {
     return Boolean(snapshot?.current) || (snapshot?.queue?.length ?? 0) > 0;
 }
 
-function resolveNotifyChannelId(guildData, player) {
-    const textChannelId = player.textChannel;
-    if (guildData.chatPlayChannelId && textChannelId === guildData.chatPlayChannelId) {
-        return guildData.chatPlayChannelId;
-    }
-    return guildData.playerChannelId || textChannelId || guildData.chatPlayChannelId;
+function resolveNotifyChannelId(client, guild, guildData, player) {
+    return resolvePlayerTextChannelId(client, guild, guildData, player, {
+        voiceChannelId: player?.voiceChannel,
+        fallbackChannelId: player?.textChannel,
+    });
 }
 
 function isLavalinkSuspended(guildId) {
@@ -56,12 +56,16 @@ function isLavalinkOutageActive() {
 
 function buildSnapshot(client, player) {
     const guildData = getGuildData(player.guildId);
+    const guild = client.guilds.cache.get(player.guildId);
+    const textChannelId = resolvePlayerTextChannelId(client, guild, guildData, player, {
+        voiceChannelId: player.voiceChannel || guildData.boundVoiceChannelId,
+        fallbackChannelId: player.textChannel,
+    });
     return {
         guildId: player.guildId,
         voiceChannelId: player.voiceChannel || guildData.boundVoiceChannelId,
-        textChannelId:
-            player.textChannel || guildData.chatPlayChannelId || guildData.playerChannelId,
-        notifyChannelId: resolveNotifyChannelId(guildData, player),
+        textChannelId,
+        notifyChannelId: resolveNotifyChannelId(client, guild, guildData, player),
         current: player.current ?? null,
         queue: cloneQueue(player),
         position: player.position || 0,

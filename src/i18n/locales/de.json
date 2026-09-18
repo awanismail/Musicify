@@ -133,6 +133,11 @@
       "nowPlaying": "Läuft gerade: deine Lieblingssongs"
     }
   },
+  "voiceChannelStatus": {
+    "playing": "Wiedergabe: {{author}} - {{title}}",
+    "paused": "Pausiert: {{author}} - {{title}}",
+    "playingTitleOnly": "Wiedergabe: {{title}}"
+  },
   "errors": {
     "unexpected": "**Etwas ist schiefgelaufen**\n-# Ein unerwarteter Fehler ist aufgetreten. Versuche es erneut.",
     "interactionFailed": "**Etwas ist schiefgelaufen**\n-# Diese Interaktion ist fehlgeschlagen. Versuche es erneut.",
@@ -224,7 +229,8 @@
       "playlistHeading": "### ✅ Playlist hinzugefügt",
       "tracksLine": "**Tracks**\n-# {{addedCount}} von {{totalCount}} Songs zur Warteschlange hinzugefügt",
       "duplicatesSkipped": "**Duplikate übersprungen**\n-# {{count}} Songs bereits in der Warteschlange",
-      "trackHeading": "### ✅ Track hinzugefügt"
+      "trackHeading": "### ✅ Track hinzugefügt",
+      "controlsInVoiceChat": "**Steuerung**\n-# Player-Steuerung wurde nach {{channel}} gesendet."
     },
     "nowplaying": {
       "emptyHeading": "### 🎶 Wird abgespielt",

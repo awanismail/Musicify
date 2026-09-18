@@ -8,6 +8,8 @@ const {
     scheduleTwentyFourSevenReconnect,
     savePending247Snapshot,
 } = require("../services/sessionManager");
+const { clearVoiceChannelStatus } = require("../utils/voiceChannelStatus");
+const { isChatPlayActive } = require("../utils/playerChannel");
 
 module.exports = {
     name: "voiceStateUpdate",
@@ -19,6 +21,10 @@ module.exports = {
             const guildData = getGuildData(guildId);
             const player = client.riffy?.players.get(guildId);
             let savedPlayback = false;
+
+            if (oldState.channelId) {
+                await clearVoiceChannelStatus(client, oldState.channelId);
+            }
 
             if (player && guildData.twentyFourSeven && guildData.boundVoiceChannelId) {
                 savedPlayback = savePending247Snapshot(client, player);
@@ -64,7 +70,7 @@ module.exports = {
 async function resetChatPlayIfActive(client, guildId) {
     const guildData = getGuildData(guildId);
 
-    if (guildData.chatPlayChannelId && guildData.chatPlayMessageId) {
+    if (isChatPlayActive(guildData) && guildData.chatPlayMessageId) {
         await resetChatPlayToIdle(client, guildId);
     } else if (guildData.playerMessageId && guildData.playerChannelId) {
         await clearRegularPlayerMessage(client, guildData);

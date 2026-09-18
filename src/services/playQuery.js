@@ -21,6 +21,7 @@ const { getTrackQueuePosition, getDuplicateTrackError } = require("../utils/queu
 const { showChatPlayLoading, refreshChatPlayPlayer } = require("./chatPlayPlayer");
 const { abandonFailedPlayConnection } = require("./sessionManager");
 const { isYouTubeQuery } = require("../utils/playAutocomplete");
+const { resolvePlayerTextChannelId } = require("../utils/playerChannel");
 
 async function queueSingleTrack(player, member, track, t) {
     const duplicatePosition = getTrackQueuePosition(player, track.info.uri);
@@ -126,17 +127,22 @@ async function playQuery(
         };
     }
 
+    const playerTextChannelId = resolvePlayerTextChannelId(client, guild, guildData, existingPlayer, {
+        voiceChannelId,
+        fallbackChannelId: textChannelId,
+    });
+
     let player;
     const joinedForThisRequest = !hadHealthyPlayer;
     try {
         player = getOrCreateHealthyPlayer(client, {
             guildId,
             voiceChannel: voiceChannelId,
-            textChannel: textChannelId,
+            textChannel: playerTextChannelId,
             deaf: true,
         });
         if (source === "slash") {
-            guildData.playerChannelId = textChannelId;
+            guildData.playerChannelId = playerTextChannelId;
         }
     } catch (err) {
         console.error(`[Musicify] playQuery connection error (${source}):`, err.message);

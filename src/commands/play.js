@@ -2,6 +2,8 @@ const { MessageFlags, ContainerBuilder, TextDisplayBuilder } = require("discord.
 const { slashMeta, applySlashOption, getT, translateError } = require("../i18n");
 const { buildErrorContainer, buildFeedbackContainer, ephemeralV2 } = require("../utils/replies");
 const { playQuery } = require("../services/playQuery");
+const { getGuildData } = require("../utils/playerStore");
+const { isVoiceChannelPlayerChat } = require("../utils/playerChannel");
 const { maybePromptOnSlashPlay } = require("../utils/votePrompt");
 const { requireVoiceForPlay } = require("../utils/playerControls");
 const {
@@ -17,6 +19,18 @@ function scheduleSlashVotePrompt(interaction) {
         interaction.channel.id,
         interaction.user.id
     ).catch(() => {});
+}
+
+function buildControlsInVoiceChatHint(t, guildData, member, interactionChannelId) {
+    const voiceChannelId = member.voice?.channel?.id;
+    if (
+        !isVoiceChannelPlayerChat(guildData, guildData.playerChannelId, voiceChannelId) ||
+        guildData.playerChannelId === interactionChannelId
+    ) {
+        return "";
+    }
+
+    return `\n\n${t("commands.play.controlsInVoiceChat", { channel: `<#${guildData.playerChannelId}>` })}`;
 }
 
 module.exports = {
@@ -85,6 +99,7 @@ module.exports = {
         }
 
         if (result.type === "playlist") {
+            const guildData = getGuildData(interaction.guild.id);
             let content =
                 `${t("commands.play.playlistHeading")}\n\n` +
                 `**${result.playlistName || t("common.playlist")}**\n\n` +
@@ -99,6 +114,8 @@ module.exports = {
                 })}`;
             }
 
+            content += buildControlsInVoiceChatHint(t, guildData, member, interaction.channel.id);
+
             const container = new ContainerBuilder();
             container.addTextDisplayComponents(new TextDisplayBuilder().setContent(content));
             scheduleSlashVotePrompt(interaction);
@@ -108,6 +125,7 @@ module.exports = {
             });
         }
 
+        const guildData = getGuildData(interaction.guild.id);
         const positionLine = result.queuePosition
             ? t("player.inQueue", { position: result.queuePosition })
             : t("player.startingPlayback");
@@ -121,7 +139,8 @@ module.exports = {
                 `${t("common.labels.artist")}\n` +
                 `-# ${result.author}\n\n` +
                 `${t("common.labels.position")}\n` +
-                positionLine
+                positionLine +
+                buildControlsInVoiceChatHint(t, guildData, member, interaction.channel.id)
             )
         );
 

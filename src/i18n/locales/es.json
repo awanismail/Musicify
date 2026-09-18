@@ -133,6 +133,11 @@
       "nowPlaying": "Reproduciendo: tus canciones favoritas"
     }
   },
+  "voiceChannelStatus": {
+    "playing": "Reproduciendo: {{author}} - {{title}}",
+    "paused": "En pausa: {{author}} - {{title}}",
+    "playingTitleOnly": "Reproduciendo: {{title}}"
+  },
   "errors": {
     "unexpected": "**Algo salió mal**\n-# Ocurrió un error inesperado. Inténtalo de nuevo.",
     "interactionFailed": "**Algo salió mal**\n-# Esa interacción falló. Inténtalo de nuevo.",
@@ -224,7 +229,8 @@
       "playlistHeading": "### ✅ Lista de reproducción añadida",
       "tracksLine": "**Pistas**\n-# {{addedCount}} de {{totalCount}} canciones añadidas a la cola",
       "duplicatesSkipped": "**Duplicados omitidos**\n-# {{count}} canciones ya estaban en la cola",
-      "trackHeading": "### ✅ Pista añadida"
+      "trackHeading": "### ✅ Pista añadida",
+      "controlsInVoiceChat": "**Controles**\n-# Los controles del reproductor se enviaron a {{channel}}."
     },
     "nowplaying": {
       "emptyHeading": "### 🎶 Reproduciendo ahora",

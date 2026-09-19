@@ -62,7 +62,7 @@ const CHAT_BLOCKLIST = new Set([
     "-1",
 ]);
 
-const URL_PATTERN = /(?:https?:\/\/|spotify:|soundcloud\.com|deezer\.com|music\.apple\.com|tidal\.com)/i;
+const URL_PATTERN = /(?:https?:\/\/|spotify:|soundcloud\.com|deezer\.com|music\.apple\.com|music\.youtube\.com|tidal\.com)/i;
 const DISCORD_MENTION_PATTERN = /^<(@[!&]?|#\d+|@everyone|@here)/;
 const CUSTOM_EMOJI_PATTERN = /^<a?:\w+:\d+>$/;
 const UNICODE_EMOJI_PATTERN =

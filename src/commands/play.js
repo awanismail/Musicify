@@ -11,6 +11,7 @@ const {
     resolveAutocompleteSelection,
     isYouTubeQuery,
 } = require("../utils/playAutocomplete");
+const { isSoundCloudPlaylistQuery } = require("../utils/normalizeQuery");
 
 function scheduleSlashVotePrompt(interaction) {
     void maybePromptOnSlashPlay(
@@ -44,7 +45,15 @@ module.exports = {
 
     async autocomplete(interaction, client) {
         const choices = await fetchPlayAutocompleteChoices(client, interaction);
-        await interaction.respond(choices);
+        if (interaction.responded) return;
+
+        try {
+            await interaction.respond(choices);
+        } catch (error) {
+            if (error.code !== 10062 && !/unknown interaction/i.test(error.message || "")) {
+                throw error;
+            }
+        }
     },
 
     async execute(interaction, client) {
@@ -58,6 +67,12 @@ module.exports = {
         if (isYouTubeQuery(query)) {
             return interaction.reply(
                 ephemeralV2(buildErrorContainer(t("errors.youtubeNotSupported"), t))
+            );
+        }
+
+        if (await isSoundCloudPlaylistQuery(query)) {
+            return interaction.reply(
+                ephemeralV2(buildErrorContainer(t("errors.soundcloudPlaylistUnsupported"), t))
             );
         }
 
@@ -89,8 +104,7 @@ module.exports = {
                 );
             }
 
-            const isSoft =
-                result.type === "lavalink_down" || result.type === "vc_mismatch";
+            const isSoft = result.type === "lavalink_down" || result.type === "vc_mismatch";
             const message = translateError(t, result.error);
             const container = isSoft
                 ? buildFeedbackContainer(message)

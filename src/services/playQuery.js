@@ -21,6 +21,7 @@ const { getTrackQueuePosition, getDuplicateTrackError } = require("../utils/queu
 const { showChatPlayLoading, refreshChatPlayPlayer } = require("./chatPlayPlayer");
 const { abandonFailedPlayConnection } = require("./sessionManager");
 const { isYouTubeQuery } = require("../utils/playAutocomplete");
+const { isSoundCloudPlaylistQuery } = require("../utils/normalizeQuery");
 const { resolvePlayerTextChannelId } = require("../utils/playerChannel");
 
 async function queueSingleTrack(player, member, track, t) {
@@ -84,6 +85,14 @@ async function playQuery(
             ok: false,
             type: "youtube_blocked",
             error: { key: "errors.youtubeNotSupported" },
+        };
+    }
+
+    if (await isSoundCloudPlaylistQuery(query)) {
+        return {
+            ok: false,
+            type: "soundcloud_playlist_blocked",
+            error: { key: "errors.soundcloudPlaylistUnsupported" },
         };
     }
 
@@ -164,6 +173,8 @@ async function playQuery(
         await showChatPlayLoading(client, guildId);
     }
 
+    const isUrlQuery = /^https?:\/\//i.test((query || "").trim().split(/\s+/)[0]);
+
     let result;
     try {
         if (resolvedTrack) {
@@ -175,7 +186,7 @@ async function playQuery(
             query,
             requester: member.user,
             guildId,
-            userId: isChatPlay ? member.user.id : undefined,
+            userId: isChatPlay && !isUrlQuery ? member.user.id : undefined,
         });
 
         const classified = classifyResolveResult(resolveResult, query);
@@ -197,6 +208,15 @@ async function playQuery(
                 t
             );
 
+            if (!addedTracks.length && !duplicates.length) {
+                result = {
+                    ok: false,
+                    type: "no_results",
+                    error: { key: "errors.noResults" },
+                };
+                return result;
+            }
+
             if (!player.playing && !player.paused && !player.current) {
                 const playResult = await safePlayerPlay(player, guildId);
                 if (!playResult.ok) {
@@ -214,7 +234,7 @@ async function playQuery(
                 type: "playlist",
                 playlistName: getPlaylistDisplayName(classified.playlistInfo),
                 addedCount: addedTracks.length,
-                totalCount: classified.tracks.length,
+                totalCount: resolveResult.pluginInfo?.totalTracks || classified.tracks.length,
                 duplicates,
             };
             return result;

@@ -6,12 +6,20 @@ const AUTOCOMPLETE_PREFIX = "musicify:track:";
 const CACHE_TTL_MS = 2 * 60 * 1000;
 const MIN_QUERY_LENGTH = 2;
 const MAX_CHOICES = 25;
+const AUTOCOMPLETE_TIMEOUT_MS = 2500;
 
 /** @type {Map<string, { tracks: object[], expires: number }>} */
 const autocompleteCaches = new Map();
 
+function isYouTubeMusicQuery(query) {
+    return /music\.youtube\.com/i.test(query || "");
+}
+
+/** Standard YouTube / youtu.be — not YouTube Music. */
 function isYouTubeQuery(query) {
-    return /(?:youtube\.com|youtu\.be)/i.test(query || "");
+    const text = query || "";
+    if (isYouTubeMusicQuery(text)) return false;
+    return /(?:youtube\.com|youtu\.be)/i.test(text);
 }
 
 function truncate(text, max) {
@@ -62,6 +70,13 @@ function resolveAutocompleteSelection(userId, query) {
     return { query: track.info?.uri || query, track };
 }
 
+function withAutocompleteTimeout(promise) {
+    return Promise.race([
+        promise,
+        new Promise((resolve) => setTimeout(() => resolve(null), AUTOCOMPLETE_TIMEOUT_MS)),
+    ]);
+}
+
 async function fetchPlayAutocompleteChoices(client, interaction) {
     const focused = interaction.options.getFocused()?.trim() ?? "";
 
@@ -69,6 +84,7 @@ async function fetchPlayAutocompleteChoices(client, interaction) {
         return [];
     }
 
+    // URLs don't need suggestions; resolving them here often exceeds Discord's 3s limit.
     if (isYouTubeQuery(focused) || /^https?:\/\//i.test(focused)) {
         return [];
     }
@@ -78,12 +94,18 @@ async function fetchPlayAutocompleteChoices(client, interaction) {
     }
 
     try {
-        const result = await limitedResolve(client, {
-            query: focused,
-            guildId: interaction.guild.id,
-            userId: interaction.user.id,
-            priority: PRIORITY_SUGGESTIONS,
-        });
+        const result = await withAutocompleteTimeout(
+            limitedResolve(client, {
+                query: focused,
+                guildId: interaction.guild.id,
+                userId: interaction.user.id,
+                priority: PRIORITY_SUGGESTIONS,
+            })
+        );
+
+        if (!result) {
+            return [];
+        }
 
         const classified = classifyResolveResult(result, focused);
         if (classified.mode === "empty" || classified.mode === "playlist") {
@@ -115,4 +137,5 @@ module.exports = {
     fetchPlayAutocompleteChoices,
     resolveAutocompleteSelection,
     isYouTubeQuery,
+    isYouTubeMusicQuery,
 };

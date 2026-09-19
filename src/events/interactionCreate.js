@@ -24,14 +24,19 @@ module.exports = {
             try {
                 await command.autocomplete(interaction, client);
             } catch (error) {
-                console.error(
-                    `[Musicify] Autocomplete error (${interaction.commandName}):`,
-                    error.message
-                );
+                if (error.code !== 10062 && !/unknown interaction/i.test(error.message || "")) {
+                    console.error(
+                        `[Musicify] Autocomplete error (${interaction.commandName}):`,
+                        error.message
+                    );
+                }
+
                 try {
-                    await interaction.respond([]);
+                    if (!interaction.responded) {
+                        await interaction.respond([]);
+                    }
                 } catch {
-                    // interaction already answered
+                    // interaction already expired
                 }
             }
             return;

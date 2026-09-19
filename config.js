@@ -1,5 +1,11 @@
 require("dotenv").config();
 
+function sanitizeSoundCloudClientId(value) {
+    const trimmed = (value || "").trim();
+    if (!trimmed) return null;
+    return trimmed.split("&")[0].split("#")[0].trim() || null;
+}
+
 function buildNodes() {
     const nodes = [];
 
@@ -31,6 +37,8 @@ module.exports = {
 
     defaultSearchPlatform: "ytmsearch",
     restVersion: "v4",
+    maxPlaylistTracks: 100,
+    soundcloudClientId: sanitizeSoundCloudClientId(process.env.SOUNDCLOUD_CLIENT_ID),
 
     accentColor: 0x2b2d31,
     statusWebhookUrl: process.env.STATUS_WEBHOOK_URL,

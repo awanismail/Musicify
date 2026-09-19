@@ -107,7 +107,7 @@
     "supportServer": "Servidor de soporte",
     "vote": "⭐ Votar",
     "brandWatermark": "-# Desarrollado por [{{brandName}}]({{inviteUrl}})",
-    "supportedPlatforms": "Spotify, SoundCloud, Deezer, Apple Music, Tidal, Qobuz y JioSaavn",
+    "supportedPlatforms": "Spotify, SoundCloud, Deezer, Apple Music, YouTube Music, Tidal, Qobuz y JioSaavn",
     "labels": {
       "title": "**Título**",
       "artist": "**Artista**",
@@ -150,7 +150,8 @@
     "sameVoiceChannel": "❌ Tienes que estar en el mismo canal de voz que el bot para usar estos controles.",
     "nothingPlaying": "❌ No se está reproduciendo nada en este momento.",
     "noMusicPlaying": "❌ No hay música en reproducción. ¡Empieza con {{cmdPlay}} o ChatPlay!",
-    "youtubeNotSupported": "**YouTube no compatible**\n-# Los enlaces de YouTube no están soportados por ahora.",
+    "youtubeNotSupported": "**YouTube no compatible**\n-# Los enlaces de YouTube normales no están soportados — usa **YouTube Music**.",
+    "soundcloudPlaylistUnsupported": "**Listas de SoundCloud temporalmente no disponibles**\n-# Corrección en curso — prueba **Spotify**, **Deezer** o **Tidal**.\n-# Progreso y detalles en nuestro [servidor de soporte](https://discord.gg/MRjEUhDCpZ).",
     "noResults": "**Sin resultados**\n-# Nada coincidió con esa búsqueda.",
     "searchFailed": "**Búsqueda fallida**\n-# Algo salió mal al buscar. Inténtalo de nuevo.",
     "voicePermissions": {

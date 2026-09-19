@@ -66,14 +66,43 @@ function extractNameFromLoadResponse(raw) {
     return extractNameFromPluginInfo(pluginInfo);
 }
 
-async function fetchJson(url, timeoutMs = 5000) {
+async function fetchJson(url, timeoutMs = 5000, headers = {}) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
 
     try {
-        const response = await fetch(url, { signal: controller.signal });
+        const response = await fetch(url, {
+            signal: controller.signal,
+            headers: {
+                Accept: "application/json",
+                "User-Agent": "Musicify/1.0",
+                ...headers,
+            },
+        });
         if (!response.ok) return null;
         return await response.json();
+    } catch {
+        return null;
+    } finally {
+        clearTimeout(timer);
+    }
+}
+
+async function fetchText(url, timeoutMs = 10000) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+    try {
+        const response = await fetch(url, {
+            signal: controller.signal,
+            headers: {
+                Accept: "text/html,application/xhtml+xml",
+                "User-Agent":
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            },
+        });
+        if (!response.ok) return null;
+        return await response.text();
     } catch {
         return null;
     } finally {
@@ -209,6 +238,151 @@ async function enrichResolveResult(client, query, result) {
     };
 }
 
+function parseSpotifyCollectionQuery(query) {
+    const url = toHttpCollectionUrl(query);
+    if (!url) return null;
+
+    const playlistMatch = url.match(/open\.spotify\.com\/playlist\/([a-zA-Z0-9]+)/i);
+    if (playlistMatch) {
+        return { type: "playlist", id: playlistMatch[1] };
+    }
+
+    const albumMatch = url.match(/open\.spotify\.com\/album\/([a-zA-Z0-9]+)/i);
+    if (albumMatch) {
+        return { type: "album", id: albumMatch[1] };
+    }
+
+    return null;
+}
+
+function isSpotifyCollectionQuery(query) {
+    return Boolean(parseSpotifyCollectionQuery(query));
+}
+
+function spotifyTrackIdFromUrl(trackUrl) {
+    return trackUrl.match(/(?:open\.spotify\.com\/track\/|spotify:track:)([a-zA-Z0-9]+)/i)?.[1] || null;
+}
+
+let spotifyTokenCache = { token: null, expiresAt: 0 };
+
+async function getSpotifyAccessToken() {
+    const clientId = config.spotifyClientId;
+    const clientSecret = config.spotifyClientSecret;
+    if (!clientId || !clientSecret) return null;
+
+    if (spotifyTokenCache.token && Date.now() < spotifyTokenCache.expiresAt - 60_000) {
+        return spotifyTokenCache.token;
+    }
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 8000);
+
+    try {
+        const response = await fetch("https://accounts.spotify.com/api/token", {
+            method: "POST",
+            signal: controller.signal,
+            headers: {
+                Authorization: `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString("base64")}`,
+                "Content-Type": "application/x-www-form-urlencoded",
+            },
+            body: new URLSearchParams({ grant_type: "client_credentials" }),
+        });
+
+        if (!response.ok) return null;
+
+        const data = await response.json();
+        spotifyTokenCache = {
+            token: data.access_token,
+            expiresAt: Date.now() + (data.expires_in || 3600) * 1000,
+        };
+
+        return spotifyTokenCache.token;
+    } catch {
+        return null;
+    } finally {
+        clearTimeout(timer);
+    }
+}
+
+async function fetchSpotifyApiTrackUrls(collection, maxTracks, token) {
+    const urls = [];
+    let offset = 0;
+    const pageSize = 50;
+
+    while (urls.length < maxTracks) {
+        const limit = Math.min(pageSize, maxTracks - urls.length);
+        const endpoint =
+            collection.type === "album"
+                ? `https://api.spotify.com/v1/albums/${collection.id}/tracks?limit=${limit}&offset=${offset}`
+                : `https://api.spotify.com/v1/playlists/${collection.id}/tracks?limit=${limit}&offset=${offset}&fields=items(track(uri,type)),next`;
+
+        const data = await fetchJson(endpoint, 8000, {
+            Authorization: `Bearer ${token}`,
+        });
+
+        const items = data?.items || [];
+        if (!items.length) break;
+
+        for (const item of items) {
+            const track = collection.type === "album" ? item : item?.track;
+            if (track?.type !== "track" && collection.type !== "album") continue;
+
+            const trackId = track?.id || track?.uri?.replace("spotify:track:", "");
+            if (!trackId) continue;
+
+            urls.push(`https://open.spotify.com/track/${trackId}`);
+            if (urls.length >= maxTracks) break;
+        }
+
+        if (urls.length >= maxTracks || items.length < limit) break;
+        if (collection.type === "playlist" && !data?.next) break;
+
+        offset += limit;
+    }
+
+    return urls.length ? urls : null;
+}
+
+async function fetchSpotifyEmbedTrackUrls(collection, maxTracks) {
+    if (collection.type !== "playlist") return null;
+
+    const html = await fetchText(`https://open.spotify.com/embed/playlist/${collection.id}`);
+    if (!html) return null;
+
+    const ids = [...html.matchAll(/spotify:track:([a-zA-Z0-9]+)/g)].map((match) => match[1]);
+    const uniqueIds = [...new Set(ids)].slice(0, maxTracks);
+    if (!uniqueIds.length) return null;
+
+    return uniqueIds.map((id) => `https://open.spotify.com/track/${id}`);
+}
+
+async function fetchSpotifyTrackUrls(query, maxTracks) {
+    const collection = parseSpotifyCollectionQuery(query);
+    if (!collection) return null;
+
+    const token = await getSpotifyAccessToken();
+    if (token) {
+        const apiUrls = await fetchSpotifyApiTrackUrls(collection, maxTracks, token);
+        if (apiUrls?.length) return apiUrls;
+    }
+
+    return fetchSpotifyEmbedTrackUrls(collection, maxTracks);
+}
+
+async function fetchCollectionTrackUrls(query, maxTracks) {
+    return (await fetchSpotifyTrackUrls(query, maxTracks)) || (await fetchDeezerTrackUrls(query, maxTracks));
+}
+
+function trackUrlAlreadyPresent(merged, trackUrl) {
+    const trackId = trackUrl.match(/track\/([a-zA-Z0-9]+)/i)?.[1];
+    if (!trackId) return false;
+
+    return merged.some((track) => {
+        const identifier = String(track.info?.identifier || track.info?.uri || "");
+        return identifier.includes(trackId);
+    });
+}
+
 async function fetchDeezerTrackUrls(query, maxTracks) {
     const url = toHttpCollectionUrl(query);
     if (!url) return null;
@@ -247,7 +421,15 @@ function shouldExpandPlaylist(query, result, maxTracks) {
     }
 
     // Lavalink/LavaSrc album pages are commonly capped at 50 tracks.
-    return /deezer\.com\/(?:\w{2}\/)?(?:playlist|album)\//i.test(query || "");
+    if (/deezer\.com\/(?:\w{2}\/)?(?:playlist|album)\//i.test(query || "")) {
+        return true;
+    }
+
+    if (isSpotifyCollectionQuery(query) && result.tracks.length < maxTracks) {
+        return true;
+    }
+
+    return false;
 }
 
 const YOUTUBE_RESOLVE_BATCH_SIZE = 4;
@@ -329,7 +511,7 @@ async function expandPlaylistTracks(client, query, result, maxTracks = config.ma
         return result;
     }
 
-    const trackUrls = await fetchDeezerTrackUrls(query, maxTracks);
+    const trackUrls = await fetchCollectionTrackUrls(query, maxTracks);
     if (!trackUrls?.length) {
         return { ...result, tracks: result.tracks.slice(0, maxTracks) };
     }
@@ -342,11 +524,12 @@ async function expandPlaylistTracks(client, query, result, maxTracks = config.ma
     for (const trackUrl of trackUrls) {
         if (merged.length >= maxTracks || Date.now() >= deadline) break;
 
-        const idMatch = trackUrl.match(/track\/(\d+)/i);
-        if (
-            idMatch &&
-            merged.some((track) => String(track.info?.identifier || track.info?.uri || "").includes(idMatch[1]))
-        ) {
+        if (trackUrlAlreadyPresent(merged, trackUrl)) {
+            continue;
+        }
+
+        const spotifyId = spotifyTrackIdFromUrl(trackUrl);
+        if (spotifyId && identities.has(`https://open.spotify.com/track/${spotifyId}`)) {
             continue;
         }
 

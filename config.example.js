@@ -39,6 +39,8 @@ module.exports = {
     restVersion: "v4",
     maxPlaylistTracks: 100,
     soundcloudClientId: sanitizeSoundCloudClientId(process.env.SOUNDCLOUD_CLIENT_ID),
+    spotifyClientId: (process.env.SPOTIFY_CLIENT_ID || "").trim() || null,
+    spotifyClientSecret: (process.env.SPOTIFY_CLIENT_SECRET || "").trim() || null,
 
     accentColor: 0x2b2d31,
     statusWebhookUrl: process.env.STATUS_WEBHOOK_URL,

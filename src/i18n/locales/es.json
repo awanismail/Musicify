@@ -70,6 +70,7 @@
     "chatplay": { "description": "Configura o gestiona ChatPlay en este servidor" },
     "clear": { "description": "Vacía la cola sin detener la pista actual" },
     "status": { "description": "Consulta el estado actual de los sistemas de Musicify" },
+    "troubleshoot": { "description": "Comprueba si el bot tiene los permisos que necesita" },
     "stats": { "description": "Muestra las estadísticas de Musicify" },
     "language": { "description": "Configura el idioma del bot para este servidor" },
     "profile": {
@@ -333,6 +334,19 @@
       "permissionManage": "**Permiso requerido**\n-# Necesitas **Gestionar canales** o **Administrador** para gestionar ChatPlay.",
       "missingPermissions": "**Permisos faltantes**\n-# {{botName}} necesita **Ver canal**, **Enviar mensajes**, **Insertar enlaces** y **Conectar y hablar** en un canal de voz antes de que ChatPlay pueda configurarse."
     },
+    "troubleshoot": {
+      "allGood": "✅ **Comprobación correcta**\n{{botName}} tiene el acceso necesario para reproducir música en este servidor.",
+      "summaryFail": "❌ **Permisos faltantes**",
+      "missingLine": "{{place}}: {{labels}}",
+      "placeVoice": "Voz",
+      "voiceHintShort": "Únete a un canal de voz y ejecuta `/troubleshoot` otra vez para comprobarlo.",
+      "guildOnly": "Ejecuta este comando en un servidor.",
+      "botMissing": "No pude leer los permisos. Inténtalo de nuevo.",
+      "connect": "Conectar",
+      "speak": "Hablar",
+      "pinOrManageMessages": "Fijar mensajes (o Gestionar mensajes)",
+      "changeNickname": "Cambiar apodo"
+    },
     "clear": {
       "alreadyEmpty": "❌ La cola ya está vacía.",
       "successHeading": "### 🗑️ Cola vaciada",
@@ -441,6 +455,7 @@
     },
     "troubleshoot": {
       "heading": "### 🛠️ Solución de problemas\n-# Problemas comunes y cómo solucionarlos.",
+      "permCheck": "**Permisos faltantes / el bot no puede unirse al canal de voz**\n-# Ejecuta {{cmdTroubleshoot}} para ver qué permisos le faltan a {{botName}} en este servidor.",
       "wontPlay": "**El bot no reproduce música / Error de pista**\n-# La canción puede tener restricción de edad o bloqueo regional.\n-# La fuente de streaming puede no estar disponible temporalmente.\n-# **Solución:** Prueba otra canción o pega una URL directa de {{platforms}}.",
       "joinsLeaves": "**El bot entra pero se va inmediatamente**\n-# {{botName}} puede no tener permisos de Hablar/Conectar en ese canal.\n-# La canción solicitada puede haber fallado al cargarse.\n-# **Solución:** Comprueba los permisos del bot e intenta otra canción.",
       "noSound": "**Sin sonido pero el bot está en el canal de voz**\n-# Comprueba si el bot está en pausa — usa el botón ▶️ o {{cmdPause}}.\n-# Comprueba el volumen con {{cmdVolume}}.\n-# **Solución:** Asegúrate de estar en el mismo canal de voz y de no estar ensordecido.",
@@ -458,7 +473,7 @@
       "needHelp": "**¿Necesitas ayuda o encontraste un error?**\n-# Nuestro equipo está listo para ayudarte con cualquier problema.",
       "joinSupportServer": "Unirse al servidor de soporte",
       "reportBug": "**Cómo informar de un error**\n\n**1.** Anota qué comando estabas usando\n-# Incluye el comando exacto y cualquier error mostrado.\n\n**2.** Únete a nuestro servidor de soporte\n-# Usa el botón **Unirse al servidor de soporte** de arriba.\n\n**3.** Abre un ticket\n-# O pregunta en el canal de soporte.\n\n**4.** Adjunta pruebas\n-# ¡Las capturas de pantalla o grabaciones nos ayudan a solucionarlo más rápido!",
-      "botInfo": "**Comandos de información del bot**\n**1.** {{cmdStats}}\n-# Ver ping, tiempo activo y memoria\n**2.** {{cmdStatus}}\n-# Ver el estado de conexión de Lavalink\n**3.** {{cmdHelp}}\n-# ¡Estás aquí!",
+      "botInfo": "**Comandos de información del bot**\n**1.** {{cmdStats}}\n-# Ver ping, tiempo activo y memoria\n**2.** {{cmdStatus}}\n-# Ver el estado de conexión de Lavalink\n**3.** {{cmdTroubleshoot}}\n-# Comprobar permisos del bot en este servidor\n**4.** {{cmdHelp}}\n-# ¡Estás aquí!",
       "footer": "-# {{botName}} es [código abierto](https://github.com/codebymitch/Musicify)."
     }
   },

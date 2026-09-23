@@ -50,6 +50,7 @@ function buildCmdParams(getCmd) {
         cmdAbout: getCmd("about"),
         cmdStats: getCmd("stats"),
         cmdStatus: getCmd("status"),
+        cmdTroubleshoot: getCmd("troubleshoot"),
         cmdHelp: getCmd("help"),
         cmdLanguage: getCmd("language"),
         cmdProfile: getCmd("profile", "set"),
@@ -267,6 +268,14 @@ function addTroubleshootPage(container, t, cmd) {
 
     container.addTextDisplayComponents(
         new TextDisplayBuilder().setContent(
+            t("help.troubleshoot.permCheck", { cmdTroubleshoot: cmd.cmdTroubleshoot })
+        )
+    );
+
+    container.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
+
+    container.addTextDisplayComponents(
+        new TextDisplayBuilder().setContent(
             `${t("help.troubleshoot.wontPlay", {
                 platforms: t("common.supportedPlatforms"),
             })}\n\n` + t("help.troubleshoot.joinsLeaves")
@@ -321,6 +330,7 @@ function addSupportPage(container, t, cmd) {
             t("help.support.botInfo", {
                 cmdStats: cmd.cmdStats,
                 cmdStatus: cmd.cmdStatus,
+                cmdTroubleshoot: cmd.cmdTroubleshoot,
                 cmdHelp: cmd.cmdHelp,
             })
         )

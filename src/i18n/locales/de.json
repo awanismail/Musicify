@@ -70,6 +70,7 @@
     "chatplay": { "description": "ChatPlay in diesem Server einrichten oder verwalten" },
     "clear": { "description": "Leere die Warteschlange, ohne den aktuellen Track zu stoppen" },
     "status": { "description": "Prüfe den aktuellen Status der Musicify-Systeme" },
+    "troubleshoot": { "description": "Prüfen, ob der Bot alle benötigten Berechtigungen hat" },
     "stats": { "description": "Zeige Musicify-Statistiken" },
     "language": { "description": "Bot-Sprache für diesen Server festlegen" },
     "profile": {
@@ -333,6 +334,19 @@
       "permissionManage": "**Berechtigung erforderlich**\n-# Du brauchst **Kanäle verwalten** oder **Administrator**, um ChatPlay zu verwalten.",
       "missingPermissions": "**Fehlende Berechtigungen**\n-# {{botName}} braucht **Kanal anzeigen**, **Nachrichten senden**, **Links einbetten** und **Verbinden & Sprechen** in einem Sprachkanal, bevor ChatPlay eingerichtet werden kann."
     },
+    "troubleshoot": {
+      "allGood": "✅ **Berechtigungsprüfung bestanden**\n{{botName}} hat die nötigen Rechte, um auf diesem Server Musik abzuspielen.",
+      "summaryFail": "❌ **Fehlende Berechtigungen**",
+      "missingLine": "{{place}}: {{labels}}",
+      "placeVoice": "Sprache",
+      "voiceHintShort": "Tritt einem Sprachkanal bei und führe `/troubleshoot` erneut aus.",
+      "guildOnly": "Führe diesen Befehl auf einem Server aus.",
+      "botMissing": "Berechtigungen konnten nicht gelesen werden. Versuche es erneut.",
+      "connect": "Verbinden",
+      "speak": "Sprechen",
+      "pinOrManageMessages": "Nachrichten anheften (oder Nachrichten verwalten)",
+      "changeNickname": "Nickname ändern"
+    },
     "clear": {
       "alreadyEmpty": "❌ Die Warteschlange ist bereits leer.",
       "successHeading": "### 🗑️ Warteschlange geleert",
@@ -441,6 +455,7 @@
     },
     "troubleshoot": {
       "heading": "### 🛠️ Fehlerbehebung\n-# Häufige Probleme und wie du sie behebst.",
+      "permCheck": "**Fehlende Berechtigungen / Bot kann Sprachkanal nicht betreten**\n-# Führe {{cmdTroubleshoot}} aus, um zu sehen, welche Berechtigungen {{botName}} auf diesem Server fehlen.",
       "wontPlay": "**Bot spielt keine Musik / Track-Fehler**\n-# Der Song ist möglicherweise altersbeschränkt oder regional blockiert.\n-# Die Streaming-Quelle ist möglicherweise vorübergehend nicht verfügbar.\n-# **Lösung:** Probiere einen anderen Song oder füge eine direkte URL von {{platforms}} ein.",
       "joinsLeaves": "**Bot tritt bei, verlässt aber sofort wieder**\n-# {{botName}} fehlen möglicherweise Sprechen-/Verbinden-Berechtigungen in diesem Kanal.\n-# Der angefragte Song konnte möglicherweise nicht geladen werden.\n-# **Lösung:** Prüfe Bot-Berechtigungen und probiere einen anderen Song.",
       "noSound": "**Kein Ton, aber Bot ist im Sprachkanal**\n-# Prüfe, ob der Bot pausiert ist — nutze den ▶️-Button oder {{cmdPause}}.\n-# Prüfe die Lautstärke mit {{cmdVolume}}.\n-# **Lösung:** Stelle sicher, dass du im selben Sprachkanal bist und nicht taubgeschaltet bist.",
@@ -458,7 +473,7 @@
       "needHelp": "**Brauchst du Hilfe oder einen Fehler gefunden?**\n-# Unser Team hilft dir bei allen Problemen.",
       "joinSupportServer": "Support-Server beitreten",
       "reportBug": "**So meldest du einen Fehler**\n\n**1.** Notiere, welchen Befehl du genutzt hast\n-# Gib den genauen Befehl und eventuelle Fehlermeldungen an.\n\n**2.** Tritt unserem Support-Server bei\n-# Nutze den **Support-Server beitreten**-Button oben.\n\n**3.** Öffne ein Ticket\n-# Oder frage im Support-Kanal.\n\n**4.** Füge Belege bei\n-# Screenshots oder Aufnahmen helfen uns, schneller zu beheben!",
-      "botInfo": "**Bot-Info-Befehle**\n**1.** {{cmdStats}}\n-# Ping, Betriebszeit und Speicher anzeigen\n**2.** {{cmdStatus}}\n-# Lavalink-Verbindungsstatus anzeigen\n**3.** {{cmdHelp}}\n-# Du bist hier!",
+      "botInfo": "**Bot-Info-Befehle**\n**1.** {{cmdStats}}\n-# Ping, Betriebszeit und Speicher anzeigen\n**2.** {{cmdStatus}}\n-# Lavalink-Verbindungsstatus anzeigen\n**3.** {{cmdTroubleshoot}}\n-# Bot-Berechtigungen auf diesem Server prüfen\n**4.** {{cmdHelp}}\n-# Du bist hier!",
       "footer": "-# {{botName}} ist [Open Source](https://github.com/codebymitch/Musicify)."
     }
   },

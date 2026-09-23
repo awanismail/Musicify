@@ -70,6 +70,7 @@
     "chatplay": { "description": "Set up or manage ChatPlay in this server" },
     "clear": { "description": "Clear the queue without stopping the current track" },
     "status": { "description": "Check the current status of Musicify's systems" },
+    "troubleshoot": { "description": "Check whether the bot has the permissions it needs" },
     "stats": { "description": "Show Musicify's statistics" },
     "language": { "description": "Set the bot language for this server" },
     "profile": {
@@ -333,6 +334,19 @@
       "permissionManage": "**Permission required**\n-# You need **Manage Channels** or **Administrator** to manage ChatPlay.",
       "missingPermissions": "**Missing permissions**\n-# {{botName}} needs **View Channel**, **Send Messages**, **Embed Links**, and **Connect & Speak** in a voice channel before ChatPlay can be set up."
     },
+    "troubleshoot": {
+      "allGood": "✅ **Permissions check passed**\n{{botName}} has the access needed to play music in this server.",
+      "summaryFail": "❌ **Missing permissions**",
+      "missingLine": "{{place}}: {{labels}}",
+      "placeVoice": "Voice",
+      "voiceHintShort": "Join a voice channel and run `/troubleshoot` again to check it.",
+      "guildOnly": "Run this command in a server.",
+      "botMissing": "Could not read permissions. Try again.",
+      "connect": "Connect",
+      "speak": "Speak",
+      "pinOrManageMessages": "Pin Messages (or Manage Messages)",
+      "changeNickname": "Change Nickname"
+    },
     "clear": {
       "alreadyEmpty": "❌ The queue is already empty.",
       "successHeading": "### 🗑️ Queue Cleared",
@@ -441,6 +455,7 @@
     },
     "troubleshoot": {
       "heading": "### 🛠️ Troubleshooting\n-# Common issues and how to fix them.",
+      "permCheck": "**Missing permissions / bot can't join voice**\n-# Run {{cmdTroubleshoot}} to see which permissions {{botName}} is missing in this server.",
       "wontPlay": "**Bot won't play music / Track Error**\n-# The song may be age-restricted or region-blocked.\n-# The streaming source may be temporarily unavailable.\n-# **Fix:** Try a different song or paste a direct URL from {{platforms}}.",
       "joinsLeaves": "**Bot joins but immediately leaves**\n-# {{botName}} may lack Speak/Connect permissions in that channel.\n-# The requested song may have failed to load.\n-# **Fix:** Check bot permissions and try another song.",
       "noSound": "**No sound but bot is in VC**\n-# Check if the bot is paused — use the ▶️ button or {{cmdPause}}.\n-# Check volume with {{cmdVolume}}.\n-# **Fix:** Make sure you're in the same VC and not deafened.",
@@ -458,7 +473,7 @@
       "needHelp": "**Need help or found a bug?**\n-# Our team is ready to help you with any issues.",
       "joinSupportServer": "Join Support Server",
       "reportBug": "**How to Report a Bug**\n\n**1.** Note what command you were using\n-# Include the exact command and any error shown.\n\n**2.** Join our Support Server\n-# Use the **Join Support Server** button above.\n\n**3.** Open a ticket\n-# Or ask in the support channel.\n\n**4.** Attach evidence\n-# Screenshots or recordings help us fix faster!",
-      "botInfo": "**Bot Info Commands**\n**1.** {{cmdStats}}\n-# See ping, uptime, and memory\n**2.** {{cmdStatus}}\n-# See Lavalink connection status\n**3.** {{cmdHelp}}\n-# You're here!",
+      "botInfo": "**Bot Info Commands**\n**1.** {{cmdStats}}\n-# See ping, uptime, and memory\n**2.** {{cmdStatus}}\n-# See Lavalink connection status\n**3.** {{cmdTroubleshoot}}\n-# Check bot permissions in this server\n**4.** {{cmdHelp}}\n-# You're here!",
       "footer": "-# {{botName}} is [open source](https://github.com/codebymitch/Musicify)."
     }
   },

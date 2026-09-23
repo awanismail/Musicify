@@ -70,6 +70,7 @@
     "chatplay": { "description": "Configurer ou gérer ChatPlay sur ce serveur" },
     "clear": { "description": "Vider la file d'attente sans arrêter le morceau en cours" },
     "status": { "description": "Vérifier l'état actuel des systèmes de Musicify" },
+    "troubleshoot": { "description": "Vérifier si le bot dispose de toutes les permissions nécessaires" },
     "stats": { "description": "Afficher les statistiques de Musicify" },
     "language": { "description": "Définir la langue du bot pour ce serveur" },
     "profile": {
@@ -333,6 +334,19 @@
       "permissionManage": "**Permission requise**\n-# Vous avez besoin de **Gérer les salons** ou **Administrateur** pour gérer ChatPlay.",
       "missingPermissions": "**Permissions manquantes**\n-# {{botName}} a besoin de **Voir le salon**, **Envoyer des messages**, **Intégrer des liens** et **Se connecter et parler** dans un salon vocal avant que ChatPlay puisse être configuré."
     },
+    "troubleshoot": {
+      "allGood": "✅ **Vérification réussie**\n{{botName}} dispose des accès nécessaires pour jouer de la musique sur ce serveur.",
+      "summaryFail": "❌ **Permissions manquantes**",
+      "missingLine": "{{place}} : {{labels}}",
+      "placeVoice": "Vocal",
+      "voiceHintShort": "Rejoignez un salon vocal et relancez `/troubleshoot` pour le vérifier.",
+      "guildOnly": "Utilisez cette commande sur un serveur.",
+      "botMissing": "Impossible de lire les permissions. Réessayez.",
+      "connect": "Se connecter",
+      "speak": "Parler",
+      "pinOrManageMessages": "Épingler des messages (ou Gérer les messages)",
+      "changeNickname": "Changer le pseudo"
+    },
     "clear": {
       "alreadyEmpty": "❌ La file d'attente est déjà vide.",
       "successHeading": "### 🗑️ File d'attente vidée",
@@ -441,6 +455,7 @@
     },
     "troubleshoot": {
       "heading": "### 🛠️ Dépannage\n-# Problèmes courants et comment les résoudre.",
+      "permCheck": "**Permissions manquantes / le bot ne peut pas rejoindre le vocal**\n-# Utilisez {{cmdTroubleshoot}} pour voir quelles permissions manquent à {{botName}} sur ce serveur.",
       "wontPlay": "**Le bot ne joue pas / Erreur de morceau**\n-# Le morceau peut être soumis à une limite d'âge ou bloqué par région.\n-# La source de streaming peut être temporairement indisponible.\n-# **Solution :** Essayez un autre morceau ou collez une URL directe depuis {{platforms}}.",
       "joinsLeaves": "**Le bot rejoint puis quitte immédiatement**\n-# {{botName}} peut manquer des permissions Parler/Se connecter dans ce salon.\n-# Le morceau demandé a peut-être échoué au chargement.\n-# **Solution :** Vérifiez les permissions du bot et essayez un autre morceau.",
       "noSound": "**Pas de son mais le bot est dans le salon vocal**\n-# Vérifiez si le bot est en pause — utilisez le bouton ▶️ ou {{cmdPause}}.\n-# Vérifiez le volume avec {{cmdVolume}}.\n-# **Solution :** Assurez-vous d'être dans le même salon vocal et de ne pas être en sourdine.",
@@ -458,7 +473,7 @@
       "needHelp": "**Besoin d'aide ou bug trouvé ?**\n-# Notre équipe est prête à vous aider pour tout problème.",
       "joinSupportServer": "Rejoindre le serveur d'assistance",
       "reportBug": "**Comment signaler un bug**\n\n**1.** Notez la commande que vous utilisiez\n-# Indiquez la commande exacte et toute erreur affichée.\n\n**2.** Rejoignez notre serveur d'assistance\n-# Utilisez le bouton **Rejoindre le serveur d'assistance** ci-dessus.\n\n**3.** Ouvrez un ticket\n-# Ou posez votre question dans le salon d'assistance.\n\n**4.** Joignez des preuves\n-# Des captures d'écran ou enregistrements nous aident à corriger plus vite !",
-      "botInfo": "**Commandes d'information du bot**\n**1.** {{cmdStats}}\n-# Voir la latence, le temps de fonctionnement et la mémoire\n**2.** {{cmdStatus}}\n-# Voir l'état de connexion Lavalink\n**3.** {{cmdHelp}}\n-# Vous y êtes !",
+      "botInfo": "**Commandes d'information du bot**\n**1.** {{cmdStats}}\n-# Voir la latence, le temps de fonctionnement et la mémoire\n**2.** {{cmdStatus}}\n-# Voir l'état de connexion Lavalink\n**3.** {{cmdTroubleshoot}}\n-# Vérifier les permissions du bot sur ce serveur\n**4.** {{cmdHelp}}\n-# Vous y êtes !",
       "footer": "-# {{botName}} est [open source](https://github.com/codebymitch/Musicify)."
     }
   },

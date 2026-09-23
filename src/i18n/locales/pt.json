@@ -70,6 +70,7 @@
     "chatplay": { "description": "Configurar ou gerenciar o ChatPlay neste servidor" },
     "clear": { "description": "Limpar a fila sem parar a faixa atual" },
     "status": { "description": "Verificar o status atual dos sistemas do Musicify" },
+    "troubleshoot": { "description": "Verificar se o bot tem as permissões necessárias" },
     "stats": { "description": "Mostrar as estatísticas do Musicify" },
     "language": { "description": "Definir o idioma do bot para este servidor" },
     "profile": {
@@ -333,6 +334,19 @@
       "permissionManage": "**Permissão necessária**\n-# Você precisa de **Gerenciar Canais** ou **Administrador** para gerenciar o ChatPlay.",
       "missingPermissions": "**Permissões ausentes**\n-# O {{botName}} precisa de **Ver Canal**, **Enviar Mensagens**, **Inserir Links** e **Conectar e Falar** em um canal de voz antes que o ChatPlay possa ser configurado."
     },
+    "troubleshoot": {
+      "allGood": "✅ **Verificação concluída**\nO {{botName}} tem o acesso necessário para tocar música neste servidor.",
+      "summaryFail": "❌ **Permissões ausentes**",
+      "missingLine": "{{place}}: {{labels}}",
+      "placeVoice": "Voz",
+      "voiceHintShort": "Entre em um canal de voz e execute `/troubleshoot` de novo para verificar.",
+      "guildOnly": "Execute este comando em um servidor.",
+      "botMissing": "Não foi possível ler as permissões. Tente novamente.",
+      "connect": "Conectar",
+      "speak": "Falar",
+      "pinOrManageMessages": "Fixar mensagens (ou Gerenciar mensagens)",
+      "changeNickname": "Alterar apelido"
+    },
     "clear": {
       "alreadyEmpty": "❌ A fila já está vazia.",
       "successHeading": "### 🗑️ Fila Limpa",
@@ -441,6 +455,7 @@
     },
     "troubleshoot": {
       "heading": "### 🛠️ Solução de Problemas\n-# Problemas comuns e como corrigi-los.",
+      "permCheck": "**Permissões ausentes / o bot não consegue entrar no canal de voz**\n-# Use {{cmdTroubleshoot}} para ver quais permissões faltam para o {{botName}} neste servidor.",
       "wontPlay": "**O bot não toca música / Erro na faixa**\n-# A música pode ter restrição de idade ou bloqueio regional.\n-# A fonte de streaming pode estar temporariamente indisponível.\n-# **Correção:** Tente outra música ou cole uma URL direta de {{platforms}}.",
       "joinsLeaves": "**O bot entra e sai imediatamente**\n-# O {{botName}} pode não ter permissões de Falar/Conectar nesse canal.\n-# A música solicitada pode ter falhado ao carregar.\n-# **Correção:** Verifique as permissões do bot e tente outra música.",
       "noSound": "**Sem som, mas o bot está no canal de voz**\n-# Verifique se o bot está pausado — use o botão ▶️ ou {{cmdPause}}.\n-# Verifique o volume com {{cmdVolume}}.\n-# **Correção:** Certifique-se de estar no mesmo canal de voz e não estar ensurdecido.",
@@ -458,7 +473,7 @@
       "needHelp": "**Precisa de ajuda ou encontrou um bug?**\n-# Nossa equipe está pronta para ajudar com qualquer problema.",
       "joinSupportServer": "Entrar no Servidor de Suporte",
       "reportBug": "**Como Reportar um Bug**\n\n**1.** Anote qual comando você estava usando\n-# Inclua o comando exato e qualquer erro exibido.\n\n**2.** Entre no nosso Servidor de Suporte\n-# Use o botão **Entrar no Servidor de Suporte** acima.\n\n**3.** Abra um ticket\n-# Ou pergunte no canal de suporte.\n\n**4.** Anexe evidências\n-# Capturas de tela ou gravações nos ajudam a corrigir mais rápido!",
-      "botInfo": "**Comandos de Informações do Bot**\n**1.** {{cmdStats}}\n-# Veja ping, tempo online e memória\n**2.** {{cmdStatus}}\n-# Veja o status da conexão Lavalink\n**3.** {{cmdHelp}}\n-# Você está aqui!",
+      "botInfo": "**Comandos de Informações do Bot**\n**1.** {{cmdStats}}\n-# Veja ping, tempo online e memória\n**2.** {{cmdStatus}}\n-# Veja o status da conexão Lavalink\n**3.** {{cmdTroubleshoot}}\n-# Verificar permissões do bot neste servidor\n**4.** {{cmdHelp}}\n-# Você está aqui!",
       "footer": "-# O {{botName}} é [open source](https://github.com/codebymitch/Musicify)."
     }
   },

@@ -1,5 +1,6 @@
 ﻿node_modules/
 .env
+config.js
 data/
 data/*.db
 data/*.db-wal

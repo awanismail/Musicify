@@ -58,6 +58,8 @@ async function start() {
 
     setupPlayerHandler(client);
 
+    console.log("[Musicify] Handlers attached — connecting to Discord...");
+
     process.on("unhandledRejection", (reason) => {
         const message = reason?.message || String(reason);
         if (message.includes("Queue is empty")) return;
@@ -94,6 +96,32 @@ async function start() {
         console.error("[Musicify] BOT_TOKEN is not set in .env file!");
         process.exit(1);
     }
+
+    const loginStartedAt = Date.now();
+
+    const readyWarningTimer = setTimeout(() => {
+        if (!client.isReady()) {
+            console.warn(
+                "[Musicify] Still waiting for Discord READY after 60s (large guild count or network delay)."
+            );
+        }
+    }, 60_000);
+
+    const readyTimeoutTimer = setTimeout(() => {
+        if (!client.isReady()) {
+            console.error(
+                "[Musicify] Discord READY not received after 5 minutes — check BOT_TOKEN, Discord API status, and Railway networking."
+            );
+        }
+    }, 5 * 60_000);
+
+    client.once("clientReady", () => {
+        clearTimeout(readyWarningTimer);
+        clearTimeout(readyTimeoutTimer);
+        console.log(
+            `[Musicify] Gateway ready in ${Date.now() - loginStartedAt}ms (${client.guilds.cache.size} guild(s) in cache).`
+        );
+    });
 
     await client.login(token);
 

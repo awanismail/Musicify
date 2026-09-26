@@ -19,6 +19,7 @@
     "i18next": "^26.3.6",
     "i18next-fs-backend": "^2.6.7",
     "musicard": "latest",
-    "riffy": "1.0.12"
+    "riffy": "1.0.12",
+    "zlib-sync": "^0.1.9"
   }
 }

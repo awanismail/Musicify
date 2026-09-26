@@ -1,6 +1,6 @@
 require("dotenv").config();
 
-const { Client, GatewayIntentBits, GatewayDispatchEvents, Events } = require("discord.js");
+const { Client, GatewayIntentBits, GatewayDispatchEvents } = require("discord.js");
 const { Riffy } = require("riffy");
 const fs = require("fs");
 const path = require("path");
@@ -15,6 +15,10 @@ const {
     forwardVoiceStateToRiffy,
     isTransientVoiceStateError,
 } = require("./utils/voiceStateBridge");
+const {
+    attachGatewayDiagnostics,
+    validateBotToken,
+} = require("./utils/gatewayDiagnostics");
 
 async function start() {
     await initI18n();
@@ -62,14 +66,6 @@ async function start() {
 
     console.log("[Musicify] Handlers attached — connecting to Discord...");
 
-    client.on("shardError", (error, shardId) => {
-        console.error(`[Musicify] Shard ${shardId} error:`, error);
-    });
-
-    if (process.env.DISCORD_DEBUG === "true") {
-        client.on(Events.Debug, (message) => console.log(`[Discord] ${message}`));
-    }
-
     process.on("unhandledRejection", (reason) => {
         const message = reason?.message || String(reason);
         if (message.includes("Queue is empty")) return;
@@ -101,13 +97,28 @@ async function start() {
         forwardVoiceStateToRiffy(client, d);
     });
 
-    const token = process.env.BOT_TOKEN;
+    const token = (process.env.BOT_TOKEN || "").trim();
     if (!token) {
         console.error("[Musicify] BOT_TOKEN is not set in .env file!");
         process.exit(1);
     }
 
+    try {
+        const userId = await validateBotToken(token);
+        console.log(`[Musicify] BOT_TOKEN valid for application user ${userId}.`);
+    } catch (error) {
+        const status = error?.status ?? error?.code;
+        console.error(
+            `[Musicify] BOT_TOKEN check failed (${status ?? "unknown"}): ${error.message}`
+        );
+        console.error(
+            "[Musicify] Fix BOT_TOKEN in Railway variables (no quotes/spaces). Confirm Message Content intent in the Developer Portal if login later fails with code 4014."
+        );
+        process.exit(1);
+    }
+
     const loginStartedAt = Date.now();
+    attachGatewayDiagnostics(client, loginStartedAt);
 
     const readyWarningTimer = setTimeout(() => {
         if (!client.isReady()) {

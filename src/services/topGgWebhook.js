@@ -151,77 +151,107 @@ function isAuthorized(req, rawBody) {
     return false;
 }
 
-function startTopGgWebhookServer(client) {
+async function handleTopGgWebhookRequest(client, req, res, webhookPath) {
+    if (req.method !== "POST" || req.url?.split("?")[0] !== webhookPath) {
+        res.writeHead(404);
+        res.end();
+        return;
+    }
+
+    try {
+        const rawBody = await readRawBody(req);
+
+        if (!isAuthorized(req, rawBody)) {
+            console.warn("[Musicify] Rejected top.gg webhook — invalid signature/auth.");
+            res.writeHead(401);
+            res.end("Unauthorized");
+            return;
+        }
+
+        const body = JSON.parse(rawBody.toString("utf8"));
+        const vote = extractVotePayload(body);
+
+        if (!vote) {
+            res.writeHead(400);
+            res.end("Bad Request");
+            return;
+        }
+
+        res.writeHead(200);
+        res.end("OK");
+
+        if (!vote.isTest) {
+            void handleVoteReceived(client, vote).catch((err) => {
+                console.error("[Musicify] Vote thank-you handler failed:", err.message);
+            });
+        } else {
+            console.log("[Musicify] top.gg webhook test received.");
+        }
+    } catch (err) {
+        console.error("[Musicify] top.gg webhook error:", err.message);
+        if (!res.headersSent) {
+            res.writeHead(500);
+            res.end("Error");
+        }
+    }
+}
+
+/**
+ * Binds HTTP as early as possible (Railway health checks use PORT).
+ * Serves GET / and GET /health; optional top.gg POST when TOP_GG_WEBHOOK_SECRET is set.
+ */
+function startPublicHttpServer(client) {
     const secret = config.vote.webhookSecret;
     const webhookPath = config.vote.webhookPath;
     const port = Number(process.env.PORT || process.env.TOP_GG_WEBHOOK_PORT || 0);
 
-    if (!secret) {
-        console.log("[Musicify] TOP_GG_WEBHOOK_SECRET not set — vote webhook server disabled.");
-        return null;
-    }
-
     if (!port) {
-        console.warn(
-            "[Musicify] No PORT or TOP_GG_WEBHOOK_PORT — vote webhook server disabled."
-        );
+        console.log("[Musicify] No PORT set — HTTP server disabled (local dev is fine).");
         return null;
     }
 
     const server = http.createServer(async (req, res) => {
-        if (req.method !== "POST" || req.url?.split("?")[0] !== webhookPath) {
-            res.writeHead(404);
-            res.end();
+        const pathOnly = req.url?.split("?")[0] || "/";
+
+        if (req.method === "GET" && (pathOnly === "/" || pathOnly === "/health")) {
+            res.writeHead(200, { "Content-Type": "application/json" });
+            res.end(
+                JSON.stringify({
+                    ok: true,
+                    discord: client.isReady(),
+                })
+            );
             return;
         }
 
-        try {
-            const rawBody = await readRawBody(req);
-
-            if (!isAuthorized(req, rawBody)) {
-                console.warn("[Musicify] Rejected top.gg webhook — invalid signature/auth.");
-                res.writeHead(401);
-                res.end("Unauthorized");
-                return;
-            }
-
-            const body = JSON.parse(rawBody.toString("utf8"));
-            const vote = extractVotePayload(body);
-
-            if (!vote) {
-                res.writeHead(400);
-                res.end("Bad Request");
-                return;
-            }
-
-            res.writeHead(200);
-            res.end("OK");
-
-            if (!vote.isTest) {
-                void handleVoteReceived(client, vote).catch((err) => {
-                    console.error("[Musicify] Vote thank-you handler failed:", err.message);
-                });
-            } else {
-                console.log("[Musicify] top.gg webhook test received.");
-            }
-        } catch (err) {
-            console.error("[Musicify] top.gg webhook error:", err.message);
-            if (!res.headersSent) {
-                res.writeHead(500);
-                res.end("Error");
-            }
+        if (secret) {
+            await handleTopGgWebhookRequest(client, req, res, webhookPath);
+            return;
         }
+
+        res.writeHead(404);
+        res.end();
     });
 
     server.listen(port, () => {
-        console.log(
-            `[Musicify] top.gg vote webhook listening on port ${port} at ${webhookPath}`
-        );
+        if (secret) {
+            console.log(
+                `[Musicify] HTTP listening on port ${port} (health + top.gg ${webhookPath})`
+            );
+        } else {
+            console.log(`[Musicify] HTTP listening on port ${port} (Railway health checks)`);
+        }
     });
 
     return server;
 }
 
+/** @deprecated Use startPublicHttpServer */
+function startTopGgWebhookServer(client) {
+    return startPublicHttpServer(client);
+}
+
 module.exports = {
+    startPublicHttpServer,
     startTopGgWebhookServer,
 };

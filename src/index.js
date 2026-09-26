@@ -1,6 +1,6 @@
 require("dotenv").config();
 
-const { Client, GatewayIntentBits, GatewayDispatchEvents } = require("discord.js");
+const { Client, GatewayIntentBits, GatewayDispatchEvents, Events } = require("discord.js");
 const { Riffy } = require("riffy");
 const fs = require("fs");
 const path = require("path");
@@ -10,7 +10,7 @@ const { loadCommands } = require("./handlers/commandHandler");
 const { setupPlayerHandler } = require("./handlers/playerHandler");
 const db = require("./db/sqlite");
 const { runBackup, stopBackupScheduler } = require("./db/backup");
-const { startTopGgWebhookServer } = require("./services/topGgWebhook");
+const { startPublicHttpServer } = require("./services/topGgWebhook");
 const {
     forwardVoiceStateToRiffy,
     isTransientVoiceStateError,
@@ -58,7 +58,17 @@ async function start() {
 
     setupPlayerHandler(client);
 
+    startPublicHttpServer(client);
+
     console.log("[Musicify] Handlers attached — connecting to Discord...");
+
+    client.on("shardError", (error, shardId) => {
+        console.error(`[Musicify] Shard ${shardId} error:`, error);
+    });
+
+    if (process.env.DISCORD_DEBUG === "true") {
+        client.on(Events.Debug, (message) => console.log(`[Discord] ${message}`));
+    }
 
     process.on("unhandledRejection", (reason) => {
         const message = reason?.message || String(reason);
@@ -124,8 +134,7 @@ async function start() {
     });
 
     await client.login(token);
-
-    startTopGgWebhookServer(client);
+    console.log("[Musicify] Discord gateway session established.");
 
     let shuttingDown = false;
 

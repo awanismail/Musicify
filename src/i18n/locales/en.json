@@ -210,7 +210,7 @@
       "button": "STOP"
     },
     "chatplay": {
-      "header": "## <:Musicify_Logo:1517828581638541493> {{botName}} ChatPlay\n-# *Type a song name in this channel to play it!*\n-# I'll search, play it in your voice channel, and keep this message updated.",
+      "header": "## <:Nada_Logo:1556293772399349800> {{botName}} ChatPlay\n-# *Type a song name in this channel to play it!*\n-# I'll search, play it in your voice channel, and keep this message updated.",
       "headerPlain": "## {{botName}} ChatPlay\n-# *Type a song name in this channel to play it!*\n-# I'll search, play it in your voice channel, and keep this message updated.",
       "statusWaiting": "-# **Status:** Waiting for a song request...",
       "statusWaiting247": "-# **Status:** Waiting 24 hours, 7 days a week for a song request...",
@@ -221,7 +221,7 @@
   },
   "commands": {
     "about": {
-      "heading": "# <:Musicify_Logo:1517828581638541493> About {{botName}}",
+      "heading": "# <:Nada_Logo:1556293772399349800> About {{botName}}",
       "whatIs": "**What is {{botName}}?**\n-# A ChatPlay-focused Discord music bot that delivers high-quality\n-# music streaming directly to your voice channels.",
       "poweredBy": "**Powered By**\n-# [discord.js](https://discord.js.org/) · [Riffy](https://riffy.js.org/) · [Musicard](https://www.npmjs.com/package/musicard)",
       "features": "**Features**\n-# • **Rich now-playing cards** with progress bars\n-# • **10+ audio filter** presets\n-# • **Smart queue management** with pagination\n-# • **ChatPlay** — instant song requests\n-# • **Interactive button-based** controls",
@@ -354,7 +354,7 @@
       "removedPlural": "-# {{count}} tracks removed from queue"
     },
     "stats": {
-      "heading": "### <:Musicify_Logo:1517828581638541493> Statistics",
+      "heading": "### <:Nada_Logo:1556293772399349800> Statistics",
       "botId": "**Bot ID**",
       "uptime": "**Uptime**",
       "uptimeTimezoneNote": "-# *Times shown in your local timezone*",
@@ -417,7 +417,7 @@
   },
   "help": {
     "placeholder": "📖 Navigate help sections",
-    "header": "# <:Musicify_Logo:1517828581638541493> {{botName}}",
+    "header": "# <:Nada_Logo:1556293772399349800> {{botName}}",
     "pages": {
       "home": { "label": "Home", "description": "Overview & quick start" },
       "music": { "label": "Music Commands", "description": "Play, skip, queue & more" },
@@ -479,7 +479,7 @@
   },
   "chatplay": {
     "setup": {
-      "stepHeader": "## <:Musicify_Logo:1517828581638541493> {{botName}} ChatPlay\n-# Step {{step}} of {{totalSteps}}",
+      "stepHeader": "## <:Nada_Logo:1556293772399349800> {{botName}} ChatPlay\n-# Step {{step}} of {{totalSteps}}",
       "channelTitle": "**ChatPlay channel**",
       "channelDescription": "ChatPlay will be set up in {{channel}}.",
       "unknownChannel": "Unknown channel",
@@ -511,7 +511,7 @@
       "modalChannelLabel": "ChatPlay channel",
       "modalChannelDescription": "Where members type song names to request music",
       "modalPlaceholder": "Choose a text channel",
-      "manageHeading": "## <:Musicify_Logo:1517828581638541493> {{botName}} ChatPlay",
+      "manageHeading": "## <:Nada_Logo:1556293772399349800> {{botName}} ChatPlay",
       "manageEnabled": "Enabled in {{channel}}",
       "manageDisabled": "Disabled in {{channel}}",
       "manageSettings": "**Your settings**\n-# Tap the toggle next to each option to change it.",

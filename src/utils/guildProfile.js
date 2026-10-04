@@ -97,7 +97,7 @@ function getRest(client) {
 }
 
 const GLOBAL_BIO_CACHE_TTL_MS = 5 * 60 * 1000;
-const MUSICIFY_LOGO_EMOJI = "<:Musicify_Logo:1517828581638541493>";
+const MUSICIFY_LOGO_EMOJI = "<:Nada_Logo:1556293772399349800>";
 const DEFAULT_SUPPORT_URL = "https://discord.gg/MRjEUhDCpZ";
 
 /** @type {{ value: string, fetchedAt: number } | null} */

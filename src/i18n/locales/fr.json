@@ -210,7 +210,7 @@
       "button": "STOP"
     },
     "chatplay": {
-      "header": "## <:Musicify_Logo:1517828581638541493> {{botName}} ChatPlay\n-# *Tapez un nom de morceau dans ce salon pour le lancer !*\n-# Je recherche, je le lis dans votre salon vocal et je mets à jour ce message.",
+      "header": "## <:Nada_Logo:1556293772399349800> {{botName}} ChatPlay\n-# *Tapez un nom de morceau dans ce salon pour le lancer !*\n-# Je recherche, je le lis dans votre salon vocal et je mets à jour ce message.",
       "headerPlain": "## {{botName}} ChatPlay\n-# *Tapez un nom de morceau dans ce salon pour le lancer !*\n-# Je recherche, je le lis dans votre salon vocal et je mets à jour ce message.",
       "statusWaiting": "-# **Statut :** En attente d'une demande de morceau...",
       "statusWaiting247": "-# **Statut :** En attente 24 heures sur 24, 7 jours sur 7 d'une demande de morceau...",
@@ -221,7 +221,7 @@
   },
   "commands": {
     "about": {
-      "heading": "# <:Musicify_Logo:1517828581638541493> À propos de {{botName}}",
+      "heading": "# <:Nada_Logo:1556293772399349800> À propos de {{botName}}",
       "whatIs": "**Qu'est-ce que {{botName}} ?**\n-# Un bot musical Discord centré sur ChatPlay qui diffuse\n-# de la musique en haute qualité directement dans vos salons vocaux.",
       "poweredBy": "**Propulsé par**\n-# [discord.js](https://discord.js.org/) · [Riffy](https://riffy.js.org/) · [Musicard](https://www.npmjs.com/package/musicard)",
       "features": "**Fonctionnalités**\n-# • **Cartes de lecture enrichies** avec barres de progression\n-# • **Plus de 10 préréglages** de filtres audio\n-# • **Gestion intelligente de la file d'attente** avec pagination\n-# • **ChatPlay** — demandes de morceaux instantanées\n-# • **Contrôles interactifs** basés sur des boutons",
@@ -354,7 +354,7 @@
       "removedPlural": "-# {{count}} pistes retirées de la file d'attente"
     },
     "stats": {
-      "heading": "### <:Musicify_Logo:1517828581638541493> Statistiques",
+      "heading": "### <:Nada_Logo:1556293772399349800> Statistiques",
       "botId": "**ID du bot**",
       "uptime": "**Temps de fonctionnement**",
       "uptimeTimezoneNote": "-# *Heures affichées dans votre fuseau horaire local*",
@@ -417,7 +417,7 @@
   },
   "help": {
     "placeholder": "📖 Parcourir les sections d'aide",
-    "header": "# <:Musicify_Logo:1517828581638541493> {{botName}}",
+    "header": "# <:Nada_Logo:1556293772399349800> {{botName}}",
     "pages": {
       "home": { "label": "Accueil", "description": "Vue d'ensemble et démarrage rapide" },
       "music": { "label": "Commandes musicales", "description": "Lecture, passage, file d'attente et plus" },
@@ -479,7 +479,7 @@
   },
   "chatplay": {
     "setup": {
-      "stepHeader": "## <:Musicify_Logo:1517828581638541493> {{botName}} ChatPlay\n-# Étape {{step}} sur {{totalSteps}}",
+      "stepHeader": "## <:Nada_Logo:1556293772399349800> {{botName}} ChatPlay\n-# Étape {{step}} sur {{totalSteps}}",
       "channelTitle": "**Salon ChatPlay**",
       "channelDescription": "ChatPlay sera configuré dans {{channel}}.",
       "unknownChannel": "Salon inconnu",
@@ -511,7 +511,7 @@
       "modalChannelLabel": "Salon ChatPlay",
       "modalChannelDescription": "Où les membres tapent des noms de morceaux pour demander de la musique",
       "modalPlaceholder": "Choisir un salon textuel",
-      "manageHeading": "## <:Musicify_Logo:1517828581638541493> {{botName}} ChatPlay",
+      "manageHeading": "## <:Nada_Logo:1556293772399349800> {{botName}} ChatPlay",
       "manageEnabled": "Activé dans {{channel}}",
       "manageDisabled": "Désactivé dans {{channel}}",
       "manageSettings": "**Vos paramètres**\n-# Appuyez sur l'interrupteur à côté de chaque option pour la modifier.",

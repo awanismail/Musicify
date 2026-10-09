@@ -61,6 +61,38 @@ docker compose logs -f musicify
 
 ## Documentation
 
+### Inspect and remove old Discord server commands
+
+For a full command reset during redeploy, run `npm run commands:reset` once in
+the new deployment environment with `BOT_TOKEN` and `CLIENT_ID` configured.
+It replaces the global command list with the current source and removes **all
+server-specific commands belonging to this bot in every server it has joined**.
+It validates the application and verifies the resulting command lists. Settings
+and playback data are unchanged. This is a separate deployment step; `npm start`
+does not run it automatically. Do not run command registration from an old bot
+version at the same time. A failed reset exits nonzero and can be retried.
+
+Run these in the bot environment with `BOT_TOKEN` and `CLIENT_ID` configured.
+Replace `SERVER_ID` and `COMMAND_ID` with the actual Discord IDs.
+
+```bash
+# Read global and server-specific registrations without changing anything
+npm run commands:inspect -- --guild SERVER_ID
+
+# Preview removal of a selected server-specific command
+npm run commands:inspect -- --guild SERVER_ID --delete COMMAND_ID
+
+# Apply that removal (multiple command IDs can be separated with commas)
+npm run commands:inspect -- --guild SERVER_ID --delete COMMAND_ID --apply
+```
+
+The tool checks the token's application, only deletes selected server-specific
+commands, and reads the server registrations again to verify removal. Matching
+names alone do not prove a command is obsolete. Global commands are preserved;
+use `npm run deploy` from the latest code to replace the global command list.
+If a request fails midway, inspect again before retrying: earlier deletions may
+have succeeded. This tool does not restart the bot or refresh the Discord client.
+
 - [Trademarks](TRADEMARKS.md)
 - [Terms of Service](TermsOfService.md)
 - [Privacy Policy](PrivacyPolicy.md)

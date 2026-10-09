@@ -6,6 +6,8 @@
   "scripts": {
     "start": "node src/index.js",
     "deploy": "node src/deploy-commands.js",
+    "commands:inspect": "node scripts/discord-commands.js",
+    "commands:reset": "node scripts/reset-discord-commands.js",
     "backup": "node scripts/backup-db.js",
     "restore-db": "node scripts/restore-db.js"
   },

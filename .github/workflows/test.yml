@@ -34,6 +34,9 @@ jobs:
           done
           echo "All files passed syntax check."
 
+      - name: Test standby connection monitor
+        run: node --test tests/*.test.js
+
       - name: Validate command structure
         run: |
           node -e "

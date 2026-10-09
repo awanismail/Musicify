@@ -22,6 +22,7 @@ const {
 } = require("../services/sessionManager");
 const { getT } = require("../i18n");
 const config = require("../../config");
+const { getAppSetting } = require("../db/appSettings");
 const { limitedResolve, PRIORITY_SUGGESTIONS } = require("../utils/resolveLimiter");
 const { rememberTrackRequester } = require("../utils/votePrompt");
 const {
@@ -34,14 +35,16 @@ const { updateVoiceChannelStatusForPlayer } = require("../utils/voiceChannelStat
 const { resolvePlayerTextChannelId, isChatPlayActive } = require("../utils/playerChannel");
 
 const UPDATE_INTERVAL_MS = 15 * 1000; // 15 seconds
+const WEBSOCKET_CLOSED = 3;
 const LAVALINK_RECONNECT_INTERVAL_MS = 30 * 60 * 1000;
 let lavalinkReconnectTimer = null;
 
 function refreshLavalinkNodes(client) {
     if (!client?.riffy?.initiated) return;
+    const forceRefresh = getAppSetting("lavalink_force_refresh") === "true";
 
     for (const configNode of config.nodes) {
-        const node = client.riffy.nodeMap.get(configNode.name);
+        const node = client.riffy.nodeMap.get(configNode.name || configNode.host);
 
         if (!node) {
             client.riffy.createNode(configNode);
@@ -49,19 +52,20 @@ function refreshLavalinkNodes(client) {
             continue;
         }
 
-        if (node.reconnectAttempt) {
-            clearTimeout(node.reconnectAttempt);
-            node.reconnectAttempt = null;
-        }
-
-        node.reconnectAttempted = 1;
-
-        if (node.connected && node.ws) {
+        if (forceRefresh && node.connected && !node.reconnectAttempt && node.ws?.readyState === 1) {
             node.ws.close(1000, "Scheduled refresh");
-            console.log(`[Musicify] Scheduled Lavalink refresh for node "${configNode.name}".`);
+            console.log(`[Musicify] Scheduled Lavalink refresh for node "${node.name}".`);
             continue;
         }
 
+        // Keep healthy voice sessions intact and let Riffy finish pending recovery.
+        // An open socket can still be waiting for Lavalink's ready payload.
+        if (node.connected || node.reconnectAttempt ||
+            (node.ws && node.ws.readyState !== WEBSOCKET_CLOSED)) {
+            continue;
+        }
+
+        node.reconnectAttempted = 1;
         node.connect();
         console.log(`[Musicify] Reconnecting Lavalink node "${configNode.name}".`);
     }
@@ -71,7 +75,7 @@ function startLavalinkReconnectMonitor(client) {
     if (lavalinkReconnectTimer) clearInterval(lavalinkReconnectTimer);
 
     lavalinkReconnectTimer = setInterval(() => {
-        console.log("[Musicify] Running scheduled Lavalink reconnect...");
+        console.log("[Musicify] Checking Lavalink connection health...");
         refreshLavalinkNodes(client);
     }, LAVALINK_RECONNECT_INTERVAL_MS);
 }

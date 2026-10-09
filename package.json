@@ -4,6 +4,7 @@
   "description": "Musicify - A multi-guild Discord music bot with ChatPlay",
   "main": "src/index.js",
   "scripts": {
+    "commands:reset": "node scripts/reset-discord-commands.js",
     "start": "node src/index.js",
     "deploy": "node src/deploy-commands.js",
     "backup": "node scripts/backup-db.js",

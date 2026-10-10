@@ -5,12 +5,11 @@ const vm = require("node:vm");
 const { test } = require("node:test");
 
 // Load the real handler with external services stubbed: no Discord login or timers.
-function fixture(node, configNode = { name: "audio" }, refresh = null) {
+function fixture(node, configNode = { name: "audio" }) {
     let connects = 0;
     let creates = 0;
     const context = vm.createContext({
-        require: (name) => name === "../../config" ? { nodes: [configNode] }
-            : name === "../db/appSettings" ? { getAppSetting: () => refresh } : {},
+        require: (name) => name === "../../config" ? { nodes: [configNode] } : {},
         module: { exports: {} },
         console: { log() {} },
     });
@@ -22,7 +21,7 @@ function fixture(node, configNode = { name: "audio" }, refresh = null) {
         createNode: () => { creates++; },
     } };
     return {
-        run: () => context.refreshLavalinkNodes(client),
+        run: () => context.recoverDisconnectedLavalinkNodes(client),
         counts: () => ({ connects, creates }),
     };
 }
@@ -33,15 +32,6 @@ test("24 hours of checks leave a healthy standby connection intact", () => {
     for (let i = 0; i < 48; i++) monitor.run();
     assert.deepEqual(monitor.counts(), { connects: 0, creates: 0 });
     assert.equal(node.reconnectAttempted, 2);
-});
-
-test("explicit enable refreshes a healthy node; disable preserves it", () => {
-    for (const enabled of ["true", "false", null]) {
-        let closes = 0;
-        const node = { connected: true, ws: { readyState: 1, close() { closes++; } } };
-        fixture(node, { name: "audio" }, enabled).run();
-        assert.equal(closes, enabled === "true" ? 1 : 0);
-    }
 });
 
 test("pending retries and sockets in progress are not duplicated", () => {

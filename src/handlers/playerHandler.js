@@ -22,7 +22,6 @@ const {
 } = require("../services/sessionManager");
 const { getT } = require("../i18n");
 const config = require("../../config");
-const { getAppSetting } = require("../db/appSettings");
 const { limitedResolve, PRIORITY_SUGGESTIONS } = require("../utils/resolveLimiter");
 const { rememberTrackRequester } = require("../utils/votePrompt");
 const {
@@ -39,9 +38,8 @@ const WEBSOCKET_CLOSED = 3;
 const LAVALINK_RECONNECT_INTERVAL_MS = 30 * 60 * 1000;
 let lavalinkReconnectTimer = null;
 
-function refreshLavalinkNodes(client) {
+function recoverDisconnectedLavalinkNodes(client) {
     if (!client?.riffy?.initiated) return;
-    const forceRefresh = getAppSetting("lavalink_force_refresh") === "true";
 
     for (const configNode of config.nodes) {
         const node = client.riffy.nodeMap.get(configNode.name || configNode.host);
@@ -49,12 +47,6 @@ function refreshLavalinkNodes(client) {
         if (!node) {
             client.riffy.createNode(configNode);
             console.log(`[Musicify] Created missing Lavalink node "${configNode.name}".`);
-            continue;
-        }
-
-        if (forceRefresh && node.connected && !node.reconnectAttempt && node.ws?.readyState === 1) {
-            node.ws.close(1000, "Scheduled refresh");
-            console.log(`[Musicify] Scheduled Lavalink refresh for node "${node.name}".`);
             continue;
         }
 
@@ -76,7 +68,7 @@ function startLavalinkReconnectMonitor(client) {
 
     lavalinkReconnectTimer = setInterval(() => {
         console.log("[Musicify] Checking Lavalink connection health...");
-        refreshLavalinkNodes(client);
+        recoverDisconnectedLavalinkNodes(client);
     }, LAVALINK_RECONNECT_INTERVAL_MS);
 }
 

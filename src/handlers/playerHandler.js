@@ -34,14 +34,15 @@ const { updateVoiceChannelStatusForPlayer } = require("../utils/voiceChannelStat
 const { resolvePlayerTextChannelId, isChatPlayActive } = require("../utils/playerChannel");
 
 const UPDATE_INTERVAL_MS = 15 * 1000; // 15 seconds
+const WEBSOCKET_CLOSED = 3;
 const LAVALINK_RECONNECT_INTERVAL_MS = 30 * 60 * 1000;
 let lavalinkReconnectTimer = null;
 
-function refreshLavalinkNodes(client) {
+function recoverDisconnectedLavalinkNodes(client) {
     if (!client?.riffy?.initiated) return;
 
     for (const configNode of config.nodes) {
-        const node = client.riffy.nodeMap.get(configNode.name);
+        const node = client.riffy.nodeMap.get(configNode.name || configNode.host);
 
         if (!node) {
             client.riffy.createNode(configNode);
@@ -49,19 +50,14 @@ function refreshLavalinkNodes(client) {
             continue;
         }
 
-        if (node.reconnectAttempt) {
-            clearTimeout(node.reconnectAttempt);
-            node.reconnectAttempt = null;
-        }
-
-        node.reconnectAttempted = 1;
-
-        if (node.connected && node.ws) {
-            node.ws.close(1000, "Scheduled refresh");
-            console.log(`[Musicify] Scheduled Lavalink refresh for node "${configNode.name}".`);
+        // Keep healthy voice sessions intact and let Riffy finish pending recovery.
+        // An open socket can still be waiting for Lavalink's ready payload.
+        if (node.connected || node.reconnectAttempt ||
+            (node.ws && node.ws.readyState !== WEBSOCKET_CLOSED)) {
             continue;
         }
 
+        node.reconnectAttempted = 1;
         node.connect();
         console.log(`[Musicify] Reconnecting Lavalink node "${configNode.name}".`);
     }
@@ -71,8 +67,8 @@ function startLavalinkReconnectMonitor(client) {
     if (lavalinkReconnectTimer) clearInterval(lavalinkReconnectTimer);
 
     lavalinkReconnectTimer = setInterval(() => {
-        console.log("[Musicify] Running scheduled Lavalink reconnect...");
-        refreshLavalinkNodes(client);
+        console.log("[Musicify] Checking Lavalink connection health...");
+        recoverDisconnectedLavalinkNodes(client);
     }, LAVALINK_RECONNECT_INTERVAL_MS);
 }
 
